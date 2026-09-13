@@ -1,0 +1,97 @@
+# AI Horizon Solution Challenge 2026
+
+Four prototypes across the two challenge tracks. Within each track, **A** and **B**
+answer the same brief with opposite bets on where the reasoning should live.
+
+| | Prototype A | Prototype B |
+|---|---|---|
+| **NSW Automation** | Diagnostic Interviewer — the model runs the interview and ranks causes | Dispensing Metrology Instrument — OpenCV measures the deposits, a weighted fault tree ranks causes from those measurements |
+| **Exabytes** | Guided Assessment — five questions to a transformation blueprint | Zero-Input Auditor — the live website is inspected first, maturity is scored from observed evidence |
+
+The axis is deliberate. **A** is an *assistant*: broad coverage, natural follow-ups,
+fast to build, but its percentages are asserted by the model. **B** is an
+*instrument*: it measures something real, computes every number in code, and can
+show the arithmetic behind any figure — at the cost of covering only what it models.
+
+Both briefs demand exactly this distinction. NSW asks for *"logical reasoning,
+rather than simply generating generic answers"*; Exabytes asks for *"evidence-based
+analysis"* instead of *"generic AI output"*.
+
+## Running it
+
+```bash
+# Web app — all four prototypes
+cd web && npm install && npm run dev        # http://localhost:3000
+
+# Metrology service — required by NSW Prototype B only
+cd vision && uv venv && uv pip install -r <(echo -e "fastapi\nuvicorn[standard]\nopencv-python-headless\nnumpy\npython-multipart")
+.venv/bin/uvicorn main:app --port 8000
+```
+
+Copy `web/.env.example` to `web/.env.local` and add a `GEMINI_API_KEY` to enable the
+A variants. Without a key they fall back to the deterministic baseline **and say so
+on screen** — so a demo never dies on a failed network call.
+
+## Architecture
+
+```
+web/
+  core/        types · Gemini adapter (with offline fallback) · log-odds inference · math
+  packs/nsw/   fault tree: 7 causes, weighted rules, defect taxonomy
+  packs/exa/   maturity rubric · service catalog · pain-point model · ROI
+  engines/     llmReasoner (A) · deterministic (B) — same Engine interface
+  app/         4 prototype routes over one shared Assessment component
+vision/        OpenCV metrology service + synthetic samples + oracle tests
+```
+
+A track and an engine are swapped independently, so the four prototypes are four
+configurations of one system rather than four codebases.
+
+### How B ranks a cause
+
+Each cause starts at a prior. Every matching rule adds a weight in **log-odds**,
+and the sum is squashed back into a probability. Nothing asserts a percentage — it
+is derived, and the UI can show every contributing term. Worked example, which
+reproduces the NSW brief's own illustration:
+
+> Occasional deviation + random positions + new material lot
+> → **Air entrapment, 92%** — *"the deviation is occasional rather than continuous,
+> and an air slug passing through the fluid path is one of the few faults that comes
+> and goes; a blockage or a mis-set parameter would deviate on every shot."*
+
+### How B measures a deposit
+
+Classical computer vision, deliberately — **no training data required**, and every
+number is reproducible by an engineer with a microscope:
+
+| Measurement | Method | Detects |
+|---|---|---|
+| Segmentation | Otsu threshold, polarity auto-detected | deposits vs substrate |
+| Size dispersion | coefficient of variation of blob area | inconsistent volume |
+| Shape | isoperimetric ratio `4πA/P²` | tailing, irregular geometry |
+| Position | least-squares fit to a lattice per row | placement drift |
+| Missing | lattice gaps **and** short rows | missing deposits |
+
+Run the oracle tests (each sample encodes a known defect):
+
+```bash
+cd vision && .venv/bin/python test_metrology.py     # 9/9
+```
+
+## Known limitations
+
+State these before a judge finds them.
+
+- **Nominal deposit area is inferred from the median** when no recipe target is
+  supplied, which assumes most deposits are in spec. Pass `target_area` to measure
+  against the true nominal instead.
+- **Measurements are in pixels, not microns.** A scale reference or known pitch is
+  needed for absolute volume.
+- **The web probe reads served HTML only.** Client-rendered sites are flagged
+  (`js_rendered`) and their content checks caveated, but not executed.
+- **Catalog prices are indicative placeholders.** Verify against exabytes.my before
+  quoting them anywhere.
+- **The fault tree covers seven causes.** It is a preliminary triage aid, not a
+  replacement for an engineer — which is what the NSW brief asks for.
+- **Prototype A is not reproducible.** The same input can produce different
+  rankings. That is the tradeoff being tested, and it is labelled in the UI.
