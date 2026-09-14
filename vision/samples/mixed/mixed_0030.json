@@ -1,10 +1,9 @@
 {
   "pattern": "line_trace",
-  "width": 720,
+  "width": 850,
   "height": 460,
   "defects_applied": [
-    "stringing",
-    "line_start_defect"
+    "smearing"
   ],
   "profile": [
     {
@@ -15,55 +14,25 @@
     },
     {
       "index": 1,
-      "cx": 157.78,
+      "cx": 262.5,
       "cy": 230.0,
       "r": 26.0
     },
     {
       "index": 2,
-      "cx": 215.56,
+      "cx": 425.0,
       "cy": 230.0,
       "r": 26.0
     },
     {
       "index": 3,
-      "cx": 273.33,
+      "cx": 587.5,
       "cy": 230.0,
       "r": 26.0
     },
     {
       "index": 4,
-      "cx": 331.11,
-      "cy": 230.0,
-      "r": 26.0
-    },
-    {
-      "index": 5,
-      "cx": 388.89,
-      "cy": 230.0,
-      "r": 26.0
-    },
-    {
-      "index": 6,
-      "cx": 446.67,
-      "cy": 230.0,
-      "r": 26.0
-    },
-    {
-      "index": 7,
-      "cx": 504.44,
-      "cy": 230.0,
-      "r": 26.0
-    },
-    {
-      "index": 8,
-      "cx": 562.22,
-      "cy": 230.0,
-      "r": 26.0
-    },
-    {
-      "index": 9,
-      "cx": 620.0,
+      "cx": 750.0,
       "cy": 230.0,
       "r": 26.0
     }
@@ -71,85 +40,43 @@
   "dots": [
     {
       "index": 0,
-      "cx": 100.31,
-      "cy": 229.9,
-      "r": 25.87,
-      "present": false,
+      "cx": 99.11,
+      "cy": 230.09,
+      "r": 25.45,
+      "present": true,
       "tags": [
-        "line_start_defect"
+        "smearing"
       ]
     },
     {
       "index": 1,
-      "cx": 158.19,
-      "cy": 230.27,
-      "r": 25.17,
+      "cx": 262.28,
+      "cy": 229.99,
+      "r": 26.34,
       "present": true,
       "tags": []
     },
     {
       "index": 2,
-      "cx": 215.88,
-      "cy": 230.26,
-      "r": 26.71,
+      "cx": 425.71,
+      "cy": 229.87,
+      "r": 25.76,
       "present": true,
       "tags": []
     },
     {
       "index": 3,
-      "cx": 273.4,
-      "cy": 230.24,
-      "r": 26.04,
+      "cx": 587.71,
+      "cy": 230.39,
+      "r": 25.47,
       "present": true,
       "tags": []
     },
     {
       "index": 4,
-      "cx": 331.19,
-      "cy": 229.93,
-      "r": 25.23,
-      "present": true,
-      "tags": []
-    },
-    {
-      "index": 5,
-      "cx": 388.9,
-      "cy": 230.22,
-      "r": 26.01,
-      "present": true,
-      "tags": []
-    },
-    {
-      "index": 6,
-      "cx": 447.47,
-      "cy": 229.61,
-      "r": 25.92,
-      "present": true,
-      "tags": [
-        "stringing"
-      ]
-    },
-    {
-      "index": 7,
-      "cx": 504.66,
-      "cy": 230.02,
-      "r": 26.23,
-      "present": true,
-      "tags": []
-    },
-    {
-      "index": 8,
-      "cx": 562.57,
-      "cy": 230.2,
-      "r": 25.96,
-      "present": true,
-      "tags": []
-    },
-    {
-      "index": 9,
-      "cx": 620.14,
-      "cy": 229.3,
-      "r": 26.28,
+      "cx": 750.11,
+      "cy": 230.59,
+      "r": 25.11,
       "present": true,
       "tags": []
     }

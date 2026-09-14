@@ -84,7 +84,17 @@ def along_path(
     travelled = 0.0
     seg_i = 0
     for step in range(n):
-        target = step * (total / (n - 1)) if n > 1 else 0.0
+        # Open path: space n points across [0, total] inclusive, so the
+        # first and last land exactly on the path's own two endpoints.
+        # Closed path: total already includes the closing segment back to
+        # the start, so spacing across [0, total] inclusive would place the
+        # last point exactly on top of the first -- two profile positions
+        # at one identical coordinate, which no real recipe would specify.
+        # Space across [0, total) instead, one interval short of closing.
+        if closed:
+            target = step * (total / n)
+        else:
+            target = step * (total / (n - 1)) if n > 1 else 0.0
         while seg_i < len(segs) - 1 and travelled + seg_lens[seg_i] < target:
             travelled += seg_lens[seg_i]
             seg_i += 1
@@ -101,7 +111,7 @@ def along_path(
     return Layout(dots=dots, order=order, pattern=pattern, width=width, height=height)
 
 
-def perimeter(w: float = 500, h: float = 300, spacing: float = 60.0, **kw) -> Layout:
+def perimeter(w: float = 500, h: float = 300, spacing: float = 120.0, **kw) -> Layout:
     ox, oy = 110, 110
     pts = [(ox, oy), (ox + w, oy), (ox + w, oy + h), (ox, oy + h)]
     return along_path(pts, spacing=spacing, closed=True, pattern="perimeter",
@@ -112,7 +122,7 @@ def custom_grid_landmark(rows: int = 4, cols: int = 4, pitch: float = 100.0, r: 
     return grid(rows=rows, cols=cols, pitch=pitch, r=r, pattern="grid_landmark", **kw)
 
 
-def pattern_shape(shape: str = "zigzag", w: float = 480, h: float = 240, spacing: float = 55.0, **kw) -> Layout:
+def pattern_shape(shape: str = "zigzag", w: float = 480, h: float = 240, spacing: float = 120.0, **kw) -> Layout:
     ox, oy = 120, 120
     if shape == "zigzag":
         pts = [(ox, oy), (ox + w / 2, oy + h), (ox + w, oy)]
@@ -124,7 +134,7 @@ def pattern_shape(shape: str = "zigzag", w: float = 480, h: float = 240, spacing
                        width=int(ox * 2 + w), height=int(oy * 2 + h), **kw)
 
 
-def line_trace(length: float = 520, spacing: float = 50.0, r: float = DEFAULT_R, **kw) -> Layout:
+def line_trace(length: float = 650, spacing: float = 120.0, r: float = DEFAULT_R, **kw) -> Layout:
     ox, oy = 100, 230
     pts = [(ox, oy), (ox + length, oy)]
     return along_path(pts, spacing=spacing, r=r, pattern="line_trace",

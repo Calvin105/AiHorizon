@@ -27,19 +27,18 @@ judgeable (air bubble, satellite, speck), **yellow** = stray unmatched blob.
 
 ## Known issues
 
-- **Severe misalignment reads as `missing`, not `misaligned`.** A dot past
-  the capture radius (1.8× nominal r) from its expected spot reads as empty
-  instead of offset. Our `misaligned` generator's drift grows with column
-  index, so the far end of a row can exceed that radius — ~20% of
-  `misaligned` dots currently read `missing`. Undecided whether the fix
-  belongs in the detector (widen radius) or the generator (cap drift) — it's
-  genuinely ambiguous past a point.
-- **A defect on one dot drags its clean neighbor down too.** When two dots
-  fuse (bridging, dragged), the aligner can't always tell which side is the
-  real problem. Confirmed in `dragged_annotated.png`: the untagged, actually
-  clean neighbor reads red, `FUSED (gt:ok)`, just for standing next to it.
-  Same root cause after the 09-14 fix below, just shows up as `missing`
-  instead of `possibly_fused` now — **not resolved, just changed shape.**
+- **~~Severe misalignment reads as `missing`~~ — mostly fixed 09-14.**
+  Capping generator drift (see change log) took this from ~20% down to a
+  residual **14/48 misaligned dots reading "nothing flagged"** rather than
+  `missing` — still capture-radius-adjacent cases, just no longer wrong in
+  the worse direction. Not fully closed.
+- **A defect on one dot can still drag its clean neighbor down.** When two
+  dots fuse (bridging, dragged), the aligner can't always tell which side is
+  the real problem. Confirmed in `dragged_annotated.png`. Far smaller now —
+  the 09-14 spacing/closed-loop fixes removed the *accidental* version of
+  this (dots touching due to layout bugs, not real defects) — but the
+  genuine case (an actual fused blob) is unresolved and needs real shape
+  analysis (Tier 2), not an alignment tweak.
 
 ## Change log
 
@@ -139,6 +138,56 @@ smearing               12    oversized=5, irregular=5, misaligned=2
 stringing              7     irregular=5, oversized=1, misaligned=1
 
 Extra (unmatched) blobs across all images: 16
+```
+
+</details>
+
+### 2026-09-14 — Three real bugs found going case-by-case with the visualizer
+
+1. **Misaligned drift was unbounded**, growing with column index past the
+   detector's capture radius. **Capped at 1.4× r** (`defects.py`). Correct
+   `misaligned` reads: **36% → 71%**.
+2. **Path-based patterns had too little spacing** — perimeter/pattern/
+   line_trace's default spacing barely exceeded the dot diameter, so
+   ordinary jitter alone made clean neighbors touch and misread as fused.
+   **Widened to 120px** (`layouts.py`). Found **26 false positives on
+   completely defect-free images** (`mixed_0007`: `defects_applied: []`,
+   4 dots wrongly flagged anyway).
+3. **Closed loops duplicated their own start point** — `perimeter`'s first
+   and last profile position landed on the *identical coordinate*,
+   guaranteeing one misread as missing. Fixed the closed-path spacing math
+   in `along_path`.
+
+Also dropped one stale assertion (`line_end_defect flags shape`) that only
+passed *because of* bug #2 — the "irregular" reading was incidental overlap
+with a too-close neighbor, not the pooling shape itself.
+
+**`good` dots wrongly flagged: 14.3% → 1.0%.** Extra stray blobs: 16 → 1.
+
+<details>
+<summary>Full breakdown</summary>
+
+```
+generator tag          n     predicted symptom breakdown
+------------------------------------------------------------------------------
+abnormal_shape         3     irregular=3
+air_bubble             6     (nothing flagged)=6
+bridging               16    possibly_fused=8, oversized=2, irregular=2, misaligned=2, missing=2
+carryover_big          7     oversized=7
+double_dispense        4     oversized=3, (nothing flagged)=1
+dragged                8     possibly_fused=4, missing=1, oversized=1, irregular=1, misaligned=1
+ghost                  1     missing=1
+good                   499   (nothing flagged)=494, possibly_fused=3, missing=2
+inconsistent           63    (nothing flagged)=24, oversized=22, undersized=16, possibly_fused=1
+line_end_defect        2     oversized=2
+line_start_defect      1     missing=1
+misaligned             48    misaligned=34, (nothing flagged)=14
+missing                7     missing=7
+overrun                5     oversized=4, irregular=1
+smearing               9     irregular=5, oversized=3, (nothing flagged)=1
+stringing              8     irregular=7, (nothing flagged)=1
+
+Extra (unmatched) blobs across all images: 1
 ```
 
 </details>

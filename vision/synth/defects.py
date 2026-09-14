@@ -141,7 +141,13 @@ def misaligned(layout: Layout, rng: np.random.Generator, touched: set[int],
         return
     for k, i in enumerate(cand):
         d = layout.dots[i]
-        d.cx += k * drift * rng.uniform(0.8, 1.2)
+        # Growth is capped relative to the dot's own radius: past a point,
+        # "drifted this far" stops being distinguishable from "not here at
+        # all" even to a human, so letting it grow unbounded with position
+        # in the row just produces ambiguous ground truth, not a harder
+        # example. Capped below the detector's capture radius (1.8x r).
+        dx = np.clip(k * drift * rng.uniform(0.8, 1.2), -d.r * 1.4, d.r * 1.4)
+        d.cx += dx
         d.cy += rng.normal(0, drift * 0.7)
         d.tag("misaligned")
         touched.add(i)

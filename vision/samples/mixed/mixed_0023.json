@@ -1,230 +1,100 @@
 {
-  "pattern": "area",
-  "width": 740,
-  "height": 480,
+  "pattern": "line_trace",
+  "width": 850,
+  "height": 460,
   "defects_applied": [
-    "overrun",
-    "abnormal_shape",
-    "air_bubble"
+    "missing_carryover",
+    "satellite",
+    "dragged"
   ],
   "profile": [
     {
       "index": 0,
-      "cx": 110.0,
-      "cy": 110.0,
+      "cx": 100.0,
+      "cy": 230.0,
       "r": 26.0
     },
     {
       "index": 1,
-      "cx": 240.0,
-      "cy": 110.0,
+      "cx": 262.5,
+      "cy": 230.0,
       "r": 26.0
     },
     {
       "index": 2,
-      "cx": 370.0,
-      "cy": 110.0,
+      "cx": 425.0,
+      "cy": 230.0,
       "r": 26.0
     },
     {
       "index": 3,
-      "cx": 500.0,
-      "cy": 110.0,
+      "cx": 587.5,
+      "cy": 230.0,
       "r": 26.0
     },
     {
       "index": 4,
-      "cx": 630.0,
-      "cy": 110.0,
-      "r": 26.0
-    },
-    {
-      "index": 5,
-      "cx": 110.0,
-      "cy": 240.0,
-      "r": 26.0
-    },
-    {
-      "index": 6,
-      "cx": 240.0,
-      "cy": 240.0,
-      "r": 26.0
-    },
-    {
-      "index": 7,
-      "cx": 370.0,
-      "cy": 240.0,
-      "r": 26.0
-    },
-    {
-      "index": 8,
-      "cx": 500.0,
-      "cy": 240.0,
-      "r": 26.0
-    },
-    {
-      "index": 9,
-      "cx": 630.0,
-      "cy": 240.0,
-      "r": 26.0
-    },
-    {
-      "index": 10,
-      "cx": 110.0,
-      "cy": 370.0,
-      "r": 26.0
-    },
-    {
-      "index": 11,
-      "cx": 240.0,
-      "cy": 370.0,
-      "r": 26.0
-    },
-    {
-      "index": 12,
-      "cx": 370.0,
-      "cy": 370.0,
-      "r": 26.0
-    },
-    {
-      "index": 13,
-      "cx": 500.0,
-      "cy": 370.0,
-      "r": 26.0
-    },
-    {
-      "index": 14,
-      "cx": 630.0,
-      "cy": 370.0,
+      "cx": 750.0,
+      "cy": 230.0,
       "r": 26.0
     }
   ],
   "dots": [
     {
       "index": 0,
-      "cx": 109.12,
-      "cy": 109.72,
-      "r": 26.35,
+      "cx": 100.57,
+      "cy": 230.3,
+      "r": 26.85,
       "present": true,
       "tags": []
     },
     {
       "index": 1,
-      "cx": 240.24,
-      "cy": 109.54,
-      "r": 26.11,
-      "present": true,
-      "tags": []
+      "cx": 262.85,
+      "cy": 230.12,
+      "r": 25.96,
+      "present": false,
+      "tags": [
+        "missing"
+      ]
     },
     {
       "index": 2,
-      "cx": 370.09,
-      "cy": 109.83,
-      "r": 26.48,
+      "cx": 424.69,
+      "cy": 230.06,
+      "r": 53.76,
       "present": true,
-      "tags": []
+      "tags": [
+        "carryover_big"
+      ]
     },
     {
       "index": 3,
-      "cx": 499.48,
-      "cy": 110.2,
-      "r": 26.18,
+      "cx": 586.91,
+      "cy": 229.94,
+      "r": 25.72,
       "present": true,
-      "tags": []
+      "tags": [
+        "dragged"
+      ]
     },
     {
       "index": 4,
-      "cx": 628.56,
-      "cy": 109.02,
-      "r": 25.99,
+      "cx": 749.35,
+      "cy": 229.93,
+      "r": 26.66,
       "present": true,
       "tags": []
     },
     {
       "index": 5,
-      "cx": 111.25,
-      "cy": 241.38,
-      "r": 26.21,
-      "present": true,
-      "tags": []
-    },
-    {
-      "index": 6,
-      "cx": 239.9,
-      "cy": 239.62,
-      "r": 26.77,
-      "present": true,
-      "tags": []
-    },
-    {
-      "index": 7,
-      "cx": 370.43,
-      "cy": 240.38,
-      "r": 25.64,
-      "present": true,
-      "tags": []
-    },
-    {
-      "index": 8,
-      "cx": 500.2,
-      "cy": 239.71,
-      "r": 25.87,
-      "present": true,
-      "tags": []
-    },
-    {
-      "index": 9,
-      "cx": 630.14,
-      "cy": 240.45,
-      "r": 27.02,
+      "cx": 234.63,
+      "cy": 182.16,
+      "r": 5.16,
       "present": true,
       "tags": [
-        "abnormal_shape"
+        "satellite"
       ]
-    },
-    {
-      "index": 10,
-      "cx": 109.95,
-      "cy": 369.98,
-      "r": 26.97,
-      "present": true,
-      "tags": []
-    },
-    {
-      "index": 11,
-      "cx": 239.67,
-      "cy": 370.85,
-      "r": 49.41,
-      "present": true,
-      "tags": [
-        "overrun"
-      ]
-    },
-    {
-      "index": 12,
-      "cx": 369.42,
-      "cy": 370.61,
-      "r": 26.0,
-      "present": true,
-      "tags": []
-    },
-    {
-      "index": 13,
-      "cx": 500.2,
-      "cy": 369.0,
-      "r": 26.15,
-      "present": true,
-      "tags": [
-        "air_bubble"
-      ]
-    },
-    {
-      "index": 14,
-      "cx": 631.1,
-      "cy": 370.81,
-      "r": 25.97,
-      "present": true,
-      "tags": []
     }
   ]
 }

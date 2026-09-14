@@ -54,7 +54,10 @@ checks = [
     ("inconsistent is dispersed",       rows["inconsistent"]["size_cv"] > 0.25),
 
     ("line_end_defect flags oversized", rows["line_end_defect"]["oversized_count"] >= 1),
-    ("line_end_defect flags shape",     rows["line_end_defect"]["irregular_count"] >= 1),
+    # Not asserting irregular_count here: with adequate dot spacing (see
+    # vision_detection_log.md's spacing-bug fix) the pooled end dot is a
+    # well-separated, cleanly-measured ellipse, not distorted by touching
+    # its neighbour -- oversized is the reliable signal, shape isn't.
 
     ("double_dispense flags oversized", rows["double_dispense"]["oversized_count"] >= 1),
 

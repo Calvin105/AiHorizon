@@ -3,8 +3,9 @@
   "width": 740,
   "height": 480,
   "defects_applied": [
-    "satellite",
-    "inconsistent"
+    "contamination_speck",
+    "misaligned",
+    "abnormal_shape"
   ],
   "profile": [
     {
@@ -101,163 +102,152 @@
   "dots": [
     {
       "index": 0,
-      "cx": 110.25,
-      "cy": 109.99,
-      "r": 21.27,
+      "cx": 109.52,
+      "cy": 110.69,
+      "r": 25.44,
       "present": true,
       "tags": [
-        "inconsistent"
+        "misaligned"
       ]
     },
     {
       "index": 1,
-      "cx": 239.8,
-      "cy": 109.74,
-      "r": 30.15,
+      "cx": 246.35,
+      "cy": 107.9,
+      "r": 26.06,
       "present": true,
       "tags": [
-        "inconsistent"
+        "misaligned"
       ]
     },
     {
       "index": 2,
-      "cx": 370.17,
-      "cy": 109.34,
-      "r": 17.43,
+      "cx": 381.9,
+      "cy": 111.51,
+      "r": 25.96,
       "present": true,
       "tags": [
-        "inconsistent"
+        "misaligned"
       ]
     },
     {
       "index": 3,
-      "cx": 500.28,
-      "cy": 109.58,
-      "r": 19.42,
+      "cx": 517.26,
+      "cy": 112.61,
+      "r": 26.57,
       "present": true,
       "tags": [
-        "inconsistent"
+        "misaligned"
       ]
     },
     {
       "index": 4,
-      "cx": 629.6,
-      "cy": 110.57,
-      "r": 25.79,
+      "cx": 647.56,
+      "cy": 105.64,
+      "r": 26.42,
       "present": true,
       "tags": [
-        "inconsistent"
+        "misaligned"
       ]
     },
     {
       "index": 5,
-      "cx": 110.37,
-      "cy": 239.35,
-      "r": 26.81,
+      "cx": 134.32,
+      "cy": 237.45,
+      "r": 26.5,
       "present": true,
       "tags": [
-        "inconsistent"
+        "misaligned"
       ]
     },
     {
       "index": 6,
-      "cx": 239.91,
-      "cy": 239.89,
-      "r": 31.46,
+      "cx": 268.89,
+      "cy": 242.54,
+      "r": 25.34,
       "present": true,
       "tags": [
-        "inconsistent"
+        "misaligned"
       ]
     },
     {
       "index": 7,
-      "cx": 370.43,
-      "cy": 239.29,
-      "r": 21.24,
+      "cx": 402.79,
+      "cy": 237.3,
+      "r": 26.36,
       "present": true,
       "tags": [
-        "inconsistent"
+        "misaligned"
       ]
     },
     {
       "index": 8,
-      "cx": 499.72,
-      "cy": 238.35,
-      "r": 29.21,
+      "cx": 536.28,
+      "cy": 243.99,
+      "r": 25.93,
       "present": true,
       "tags": [
-        "inconsistent"
+        "misaligned"
       ]
     },
     {
       "index": 9,
-      "cx": 630.27,
-      "cy": 239.79,
-      "r": 29.3,
+      "cx": 665.43,
+      "cy": 241.66,
+      "r": 25.5,
       "present": true,
       "tags": [
-        "inconsistent"
+        "misaligned"
       ]
     },
     {
       "index": 10,
-      "cx": 109.39,
-      "cy": 370.27,
-      "r": 34.4,
+      "cx": 143.84,
+      "cy": 370.47,
+      "r": 24.85,
       "present": true,
       "tags": [
-        "inconsistent"
+        "misaligned"
       ]
     },
     {
       "index": 11,
-      "cx": 240.45,
-      "cy": 370.17,
-      "r": 25.51,
+      "cx": 278.27,
+      "cy": 372.76,
+      "r": 26.95,
       "present": true,
       "tags": [
-        "inconsistent"
+        "misaligned"
       ]
     },
     {
       "index": 12,
-      "cx": 369.48,
-      "cy": 368.3,
-      "r": 25.39,
+      "cx": 406.76,
+      "cy": 365.22,
+      "r": 26.41,
       "present": true,
       "tags": [
-        "inconsistent"
+        "misaligned"
       ]
     },
     {
       "index": 13,
-      "cx": 499.62,
-      "cy": 370.0,
-      "r": 29.03,
+      "cx": 536.8,
+      "cy": 364.73,
+      "r": 25.73,
       "present": true,
       "tags": [
-        "inconsistent"
+        "misaligned"
       ]
     },
     {
       "index": 14,
-      "cx": 629.44,
-      "cy": 369.81,
-      "r": 34.32,
+      "cx": 666.86,
+      "cy": 366.61,
+      "r": 26.12,
       "present": true,
       "tags": [
-        "inconsistent"
-      ]
-    },
-    {
-      "index": 15,
-      "cx": 600.67,
-      "cy": 323.31,
-      "r": 3.89,
-      "present": true,
-      "tags": [
-        "satellite",
-        "inconsistent"
+        "misaligned"
       ]
     }
   ]

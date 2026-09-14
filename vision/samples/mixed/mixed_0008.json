@@ -3,9 +3,9 @@
   "width": 740,
   "height": 480,
   "defects_applied": [
-    "misaligned",
-    "stringing",
-    "inconsistent"
+    "air_bubble",
+    "inconsistent",
+    "smearing"
   ],
   "profile": [
     {
@@ -102,152 +102,152 @@
   "dots": [
     {
       "index": 0,
-      "cx": 109.79,
-      "cy": 107.32,
-      "r": 26.82,
+      "cx": 111.99,
+      "cy": 111.33,
+      "r": 25.54,
       "present": true,
       "tags": [
-        "misaligned"
+        "inconsistent"
       ]
     },
     {
       "index": 1,
-      "cx": 246.69,
-      "cy": 113.66,
-      "r": 26.45,
+      "cx": 240.73,
+      "cy": 110.2,
+      "r": 30.3,
       "present": true,
       "tags": [
-        "misaligned"
+        "inconsistent"
       ]
     },
     {
       "index": 2,
-      "cx": 379.27,
-      "cy": 112.1,
-      "r": 24.87,
+      "cx": 370.74,
+      "cy": 109.54,
+      "r": 34.01,
       "present": true,
       "tags": [
-        "misaligned"
+        "inconsistent"
       ]
     },
     {
       "index": 3,
-      "cx": 516.52,
-      "cy": 113.96,
-      "r": 25.1,
+      "cx": 500.25,
+      "cy": 109.83,
+      "r": 36.71,
       "present": true,
       "tags": [
-        "misaligned"
+        "inconsistent"
       ]
     },
     {
       "index": 4,
-      "cx": 651.19,
-      "cy": 107.36,
-      "r": 25.76,
+      "cx": 629.17,
+      "cy": 110.33,
+      "r": 26.01,
       "present": true,
       "tags": [
-        "misaligned"
+        "air_bubble"
       ]
     },
     {
       "index": 5,
-      "cx": 135.65,
-      "cy": 240.76,
-      "r": 25.98,
+      "cx": 109.25,
+      "cy": 238.88,
+      "r": 35.38,
       "present": true,
       "tags": [
-        "misaligned"
+        "inconsistent"
       ]
     },
     {
       "index": 6,
-      "cx": 270.21,
-      "cy": 237.0,
-      "r": 26.13,
+      "cx": 240.19,
+      "cy": 240.34,
+      "r": 25.2,
       "present": true,
       "tags": [
-        "misaligned"
+        "inconsistent"
       ]
     },
     {
       "index": 7,
-      "cx": 410.6,
-      "cy": 241.59,
-      "r": 26.78,
+      "cx": 369.62,
+      "cy": 240.7,
+      "r": 31.95,
       "present": true,
       "tags": [
-        "misaligned"
+        "inconsistent"
       ]
     },
     {
       "index": 8,
-      "cx": 545.36,
-      "cy": 241.22,
-      "r": 27.02,
+      "cx": 500.72,
+      "cy": 239.77,
+      "r": 18.05,
       "present": true,
       "tags": [
-        "misaligned"
+        "inconsistent"
       ]
     },
     {
       "index": 9,
-      "cx": 674.37,
-      "cy": 243.76,
-      "r": 25.82,
+      "cx": 629.27,
+      "cy": 240.02,
+      "r": 23.76,
       "present": true,
       "tags": [
-        "misaligned"
+        "inconsistent"
       ]
     },
     {
       "index": 10,
-      "cx": 161.82,
-      "cy": 369.58,
-      "r": 25.7,
+      "cx": 109.77,
+      "cy": 370.18,
+      "r": 33.71,
       "present": true,
       "tags": [
-        "misaligned"
+        "inconsistent"
       ]
     },
     {
       "index": 11,
-      "cx": 292.72,
-      "cy": 363.32,
-      "r": 25.71,
+      "cx": 239.47,
+      "cy": 370.67,
+      "r": 30.93,
       "present": true,
       "tags": [
-        "misaligned"
+        "inconsistent"
       ]
     },
     {
       "index": 12,
-      "cx": 433.05,
-      "cy": 374.13,
-      "r": 27.34,
+      "cx": 369.6,
+      "cy": 371.11,
+      "r": 17.72,
       "present": true,
       "tags": [
-        "misaligned"
+        "inconsistent"
       ]
     },
     {
       "index": 13,
-      "cx": 574.19,
-      "cy": 364.2,
-      "r": 26.53,
+      "cx": 500.32,
+      "cy": 370.77,
+      "r": 23.33,
       "present": true,
       "tags": [
-        "misaligned"
+        "inconsistent"
       ]
     },
     {
       "index": 14,
-      "cx": 698.74,
-      "cy": 376.84,
-      "r": 26.14,
+      "cx": 630.05,
+      "cy": 370.43,
+      "r": 23.96,
       "present": true,
       "tags": [
-        "misaligned"
+        "inconsistent"
       ]
     }
   ]

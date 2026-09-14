@@ -3,7 +3,9 @@
   "width": 520,
   "height": 520,
   "defects_applied": [
-    "missing_carryover"
+    "smearing",
+    "double_dispense",
+    "contamination_speck"
   ],
   "profile": [
     {
@@ -106,141 +108,133 @@
   "dots": [
     {
       "index": 0,
-      "cx": 109.27,
-      "cy": 109.26,
-      "r": 24.95,
-      "present": false,
-      "tags": [
-        "missing"
-      ]
+      "cx": 110.88,
+      "cy": 110.87,
+      "r": 25.39,
+      "present": true,
+      "tags": []
     },
     {
       "index": 1,
-      "cx": 209.78,
-      "cy": 109.66,
-      "r": 52.14,
+      "cx": 209.9,
+      "cy": 110.23,
+      "r": 25.64,
       "present": true,
-      "tags": [
-        "carryover_big"
-      ]
+      "tags": []
     },
     {
       "index": 2,
-      "cx": 310.22,
-      "cy": 109.28,
-      "r": 25.87,
+      "cx": 310.62,
+      "cy": 110.77,
+      "r": 25.43,
       "present": true,
       "tags": []
     },
     {
       "index": 3,
-      "cx": 410.69,
-      "cy": 108.61,
-      "r": 26.23,
+      "cx": 409.76,
+      "cy": 109.59,
+      "r": 27.14,
       "present": true,
       "tags": []
     },
     {
       "index": 4,
-      "cx": 110.6,
-      "cy": 210.03,
-      "r": 26.24,
-      "present": false,
-      "tags": [
-        "missing"
-      ]
+      "cx": 109.95,
+      "cy": 211.22,
+      "r": 25.77,
+      "present": true,
+      "tags": []
     },
     {
       "index": 5,
-      "cx": 209.83,
-      "cy": 209.8,
-      "r": 54.06,
+      "cx": 210.61,
+      "cy": 209.47,
+      "r": 26.01,
       "present": true,
       "tags": [
-        "carryover_big"
+        "smearing"
       ]
     },
     {
       "index": 6,
-      "cx": 309.86,
-      "cy": 210.26,
-      "r": 25.54,
-      "present": false,
-      "tags": [
-        "missing"
-      ]
+      "cx": 310.72,
+      "cy": 210.15,
+      "r": 25.56,
+      "present": true,
+      "tags": []
     },
     {
       "index": 7,
-      "cx": 410.55,
-      "cy": 209.78,
-      "r": 47.67,
+      "cx": 409.74,
+      "cy": 210.24,
+      "r": 26.59,
       "present": true,
       "tags": [
-        "carryover_big"
+        "double_dispense"
       ]
     },
     {
       "index": 8,
-      "cx": 109.74,
-      "cy": 309.62,
-      "r": 25.67,
+      "cx": 109.27,
+      "cy": 309.26,
+      "r": 24.95,
       "present": true,
       "tags": []
     },
     {
       "index": 9,
-      "cx": 211.02,
-      "cy": 310.13,
-      "r": 26.79,
+      "cx": 209.78,
+      "cy": 309.66,
+      "r": 26.37,
       "present": true,
       "tags": []
     },
     {
       "index": 10,
-      "cx": 309.61,
-      "cy": 309.59,
-      "r": 27.66,
+      "cx": 310.22,
+      "cy": 309.28,
+      "r": 25.87,
       "present": true,
       "tags": []
     },
     {
       "index": 11,
-      "cx": 408.98,
-      "cy": 310.24,
-      "r": 26.64,
+      "cx": 410.69,
+      "cy": 308.61,
+      "r": 26.23,
       "present": true,
       "tags": []
     },
     {
       "index": 12,
-      "cx": 107.89,
-      "cy": 409.39,
-      "r": 26.21,
+      "cx": 110.6,
+      "cy": 410.03,
+      "r": 26.24,
       "present": true,
       "tags": []
     },
     {
       "index": 13,
-      "cx": 210.04,
-      "cy": 410.51,
-      "r": 25.22,
+      "cx": 209.83,
+      "cy": 409.8,
+      "r": 26.27,
       "present": true,
       "tags": []
     },
     {
       "index": 14,
-      "cx": 310.22,
-      "cy": 409.83,
-      "r": 26.02,
+      "cx": 309.86,
+      "cy": 410.26,
+      "r": 25.54,
       "present": true,
       "tags": []
     },
     {
       "index": 15,
-      "cx": 409.97,
-      "cy": 410.1,
-      "r": 27.07,
+      "cx": 410.55,
+      "cy": 409.78,
+      "r": 25.99,
       "present": true,
       "tags": []
     }
