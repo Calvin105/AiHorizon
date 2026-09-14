@@ -1,0 +1,113 @@
+{
+  "pattern": "pattern",
+  "width": 720,
+  "height": 480,
+  "defects_applied": [
+    "bridging_dots",
+    "smearing"
+  ],
+  "dots": [
+    {
+      "index": 0,
+      "cx": 120.38,
+      "cy": 119.78,
+      "r": 25.53,
+      "present": true,
+      "tags": []
+    },
+    {
+      "index": 1,
+      "cx": 163.41,
+      "cy": 163.52,
+      "r": 26.94,
+      "present": true,
+      "tags": []
+    },
+    {
+      "index": 2,
+      "cx": 206.67,
+      "cy": 207.66,
+      "r": 25.31,
+      "present": true,
+      "tags": []
+    },
+    {
+      "index": 3,
+      "cx": 251.24,
+      "cy": 251.17,
+      "r": 25.64,
+      "present": true,
+      "tags": []
+    },
+    {
+      "index": 4,
+      "cx": 294.96,
+      "cy": 294.33,
+      "r": 25.93,
+      "present": true,
+      "tags": []
+    },
+    {
+      "index": 5,
+      "cx": 337.66,
+      "cy": 338.02,
+      "r": 25.8,
+      "present": true,
+      "tags": []
+    },
+    {
+      "index": 6,
+      "cx": 381.99,
+      "cy": 338.7,
+      "r": 26.54,
+      "present": true,
+      "tags": []
+    },
+    {
+      "index": 7,
+      "cx": 425.68,
+      "cy": 294.51,
+      "r": 25.35,
+      "present": true,
+      "tags": []
+    },
+    {
+      "index": 8,
+      "cx": 468.77,
+      "cy": 250.85,
+      "r": 25.4,
+      "present": true,
+      "tags": []
+    },
+    {
+      "index": 9,
+      "cx": 512.98,
+      "cy": 206.95,
+      "r": 25.91,
+      "present": true,
+      "tags": [
+        "smearing"
+      ]
+    },
+    {
+      "index": 10,
+      "cx": 556.12,
+      "cy": 163.0,
+      "r": 30.14,
+      "present": true,
+      "tags": [
+        "bridging"
+      ]
+    },
+    {
+      "index": 11,
+      "cx": 599.54,
+      "cy": 119.46,
+      "r": 30.58,
+      "present": true,
+      "tags": [
+        "bridging"
+      ]
+    }
+  ]
+}

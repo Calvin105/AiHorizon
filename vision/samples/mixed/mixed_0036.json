@@ -1,0 +1,234 @@
+{
+  "pattern": "perimeter",
+  "width": 720,
+  "height": 520,
+  "defects_applied": [
+    "ghost",
+    "double_dispense",
+    "smearing"
+  ],
+  "dots": [
+    {
+      "index": 0,
+      "cx": 110.25,
+      "cy": 110.33,
+      "r": 25.7,
+      "present": true,
+      "tags": []
+    },
+    {
+      "index": 1,
+      "cx": 171.17,
+      "cy": 109.64,
+      "r": 25.29,
+      "present": true,
+      "tags": [
+        "smearing"
+      ]
+    },
+    {
+      "index": 2,
+      "cx": 233.23,
+      "cy": 109.81,
+      "r": 25.73,
+      "present": true,
+      "tags": []
+    },
+    {
+      "index": 3,
+      "cx": 294.86,
+      "cy": 109.02,
+      "r": 26.68,
+      "present": true,
+      "tags": []
+    },
+    {
+      "index": 4,
+      "cx": 356.13,
+      "cy": 109.75,
+      "r": 26.05,
+      "present": true,
+      "tags": []
+    },
+    {
+      "index": 5,
+      "cx": 418.04,
+      "cy": 109.57,
+      "r": 26.22,
+      "present": true,
+      "tags": []
+    },
+    {
+      "index": 6,
+      "cx": 479.04,
+      "cy": 110.37,
+      "r": 25.23,
+      "present": true,
+      "tags": []
+    },
+    {
+      "index": 7,
+      "cx": 541.34,
+      "cy": 109.92,
+      "r": 26.21,
+      "present": true,
+      "tags": []
+    },
+    {
+      "index": 8,
+      "cx": 602.75,
+      "cy": 109.93,
+      "r": 26.33,
+      "present": true,
+      "tags": []
+    },
+    {
+      "index": 9,
+      "cx": 609.6,
+      "cy": 163.1,
+      "r": 25.85,
+      "present": true,
+      "tags": []
+    },
+    {
+      "index": 10,
+      "cx": 609.31,
+      "cy": 224.83,
+      "r": 25.89,
+      "present": true,
+      "tags": [
+        "ghost"
+      ]
+    },
+    {
+      "index": 11,
+      "cx": 610.09,
+      "cy": 286.5,
+      "r": 25.74,
+      "present": true,
+      "tags": []
+    },
+    {
+      "index": 12,
+      "cx": 610.05,
+      "cy": 348.6,
+      "r": 25.75,
+      "present": true,
+      "tags": []
+    },
+    {
+      "index": 13,
+      "cx": 610.15,
+      "cy": 410.75,
+      "r": 25.98,
+      "present": true,
+      "tags": []
+    },
+    {
+      "index": 14,
+      "cx": 548.81,
+      "cy": 410.18,
+      "r": 26.22,
+      "present": true,
+      "tags": []
+    },
+    {
+      "index": 15,
+      "cx": 486.57,
+      "cy": 409.58,
+      "r": 25.88,
+      "present": true,
+      "tags": []
+    },
+    {
+      "index": 16,
+      "cx": 425.4,
+      "cy": 409.81,
+      "r": 25.34,
+      "present": true,
+      "tags": []
+    },
+    {
+      "index": 17,
+      "cx": 363.52,
+      "cy": 410.2,
+      "r": 26.03,
+      "present": true,
+      "tags": []
+    },
+    {
+      "index": 18,
+      "cx": 301.74,
+      "cy": 409.88,
+      "r": 25.46,
+      "present": true,
+      "tags": []
+    },
+    {
+      "index": 19,
+      "cx": 240.03,
+      "cy": 409.66,
+      "r": 26.07,
+      "present": true,
+      "tags": []
+    },
+    {
+      "index": 20,
+      "cx": 178.22,
+      "cy": 409.84,
+      "r": 26.25,
+      "present": true,
+      "tags": [
+        "double_dispense"
+      ]
+    },
+    {
+      "index": 21,
+      "cx": 117.69,
+      "cy": 409.87,
+      "r": 26.5,
+      "present": true,
+      "tags": []
+    },
+    {
+      "index": 22,
+      "cx": 110.96,
+      "cy": 356.37,
+      "r": 25.78,
+      "present": true,
+      "tags": []
+    },
+    {
+      "index": 23,
+      "cx": 109.9,
+      "cy": 294.16,
+      "r": 25.84,
+      "present": true,
+      "tags": []
+    },
+    {
+      "index": 24,
+      "cx": 110.21,
+      "cy": 232.84,
+      "r": 26.34,
+      "present": true,
+      "tags": []
+    },
+    {
+      "index": 25,
+      "cx": 109.67,
+      "cy": 171.37,
+      "r": 26.69,
+      "present": true,
+      "tags": []
+    },
+    {
+      "index": 26,
+      "cx": 110.78,
+      "cy": 110.24,
+      "r": 25.93,
+      "present": true,
+      "tags": []
+    }
+  ]
+}

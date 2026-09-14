@@ -1,0 +1,105 @@
+{
+  "pattern": "line_trace",
+  "width": 720,
+  "height": 460,
+  "defects_applied": [
+    "smearing",
+    "stringing"
+  ],
+  "dots": [
+    {
+      "index": 0,
+      "cx": 99.73,
+      "cy": 230.13,
+      "r": 26.28,
+      "present": true,
+      "tags": []
+    },
+    {
+      "index": 1,
+      "cx": 158.38,
+      "cy": 229.83,
+      "r": 25.41,
+      "present": true,
+      "tags": []
+    },
+    {
+      "index": 2,
+      "cx": 215.11,
+      "cy": 230.43,
+      "r": 26.55,
+      "present": true,
+      "tags": []
+    },
+    {
+      "index": 3,
+      "cx": 274.02,
+      "cy": 230.12,
+      "r": 25.49,
+      "present": true,
+      "tags": [
+        "smearing"
+      ]
+    },
+    {
+      "index": 4,
+      "cx": 330.81,
+      "cy": 229.86,
+      "r": 26.03,
+      "present": true,
+      "tags": []
+    },
+    {
+      "index": 5,
+      "cx": 389.37,
+      "cy": 230.57,
+      "r": 25.82,
+      "present": true,
+      "tags": []
+    },
+    {
+      "index": 6,
+      "cx": 446.92,
+      "cy": 229.3,
+      "r": 25.73,
+      "present": true,
+      "tags": []
+    },
+    {
+      "index": 7,
+      "cx": 504.05,
+      "cy": 230.37,
+      "r": 25.6,
+      "present": true,
+      "tags": []
+    },
+    {
+      "index": 8,
+      "cx": 562.27,
+      "cy": 230.19,
+      "r": 26.32,
+      "present": true,
+      "tags": []
+    },
+    {
+      "index": 9,
+      "cx": 619.13,
+      "cy": 230.38,
+      "r": 26.02,
+      "present": true,
+      "tags": [
+        "stringing"
+      ]
+    },
+    {
+      "index": 10,
+      "cx": 620.71,
+      "cy": 167.5,
+      "r": 5.62,
+      "present": true,
+      "tags": [
+        "satellite"
+      ]
+    }
+  ]
+}

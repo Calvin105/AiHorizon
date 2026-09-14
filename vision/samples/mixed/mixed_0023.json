@@ -1,0 +1,138 @@
+{
+  "pattern": "area",
+  "width": 740,
+  "height": 480,
+  "defects_applied": [
+    "overrun",
+    "abnormal_shape",
+    "air_bubble"
+  ],
+  "dots": [
+    {
+      "index": 0,
+      "cx": 109.12,
+      "cy": 109.72,
+      "r": 26.35,
+      "present": true,
+      "tags": []
+    },
+    {
+      "index": 1,
+      "cx": 240.24,
+      "cy": 109.54,
+      "r": 26.11,
+      "present": true,
+      "tags": []
+    },
+    {
+      "index": 2,
+      "cx": 370.09,
+      "cy": 109.83,
+      "r": 26.48,
+      "present": true,
+      "tags": []
+    },
+    {
+      "index": 3,
+      "cx": 499.48,
+      "cy": 110.2,
+      "r": 26.18,
+      "present": true,
+      "tags": []
+    },
+    {
+      "index": 4,
+      "cx": 628.56,
+      "cy": 109.02,
+      "r": 25.99,
+      "present": true,
+      "tags": []
+    },
+    {
+      "index": 5,
+      "cx": 111.25,
+      "cy": 241.38,
+      "r": 26.21,
+      "present": true,
+      "tags": []
+    },
+    {
+      "index": 6,
+      "cx": 239.9,
+      "cy": 239.62,
+      "r": 26.77,
+      "present": true,
+      "tags": []
+    },
+    {
+      "index": 7,
+      "cx": 370.43,
+      "cy": 240.38,
+      "r": 25.64,
+      "present": true,
+      "tags": []
+    },
+    {
+      "index": 8,
+      "cx": 500.2,
+      "cy": 239.71,
+      "r": 25.87,
+      "present": true,
+      "tags": []
+    },
+    {
+      "index": 9,
+      "cx": 630.14,
+      "cy": 240.45,
+      "r": 27.02,
+      "present": true,
+      "tags": [
+        "abnormal_shape"
+      ]
+    },
+    {
+      "index": 10,
+      "cx": 109.95,
+      "cy": 369.98,
+      "r": 26.97,
+      "present": true,
+      "tags": []
+    },
+    {
+      "index": 11,
+      "cx": 239.67,
+      "cy": 370.85,
+      "r": 49.41,
+      "present": true,
+      "tags": [
+        "overrun"
+      ]
+    },
+    {
+      "index": 12,
+      "cx": 369.42,
+      "cy": 370.61,
+      "r": 26.0,
+      "present": true,
+      "tags": []
+    },
+    {
+      "index": 13,
+      "cx": 500.2,
+      "cy": 369.0,
+      "r": 26.15,
+      "present": true,
+      "tags": [
+        "air_bubble"
+      ]
+    },
+    {
+      "index": 14,
+      "cx": 631.1,
+      "cy": 370.81,
+      "r": 25.97,
+      "present": true,
+      "tags": []
+    }
+  ]
+}

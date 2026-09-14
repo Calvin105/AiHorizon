@@ -1,0 +1,172 @@
+{
+  "pattern": "area",
+  "width": 740,
+  "height": 480,
+  "defects_applied": [
+    "satellite",
+    "inconsistent"
+  ],
+  "dots": [
+    {
+      "index": 0,
+      "cx": 110.25,
+      "cy": 109.99,
+      "r": 21.27,
+      "present": true,
+      "tags": [
+        "inconsistent"
+      ]
+    },
+    {
+      "index": 1,
+      "cx": 239.8,
+      "cy": 109.74,
+      "r": 30.15,
+      "present": true,
+      "tags": [
+        "inconsistent"
+      ]
+    },
+    {
+      "index": 2,
+      "cx": 370.17,
+      "cy": 109.34,
+      "r": 17.43,
+      "present": true,
+      "tags": [
+        "inconsistent"
+      ]
+    },
+    {
+      "index": 3,
+      "cx": 500.28,
+      "cy": 109.58,
+      "r": 19.42,
+      "present": true,
+      "tags": [
+        "inconsistent"
+      ]
+    },
+    {
+      "index": 4,
+      "cx": 629.6,
+      "cy": 110.57,
+      "r": 25.79,
+      "present": true,
+      "tags": [
+        "inconsistent"
+      ]
+    },
+    {
+      "index": 5,
+      "cx": 110.37,
+      "cy": 239.35,
+      "r": 26.81,
+      "present": true,
+      "tags": [
+        "inconsistent"
+      ]
+    },
+    {
+      "index": 6,
+      "cx": 239.91,
+      "cy": 239.89,
+      "r": 31.46,
+      "present": true,
+      "tags": [
+        "inconsistent"
+      ]
+    },
+    {
+      "index": 7,
+      "cx": 370.43,
+      "cy": 239.29,
+      "r": 21.24,
+      "present": true,
+      "tags": [
+        "inconsistent"
+      ]
+    },
+    {
+      "index": 8,
+      "cx": 499.72,
+      "cy": 238.35,
+      "r": 29.21,
+      "present": true,
+      "tags": [
+        "inconsistent"
+      ]
+    },
+    {
+      "index": 9,
+      "cx": 630.27,
+      "cy": 239.79,
+      "r": 29.3,
+      "present": true,
+      "tags": [
+        "inconsistent"
+      ]
+    },
+    {
+      "index": 10,
+      "cx": 109.39,
+      "cy": 370.27,
+      "r": 34.4,
+      "present": true,
+      "tags": [
+        "inconsistent"
+      ]
+    },
+    {
+      "index": 11,
+      "cx": 240.45,
+      "cy": 370.17,
+      "r": 25.51,
+      "present": true,
+      "tags": [
+        "inconsistent"
+      ]
+    },
+    {
+      "index": 12,
+      "cx": 369.48,
+      "cy": 368.3,
+      "r": 25.39,
+      "present": true,
+      "tags": [
+        "inconsistent"
+      ]
+    },
+    {
+      "index": 13,
+      "cx": 499.62,
+      "cy": 370.0,
+      "r": 29.03,
+      "present": true,
+      "tags": [
+        "inconsistent"
+      ]
+    },
+    {
+      "index": 14,
+      "cx": 629.44,
+      "cy": 369.81,
+      "r": 34.32,
+      "present": true,
+      "tags": [
+        "inconsistent"
+      ]
+    },
+    {
+      "index": 15,
+      "cx": 600.67,
+      "cy": 323.31,
+      "r": 3.89,
+      "present": true,
+      "tags": [
+        "satellite",
+        "inconsistent"
+      ]
+    }
+  ]
+}

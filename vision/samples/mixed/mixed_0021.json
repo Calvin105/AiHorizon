@@ -1,0 +1,145 @@
+{
+  "pattern": "area",
+  "width": 740,
+  "height": 480,
+  "defects_applied": [
+    "bridging_dots",
+    "missing_carryover"
+  ],
+  "dots": [
+    {
+      "index": 0,
+      "cx": 110.27,
+      "cy": 109.57,
+      "r": 25.68,
+      "present": true,
+      "tags": []
+    },
+    {
+      "index": 1,
+      "cx": 239.6,
+      "cy": 109.52,
+      "r": 25.61,
+      "present": true,
+      "tags": []
+    },
+    {
+      "index": 2,
+      "cx": 370.03,
+      "cy": 110.16,
+      "r": 26.73,
+      "present": true,
+      "tags": []
+    },
+    {
+      "index": 3,
+      "cx": 499.23,
+      "cy": 109.57,
+      "r": 25.31,
+      "present": true,
+      "tags": []
+    },
+    {
+      "index": 4,
+      "cx": 629.87,
+      "cy": 109.92,
+      "r": 25.15,
+      "present": true,
+      "tags": []
+    },
+    {
+      "index": 5,
+      "cx": 110.97,
+      "cy": 239.11,
+      "r": 30.45,
+      "present": true,
+      "tags": [
+        "bridging"
+      ]
+    },
+    {
+      "index": 6,
+      "cx": 239.31,
+      "cy": 240.25,
+      "r": 31.25,
+      "present": true,
+      "tags": [
+        "bridging"
+      ]
+    },
+    {
+      "index": 7,
+      "cx": 369.11,
+      "cy": 239.35,
+      "r": 26.93,
+      "present": true,
+      "tags": []
+    },
+    {
+      "index": 8,
+      "cx": 499.59,
+      "cy": 240.05,
+      "r": 26.95,
+      "present": true,
+      "tags": []
+    },
+    {
+      "index": 9,
+      "cx": 629.42,
+      "cy": 240.59,
+      "r": 26.1,
+      "present": false,
+      "tags": [
+        "missing"
+      ]
+    },
+    {
+      "index": 10,
+      "cx": 109.29,
+      "cy": 369.21,
+      "r": 49.25,
+      "present": true,
+      "tags": [
+        "carryover_big"
+      ]
+    },
+    {
+      "index": 11,
+      "cx": 239.87,
+      "cy": 370.19,
+      "r": 24.97,
+      "present": true,
+      "tags": []
+    },
+    {
+      "index": 12,
+      "cx": 370.02,
+      "cy": 368.85,
+      "r": 27.04,
+      "present": false,
+      "tags": [
+        "missing"
+      ]
+    },
+    {
+      "index": 13,
+      "cx": 498.65,
+      "cy": 371.5,
+      "r": 50.48,
+      "present": true,
+      "tags": [
+        "carryover_big"
+      ]
+    },
+    {
+      "index": 14,
+      "cx": 630.36,
+      "cy": 370.06,
+      "r": 25.65,
+      "present": false,
+      "tags": [
+        "missing"
+      ]
+    }
+  ]
+}

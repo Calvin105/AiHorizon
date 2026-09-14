@@ -1,0 +1,138 @@
+{
+  "pattern": "area",
+  "width": 740,
+  "height": 480,
+  "defects_applied": [
+    "double_dispense",
+    "abnormal_shape",
+    "overrun"
+  ],
+  "dots": [
+    {
+      "index": 0,
+      "cx": 110.32,
+      "cy": 109.93,
+      "r": 25.72,
+      "present": true,
+      "tags": []
+    },
+    {
+      "index": 1,
+      "cx": 239.8,
+      "cy": 110.32,
+      "r": 25.56,
+      "present": true,
+      "tags": []
+    },
+    {
+      "index": 2,
+      "cx": 370.68,
+      "cy": 110.29,
+      "r": 26.32,
+      "present": true,
+      "tags": []
+    },
+    {
+      "index": 3,
+      "cx": 499.13,
+      "cy": 110.02,
+      "r": 26.1,
+      "present": true,
+      "tags": []
+    },
+    {
+      "index": 4,
+      "cx": 629.23,
+      "cy": 110.41,
+      "r": 25.93,
+      "present": true,
+      "tags": []
+    },
+    {
+      "index": 5,
+      "cx": 109.15,
+      "cy": 239.63,
+      "r": 26.25,
+      "present": true,
+      "tags": [
+        "abnormal_shape"
+      ]
+    },
+    {
+      "index": 6,
+      "cx": 240.54,
+      "cy": 239.07,
+      "r": 25.71,
+      "present": true,
+      "tags": []
+    },
+    {
+      "index": 7,
+      "cx": 370.58,
+      "cy": 240.41,
+      "r": 26.34,
+      "present": true,
+      "tags": []
+    },
+    {
+      "index": 8,
+      "cx": 500.37,
+      "cy": 240.51,
+      "r": 26.21,
+      "present": true,
+      "tags": []
+    },
+    {
+      "index": 9,
+      "cx": 630.01,
+      "cy": 239.16,
+      "r": 43.5,
+      "present": true,
+      "tags": [
+        "overrun"
+      ]
+    },
+    {
+      "index": 10,
+      "cx": 110.63,
+      "cy": 370.15,
+      "r": 24.69,
+      "present": true,
+      "tags": []
+    },
+    {
+      "index": 11,
+      "cx": 240.99,
+      "cy": 369.64,
+      "r": 25.86,
+      "present": true,
+      "tags": []
+    },
+    {
+      "index": 12,
+      "cx": 370.03,
+      "cy": 370.07,
+      "r": 25.97,
+      "present": true,
+      "tags": []
+    },
+    {
+      "index": 13,
+      "cx": 500.12,
+      "cy": 370.77,
+      "r": 26.26,
+      "present": true,
+      "tags": []
+    },
+    {
+      "index": 14,
+      "cx": 631.61,
+      "cy": 368.36,
+      "r": 25.55,
+      "present": true,
+      "tags": [
+        "double_dispense"
+      ]
+    }
+  ]
+}

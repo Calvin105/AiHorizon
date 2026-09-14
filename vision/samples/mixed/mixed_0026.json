@@ -1,0 +1,140 @@
+{
+  "pattern": "grid_landmark",
+  "width": 520,
+  "height": 520,
+  "defects_applied": [
+    "ghost"
+  ],
+  "dots": [
+    {
+      "index": 0,
+      "cx": 110.37,
+      "cy": 109.47,
+      "r": 26.04,
+      "present": true,
+      "tags": []
+    },
+    {
+      "index": 1,
+      "cx": 210.83,
+      "cy": 110.38,
+      "r": 25.64,
+      "present": true,
+      "tags": []
+    },
+    {
+      "index": 2,
+      "cx": 310.65,
+      "cy": 110.47,
+      "r": 25.11,
+      "present": true,
+      "tags": []
+    },
+    {
+      "index": 3,
+      "cx": 410.49,
+      "cy": 110.56,
+      "r": 26.35,
+      "present": true,
+      "tags": []
+    },
+    {
+      "index": 4,
+      "cx": 110.13,
+      "cy": 209.3,
+      "r": 25.41,
+      "present": true,
+      "tags": []
+    },
+    {
+      "index": 5,
+      "cx": 210.91,
+      "cy": 209.96,
+      "r": 24.82,
+      "present": true,
+      "tags": []
+    },
+    {
+      "index": 6,
+      "cx": 309.94,
+      "cy": 210.96,
+      "r": 24.5,
+      "present": true,
+      "tags": []
+    },
+    {
+      "index": 7,
+      "cx": 410.52,
+      "cy": 208.91,
+      "r": 26.16,
+      "present": true,
+      "tags": []
+    },
+    {
+      "index": 8,
+      "cx": 109.9,
+      "cy": 309.98,
+      "r": 25.43,
+      "present": true,
+      "tags": []
+    },
+    {
+      "index": 9,
+      "cx": 210.44,
+      "cy": 310.54,
+      "r": 27.21,
+      "present": true,
+      "tags": []
+    },
+    {
+      "index": 10,
+      "cx": 309.84,
+      "cy": 310.28,
+      "r": 26.08,
+      "present": true,
+      "tags": []
+    },
+    {
+      "index": 11,
+      "cx": 408.83,
+      "cy": 310.68,
+      "r": 26.22,
+      "present": true,
+      "tags": [
+        "ghost"
+      ]
+    },
+    {
+      "index": 12,
+      "cx": 109.31,
+      "cy": 409.28,
+      "r": 24.3,
+      "present": true,
+      "tags": []
+    },
+    {
+      "index": 13,
+      "cx": 210.57,
+      "cy": 409.83,
+      "r": 26.67,
+      "present": true,
+      "tags": []
+    },
+    {
+      "index": 14,
+      "cx": 310.27,
+      "cy": 409.42,
+      "r": 25.83,
+      "present": true,
+      "tags": []
+    },
+    {
+      "index": 15,
+      "cx": 408.48,
+      "cy": 409.76,
+      "r": 25.09,
+      "present": true,
+      "tags": []
+    }
+  ]
+}

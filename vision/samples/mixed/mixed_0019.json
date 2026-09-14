@@ -1,0 +1,95 @@
+{
+  "pattern": "line_trace",
+  "width": 720,
+  "height": 460,
+  "defects_applied": [
+    "air_bubble",
+    "overrun"
+  ],
+  "dots": [
+    {
+      "index": 0,
+      "cx": 99.36,
+      "cy": 230.7,
+      "r": 25.99,
+      "present": true,
+      "tags": []
+    },
+    {
+      "index": 1,
+      "cx": 157.88,
+      "cy": 229.78,
+      "r": 26.26,
+      "present": true,
+      "tags": []
+    },
+    {
+      "index": 2,
+      "cx": 215.22,
+      "cy": 230.14,
+      "r": 25.91,
+      "present": true,
+      "tags": []
+    },
+    {
+      "index": 3,
+      "cx": 272.9,
+      "cy": 230.68,
+      "r": 26.48,
+      "present": true,
+      "tags": []
+    },
+    {
+      "index": 4,
+      "cx": 331.1,
+      "cy": 230.07,
+      "r": 26.36,
+      "present": true,
+      "tags": []
+    },
+    {
+      "index": 5,
+      "cx": 388.94,
+      "cy": 229.92,
+      "r": 25.7,
+      "present": true,
+      "tags": [
+        "air_bubble"
+      ]
+    },
+    {
+      "index": 6,
+      "cx": 446.3,
+      "cy": 229.56,
+      "r": 43.42,
+      "present": true,
+      "tags": [
+        "overrun"
+      ]
+    },
+    {
+      "index": 7,
+      "cx": 504.16,
+      "cy": 230.27,
+      "r": 25.82,
+      "present": true,
+      "tags": []
+    },
+    {
+      "index": 8,
+      "cx": 561.73,
+      "cy": 230.12,
+      "r": 25.21,
+      "present": true,
+      "tags": []
+    },
+    {
+      "index": 9,
+      "cx": 619.48,
+      "cy": 230.34,
+      "r": 25.78,
+      "present": true,
+      "tags": []
+    }
+  ]
+}

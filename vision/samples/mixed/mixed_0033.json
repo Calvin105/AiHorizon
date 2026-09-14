@@ -1,0 +1,131 @@
+{
+  "pattern": "pattern",
+  "width": 720,
+  "height": 480,
+  "defects_applied": [
+    "misaligned",
+    "double_dispense"
+  ],
+  "dots": [
+    {
+      "index": 0,
+      "cx": 120.48,
+      "cy": 123.17,
+      "r": 25.53,
+      "present": true,
+      "tags": [
+        "misaligned"
+      ]
+    },
+    {
+      "index": 1,
+      "cx": 169.39,
+      "cy": 162.8,
+      "r": 26.52,
+      "present": true,
+      "tags": [
+        "misaligned"
+      ]
+    },
+    {
+      "index": 2,
+      "cx": 218.29,
+      "cy": 212.59,
+      "r": 26.04,
+      "present": true,
+      "tags": [
+        "misaligned"
+      ]
+    },
+    {
+      "index": 3,
+      "cx": 268.48,
+      "cy": 246.2,
+      "r": 26.13,
+      "present": true,
+      "tags": [
+        "misaligned"
+      ]
+    },
+    {
+      "index": 4,
+      "cx": 320.47,
+      "cy": 291.76,
+      "r": 25.91,
+      "present": true,
+      "tags": [
+        "misaligned"
+      ]
+    },
+    {
+      "index": 5,
+      "cx": 367.39,
+      "cy": 337.89,
+      "r": 26.01,
+      "present": true,
+      "tags": [
+        "misaligned"
+      ]
+    },
+    {
+      "index": 6,
+      "cx": 411.9,
+      "cy": 337.26,
+      "r": 26.42,
+      "present": true,
+      "tags": [
+        "misaligned"
+      ]
+    },
+    {
+      "index": 7,
+      "cx": 457.58,
+      "cy": 294.09,
+      "r": 25.81,
+      "present": true,
+      "tags": [
+        "misaligned"
+      ]
+    },
+    {
+      "index": 8,
+      "cx": 509.2,
+      "cy": 249.37,
+      "r": 25.89,
+      "present": true,
+      "tags": [
+        "misaligned"
+      ]
+    },
+    {
+      "index": 9,
+      "cx": 558.74,
+      "cy": 207.23,
+      "r": 25.92,
+      "present": true,
+      "tags": [
+        "misaligned"
+      ]
+    },
+    {
+      "index": 10,
+      "cx": 610.45,
+      "cy": 153.78,
+      "r": 26.1,
+      "present": true,
+      "tags": [
+        "misaligned"
+      ]
+    },
+    {
+      "index": 11,
+      "cx": 651.84,
+      "cy": 122.33,
+      "r": 25.92,
+      "present": true,
+      "tags": [
+        "misaligned"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,150 @@
+{
+  "pattern": "grid_landmark",
+  "width": 520,
+  "height": 520,
+  "defects_applied": [
+    "missing_carryover"
+  ],
+  "dots": [
+    {
+      "index": 0,
+      "cx": 109.27,
+      "cy": 109.26,
+      "r": 24.95,
+      "present": false,
+      "tags": [
+        "missing"
+      ]
+    },
+    {
+      "index": 1,
+      "cx": 209.78,
+      "cy": 109.66,
+      "r": 52.14,
+      "present": true,
+      "tags": [
+        "carryover_big"
+      ]
+    },
+    {
+      "index": 2,
+      "cx": 310.22,
+      "cy": 109.28,
+      "r": 25.87,
+      "present": true,
+      "tags": []
+    },
+    {
+      "index": 3,
+      "cx": 410.69,
+      "cy": 108.61,
+      "r": 26.23,
+      "present": true,
+      "tags": []
+    },
+    {
+      "index": 4,
+      "cx": 110.6,
+      "cy": 210.03,
+      "r": 26.24,
+      "present": false,
+      "tags": [
+        "missing"
+      ]
+    },
+    {
+      "index": 5,
+      "cx": 209.83,
+      "cy": 209.8,
+      "r": 54.06,
+      "present": true,
+      "tags": [
+        "carryover_big"
+      ]
+    },
+    {
+      "index": 6,
+      "cx": 309.86,
+      "cy": 210.26,
+      "r": 25.54,
+      "present": false,
+      "tags": [
+        "missing"
+      ]
+    },
+    {
+      "index": 7,
+      "cx": 410.55,
+      "cy": 209.78,
+      "r": 47.67,
+      "present": true,
+      "tags": [
+        "carryover_big"
+      ]
+    },
+    {
+      "index": 8,
+      "cx": 109.74,
+      "cy": 309.62,
+      "r": 25.67,
+      "present": true,
+      "tags": []
+    },
+    {
+      "index": 9,
+      "cx": 211.02,
+      "cy": 310.13,
+      "r": 26.79,
+      "present": true,
+      "tags": []
+    },
+    {
+      "index": 10,
+      "cx": 309.61,
+      "cy": 309.59,
+      "r": 27.66,
+      "present": true,
+      "tags": []
+    },
+    {
+      "index": 11,
+      "cx": 408.98,
+      "cy": 310.24,
+      "r": 26.64,
+      "present": true,
+      "tags": []
+    },
+    {
+      "index": 12,
+      "cx": 107.89,
+      "cy": 409.39,
+      "r": 26.21,
+      "present": true,
+      "tags": []
+    },
+    {
+      "index": 13,
+      "cx": 210.04,
+      "cy": 410.51,
+      "r": 25.22,
+      "present": true,
+      "tags": []
+    },
+    {
+      "index": 14,
+      "cx": 310.22,
+      "cy": 409.83,
+      "r": 26.02,
+      "present": true,
+      "tags": []
+    },
+    {
+      "index": 15,
+      "cx": 409.97,
+      "cy": 410.1,
+      "r": 27.07,
+      "present": true,
+      "tags": []
+    }
+  ]
+}

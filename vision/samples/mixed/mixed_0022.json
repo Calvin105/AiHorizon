@@ -1,0 +1,110 @@
+{
+  "pattern": "line_trace",
+  "width": 720,
+  "height": 460,
+  "defects_applied": [
+    "inconsistent"
+  ],
+  "dots": [
+    {
+      "index": 0,
+      "cx": 100.21,
+      "cy": 229.23,
+      "r": 19.46,
+      "present": true,
+      "tags": [
+        "inconsistent"
+      ]
+    },
+    {
+      "index": 1,
+      "cx": 157.93,
+      "cy": 230.4,
+      "r": 16.58,
+      "present": true,
+      "tags": [
+        "inconsistent"
+      ]
+    },
+    {
+      "index": 2,
+      "cx": 215.3,
+      "cy": 230.1,
+      "r": 34.5,
+      "present": true,
+      "tags": [
+        "inconsistent"
+      ]
+    },
+    {
+      "index": 3,
+      "cx": 273.62,
+      "cy": 230.3,
+      "r": 16.08,
+      "present": true,
+      "tags": [
+        "inconsistent"
+      ]
+    },
+    {
+      "index": 4,
+      "cx": 331.45,
+      "cy": 230.02,
+      "r": 16.3,
+      "present": true,
+      "tags": [
+        "inconsistent"
+      ]
+    },
+    {
+      "index": 5,
+      "cx": 388.34,
+      "cy": 229.76,
+      "r": 17.93,
+      "present": true,
+      "tags": [
+        "inconsistent"
+      ]
+    },
+    {
+      "index": 6,
+      "cx": 446.69,
+      "cy": 230.45,
+      "r": 37.3,
+      "present": true,
+      "tags": [
+        "inconsistent"
+      ]
+    },
+    {
+      "index": 7,
+      "cx": 505.2,
+      "cy": 230.12,
+      "r": 23.13,
+      "present": true,
+      "tags": [
+        "inconsistent"
+      ]
+    },
+    {
+      "index": 8,
+      "cx": 561.54,
+      "cy": 230.09,
+      "r": 37.57,
+      "present": true,
+      "tags": [
+        "inconsistent"
+      ]
+    },
+    {
+      "index": 9,
+      "cx": 619.88,
+      "cy": 230.49,
+      "r": 27.19,
+      "present": true,
+      "tags": [
+        "inconsistent"
+      ]
+    }
+  ]
+}

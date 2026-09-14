@@ -1,0 +1,100 @@
+{
+  "pattern": "line_trace",
+  "width": 720,
+  "height": 460,
+  "defects_applied": [
+    "stringing",
+    "missing_carryover",
+    "dragged"
+  ],
+  "dots": [
+    {
+      "index": 0,
+      "cx": 100.4,
+      "cy": 229.8,
+      "r": 26.37,
+      "present": true,
+      "tags": [
+        "dragged"
+      ]
+    },
+    {
+      "index": 1,
+      "cx": 157.42,
+      "cy": 230.27,
+      "r": 26.35,
+      "present": true,
+      "tags": []
+    },
+    {
+      "index": 2,
+      "cx": 215.23,
+      "cy": 229.73,
+      "r": 26.52,
+      "present": true,
+      "tags": []
+    },
+    {
+      "index": 3,
+      "cx": 273.41,
+      "cy": 229.65,
+      "r": 26.1,
+      "present": true,
+      "tags": [
+        "stringing"
+      ]
+    },
+    {
+      "index": 4,
+      "cx": 331.46,
+      "cy": 229.16,
+      "r": 25.52,
+      "present": true,
+      "tags": []
+    },
+    {
+      "index": 5,
+      "cx": 388.59,
+      "cy": 229.92,
+      "r": 26.13,
+      "present": true,
+      "tags": []
+    },
+    {
+      "index": 6,
+      "cx": 446.64,
+      "cy": 230.42,
+      "r": 26.01,
+      "present": true,
+      "tags": []
+    },
+    {
+      "index": 7,
+      "cx": 504.38,
+      "cy": 229.4,
+      "r": 26.06,
+      "present": false,
+      "tags": [
+        "missing"
+      ]
+    },
+    {
+      "index": 8,
+      "cx": 562.62,
+      "cy": 229.81,
+      "r": 48.72,
+      "present": true,
+      "tags": [
+        "carryover_big"
+      ]
+    },
+    {
+      "index": 9,
+      "cx": 619.97,
+      "cy": 230.37,
+      "r": 26.16,
+      "present": true,
+      "tags": []
+    }
+  ]
+}

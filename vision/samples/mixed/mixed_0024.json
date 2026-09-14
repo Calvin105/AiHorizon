@@ -1,0 +1,100 @@
+{
+  "pattern": "line_trace",
+  "width": 720,
+  "height": 460,
+  "defects_applied": [
+    "satellite"
+  ],
+  "dots": [
+    {
+      "index": 0,
+      "cx": 99.17,
+      "cy": 230.13,
+      "r": 25.69,
+      "present": true,
+      "tags": []
+    },
+    {
+      "index": 1,
+      "cx": 157.93,
+      "cy": 229.56,
+      "r": 26.03,
+      "present": true,
+      "tags": []
+    },
+    {
+      "index": 2,
+      "cx": 215.85,
+      "cy": 229.47,
+      "r": 26.09,
+      "present": true,
+      "tags": []
+    },
+    {
+      "index": 3,
+      "cx": 272.64,
+      "cy": 229.99,
+      "r": 26.25,
+      "present": true,
+      "tags": []
+    },
+    {
+      "index": 4,
+      "cx": 331.04,
+      "cy": 229.92,
+      "r": 25.73,
+      "present": true,
+      "tags": []
+    },
+    {
+      "index": 5,
+      "cx": 388.99,
+      "cy": 229.66,
+      "r": 26.43,
+      "present": true,
+      "tags": []
+    },
+    {
+      "index": 6,
+      "cx": 446.76,
+      "cy": 230.34,
+      "r": 25.81,
+      "present": true,
+      "tags": []
+    },
+    {
+      "index": 7,
+      "cx": 504.62,
+      "cy": 230.01,
+      "r": 26.24,
+      "present": true,
+      "tags": []
+    },
+    {
+      "index": 8,
+      "cx": 562.5,
+      "cy": 229.73,
+      "r": 25.89,
+      "present": true,
+      "tags": []
+    },
+    {
+      "index": 9,
+      "cx": 619.87,
+      "cy": 229.89,
+      "r": 26.53,
+      "present": true,
+      "tags": []
+    },
+    {
+      "index": 10,
+      "cx": 491.5,
+      "cy": 192.18,
+      "r": 6.12,
+      "present": true,
+      "tags": [
+        "satellite"
+      ]
+    }
+  ]
+}

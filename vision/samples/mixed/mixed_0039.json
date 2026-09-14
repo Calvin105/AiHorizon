@@ -1,0 +1,132 @@
+{
+  "pattern": "pattern",
+  "width": 720,
+  "height": 480,
+  "defects_applied": [
+    "abnormal_shape",
+    "satellite",
+    "stringing"
+  ],
+  "dots": [
+    {
+      "index": 0,
+      "cx": 119.18,
+      "cy": 119.33,
+      "r": 25.74,
+      "present": true,
+      "tags": []
+    },
+    {
+      "index": 1,
+      "cx": 163.42,
+      "cy": 162.73,
+      "r": 26.23,
+      "present": true,
+      "tags": []
+    },
+    {
+      "index": 2,
+      "cx": 207.46,
+      "cy": 207.16,
+      "r": 25.63,
+      "present": true,
+      "tags": []
+    },
+    {
+      "index": 3,
+      "cx": 251.32,
+      "cy": 250.87,
+      "r": 26.5,
+      "present": true,
+      "tags": []
+    },
+    {
+      "index": 4,
+      "cx": 294.53,
+      "cy": 294.61,
+      "r": 25.64,
+      "present": true,
+      "tags": []
+    },
+    {
+      "index": 5,
+      "cx": 338.22,
+      "cy": 338.44,
+      "r": 26.0,
+      "present": true,
+      "tags": []
+    },
+    {
+      "index": 6,
+      "cx": 381.95,
+      "cy": 337.9,
+      "r": 25.79,
+      "present": true,
+      "tags": []
+    },
+    {
+      "index": 7,
+      "cx": 425.94,
+      "cy": 294.08,
+      "r": 25.99,
+      "present": true,
+      "tags": []
+    },
+    {
+      "index": 8,
+      "cx": 469.19,
+      "cy": 250.56,
+      "r": 26.24,
+      "present": true,
+      "tags": []
+    },
+    {
+      "index": 9,
+      "cx": 512.85,
+      "cy": 207.22,
+      "r": 25.93,
+      "present": true,
+      "tags": [
+        "stringing"
+      ]
+    },
+    {
+      "index": 10,
+      "cx": 556.27,
+      "cy": 164.26,
+      "r": 26.12,
+      "present": true,
+      "tags": []
+    },
+    {
+      "index": 11,
+      "cx": 600.3,
+      "cy": 119.94,
+      "r": 26.35,
+      "present": true,
+      "tags": [
+        "abnormal_shape"
+      ]
+    },
+    {
+      "index": 12,
+      "cx": 265.02,
+      "cy": 325.35,
+      "r": 5.85,
+      "present": true,
+      "tags": [
+        "satellite"
+      ]
+    },
+    {
+      "index": 13,
+      "cx": 494.79,
+      "cy": 143.47,
+      "r": 7.64,
+      "present": true,
+      "tags": [
+        "satellite"
+      ]
+    }
+  ]
+}

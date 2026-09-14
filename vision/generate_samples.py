@@ -1,62 +1,41 @@
-"""Synthesise dispensing patterns so the pipeline is demoable before real
-factory images exist. Each sample encodes one known defect, which doubles as
-the test oracle for the measurement code.
+"""CLI for the synthetic dispensing-defect generator (see vision/synth/).
+
+    .venv/bin/python generate_samples.py                 # canonical oracle set -> samples/
+    .venv/bin/python generate_samples.py --mixed 200      # + 200 randomly mixed images -> samples/mixed/
 """
 
-import cv2
-import numpy as np
+from __future__ import annotations
 
-RNG = np.random.default_rng(7)
-W, H, ROWS, COLS, PITCH, MARGIN, R = 720, 460, 3, 5, 130, 110, 26
+import argparse
+import pathlib
 
-
-def _canvas() -> np.ndarray:
-    base = np.full((H, W, 3), 232, np.uint8)
-    return cv2.add(base, RNG.normal(0, 3, (H, W, 3)).astype(np.int16).clip(-12, 12).astype(np.uint8))
+from synth import dataset
 
 
-def _dot(img, cx, cy, r, squash=1.0, colour=(70, 70, 75)):
-    cv2.ellipse(img, (int(cx), int(cy)), (int(r * squash), int(r / squash)), 0, 0, 360, colour, -1)
-    cv2.GaussianBlur(img, (3, 3), 0, dst=img)
+def main() -> None:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--out", default="samples", help="output directory (default: samples/)")
+    parser.add_argument("--seed", type=int, default=7, help="canonical-set seed")
+    parser.add_argument("--mixed", type=int, default=0, help="also generate N randomly mixed images")
+    parser.add_argument("--mixed-seed", type=int, default=11)
+    parser.add_argument("--min-defects", type=int, default=0, help="min co-occurring defects per mixed image")
+    parser.add_argument("--max-defects", type=int, default=3, help="max co-occurring defects per mixed image")
+    args = parser.parse_args()
 
+    out_dir = pathlib.Path(__file__).parent / args.out
+    written = dataset.generate_canonical(out_dir, seed=args.seed)
+    print(f"wrote {len(written)} canonical samples to {out_dir}/")
+    for name in written:
+        print(f"  {name}.png / {name}.json")
 
-def build(kind: str) -> np.ndarray:
-    img = _canvas()
-    for row in range(ROWS):
-        for col in range(COLS):
-            cx, cy = MARGIN + col * PITCH, MARGIN + row * PITCH
-            r, squash = R, 1.0
-
-            if kind == "good":
-                r = R + RNG.normal(0, 0.6)
-            elif kind == "inconsistent":
-                r = R * RNG.choice([0.62, 0.8, 1.0, 1.18, 1.32])
-            elif kind == "missing":
-                r = R + RNG.normal(0, 0.6)
-                if (row, col) in {(0, 2), (1, 4), (2, 1)}:
-                    continue
-            elif kind == "spreading":
-                r = R + RNG.normal(0, 0.6)
-                if col >= 3:
-                    r, squash = R * 1.45, 1.5
-            elif kind == "misaligned":
-                r = R + RNG.normal(0, 0.6)
-                # Progressive drift plus jitter: a real axis or fixture error.
-                cx += col * 5.5 + RNG.normal(0, 4)
-                cy += RNG.normal(0, 4)
-            elif kind == "undersized":
-                r = R * (0.55 if col % 2 == 0 else 0.98)
-
-            _dot(img, cx, cy, r, squash)
-    return img
+    if args.mixed:
+        mixed_dir = out_dir / "mixed"
+        written = dataset.generate_mixed(
+            mixed_dir, args.mixed, seed=args.mixed_seed,
+            k_range=(args.min_defects, args.max_defects),
+        )
+        print(f"\nwrote {len(written)} mixed samples to {mixed_dir}/")
 
 
 if __name__ == "__main__":
-    import pathlib
-
-    out = pathlib.Path(__file__).parent / "samples"
-    out.mkdir(exist_ok=True)
-    for kind in ("good", "inconsistent", "missing", "spreading", "undersized", "misaligned"):
-        path = out / f"{kind}.png"
-        cv2.imwrite(str(path), build(kind))
-        print(f"wrote {path}")
+    main()

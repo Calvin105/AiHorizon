@@ -1,0 +1,95 @@
+{
+  "pattern": "line_trace",
+  "width": 720,
+  "height": 460,
+  "defects_applied": [
+    "stringing",
+    "line_start_defect"
+  ],
+  "dots": [
+    {
+      "index": 0,
+      "cx": 100.31,
+      "cy": 229.9,
+      "r": 25.87,
+      "present": false,
+      "tags": [
+        "line_start_defect"
+      ]
+    },
+    {
+      "index": 1,
+      "cx": 158.19,
+      "cy": 230.27,
+      "r": 25.17,
+      "present": true,
+      "tags": []
+    },
+    {
+      "index": 2,
+      "cx": 215.88,
+      "cy": 230.26,
+      "r": 26.71,
+      "present": true,
+      "tags": []
+    },
+    {
+      "index": 3,
+      "cx": 273.4,
+      "cy": 230.24,
+      "r": 26.04,
+      "present": true,
+      "tags": []
+    },
+    {
+      "index": 4,
+      "cx": 331.19,
+      "cy": 229.93,
+      "r": 25.23,
+      "present": true,
+      "tags": []
+    },
+    {
+      "index": 5,
+      "cx": 388.9,
+      "cy": 230.22,
+      "r": 26.01,
+      "present": true,
+      "tags": []
+    },
+    {
+      "index": 6,
+      "cx": 447.47,
+      "cy": 229.61,
+      "r": 25.92,
+      "present": true,
+      "tags": [
+        "stringing"
+      ]
+    },
+    {
+      "index": 7,
+      "cx": 504.66,
+      "cy": 230.02,
+      "r": 26.23,
+      "present": true,
+      "tags": []
+    },
+    {
+      "index": 8,
+      "cx": 562.57,
+      "cy": 230.2,
+      "r": 25.96,
+      "present": true,
+      "tags": []
+    },
+    {
+      "index": 9,
+      "cx": 620.14,
+      "cy": 229.3,
+      "r": 26.28,
+      "present": true,
+      "tags": []
+    }
+  ]
+}
