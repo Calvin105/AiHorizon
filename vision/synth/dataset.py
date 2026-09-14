@@ -30,20 +30,30 @@ def build_image(
     rng: np.random.Generator,
     layout_kwargs: dict | None = None,
     defect_params: dict[str, dict] | None = None,
-) -> tuple[np.ndarray, Layout]:
+) -> tuple[np.ndarray, Layout, int]:
     builder = layouts.BUILDERS[pattern]
     layout = builder(rng=rng, **(layout_kwargs or {}))
+    n_profile = len(layout.dots)  # before defects.apply can append satellites
     defects.apply(layout, defect_names, rng, defect_params)
     img = render.render(layout, rng, contamination=layout.contamination)
-    return img, layout
+    return img, layout, n_profile
 
 
-def _sidecar(layout: Layout, defect_names: list[str]) -> dict:
+def _sidecar(layout: Layout, defect_names: list[str], n_profile: int) -> dict:
     return {
         "pattern": layout.pattern,
         "width": layout.width,
         "height": layout.height,
         "defects_applied": defect_names,
+        # What the recipe specified -- frozen at layout time, independent of
+        # whatever actually got dispensed. This is the input vision/detect/
+        # checks an image against; a real machine already has this before it
+        # dispenses anything, so it isn't something a detector should guess.
+        "profile": [
+            {"index": i, "cx": round(d.nominal_cx, 2), "cy": round(d.nominal_cy, 2), "r": round(d.nominal_r, 2)}
+            for i, d in enumerate(layout.dots[:n_profile])
+        ],
+        # What actually got dispensed -- the oracle ground truth.
         "dots": [
             {
                 "index": i,
@@ -71,8 +81,8 @@ def generate_canonical(out_dir: pathlib.Path, seed: int = 7) -> list[str]:
     written: list[str] = []
 
     rng = np.random.default_rng(seed)
-    img, layout = build_image(CANONICAL_PATTERN, [], rng)
-    _write(out_dir, "good", img, _sidecar(layout, []))
+    img, layout, n_profile = build_image(CANONICAL_PATTERN, [], rng)
+    _write(out_dir, "good", img, _sidecar(layout, [], n_profile))
     written.append("good")
 
     for name in defects.OPERATORS:
@@ -80,8 +90,8 @@ def generate_canonical(out_dir: pathlib.Path, seed: int = 7) -> list[str]:
         if name in defects.LAYOUT_ONLY:
             pattern = next(iter(defects.LAYOUT_ONLY[name]))
         rng = np.random.default_rng(seed)
-        img, layout = build_image(pattern, [name], rng)
-        _write(out_dir, name, img, _sidecar(layout, [name]))
+        img, layout, n_profile = build_image(pattern, [name], rng)
+        _write(out_dir, name, img, _sidecar(layout, [name], n_profile))
         written.append(name)
 
     return written
@@ -101,9 +111,9 @@ def generate_mixed(
     for idx in range(n):
         pattern = patterns[int(rng.integers(0, len(patterns)))]
         defect_names = defects.sample_defect_set(pattern, rng, k_range)
-        img, layout = build_image(pattern, defect_names, rng)
+        img, layout, n_profile = build_image(pattern, defect_names, rng)
         name = f"mixed_{idx:04d}"
-        _write(out_dir, name, img, _sidecar(layout, defect_names))
+        _write(out_dir, name, img, _sidecar(layout, defect_names, n_profile))
         written.append(name)
 
     return written

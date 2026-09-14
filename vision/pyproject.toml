@@ -9,3 +9,11 @@ dependencies = [
     "numpy>=2.0",
     "python-multipart>=0.0.12",
 ]
+
+[tool.pyrefly]
+python-interpreter-path = ".venv/bin/python"
+
+[tool.pyright]
+venvPath = "."
+venv = ".venv"
+

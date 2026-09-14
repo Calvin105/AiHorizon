@@ -42,9 +42,14 @@ def grid(
     order: list[int] = []
     for row in range(rows):
         for col in range(cols):
-            cx = margin + col * pitch + rng.normal(0, jitter)
-            cy = margin + row * pitch + rng.normal(0, jitter)
-            dots.append(Dot(cx=cx, cy=cy, r=r + rng.normal(0, jitter)))
+            cx_ideal = margin + col * pitch
+            cy_ideal = margin + row * pitch
+            # Jitter belongs to the *actual* position: even a correctly
+            # dispensed dot isn't pixel-perfect, so the profile's nominal
+            # position stays the clean recipe value, not this run's noise.
+            cx, cy = cx_ideal + rng.normal(0, jitter), cy_ideal + rng.normal(0, jitter)
+            dots.append(Dot(cx=cx, cy=cy, r=r + rng.normal(0, jitter),
+                             nominal_cx=cx_ideal, nominal_cy=cy_ideal, nominal_r=r))
             order.append(len(dots) - 1)
     width = int(margin * 2 + (cols - 1) * pitch)
     height = int(margin * 2 + (rows - 1) * pitch)
@@ -86,9 +91,11 @@ def along_path(
         a, b = segs[seg_i]
         seg_len = seg_lens[seg_i] or 1.0
         t = min(1.0, max(0.0, (target - travelled) / seg_len))
-        cx = a[0] + (b[0] - a[0]) * t + rng.normal(0, jitter)
-        cy = a[1] + (b[1] - a[1]) * t + rng.normal(0, jitter)
-        dots.append(Dot(cx=cx, cy=cy, r=r + rng.normal(0, jitter)))
+        cx_ideal = a[0] + (b[0] - a[0]) * t
+        cy_ideal = a[1] + (b[1] - a[1]) * t
+        cx, cy = cx_ideal + rng.normal(0, jitter), cy_ideal + rng.normal(0, jitter)
+        dots.append(Dot(cx=cx, cy=cy, r=r + rng.normal(0, jitter),
+                         nominal_cx=cx_ideal, nominal_cy=cy_ideal, nominal_r=r))
         order.append(len(dots) - 1)
 
     return Layout(dots=dots, order=order, pattern=pattern, width=width, height=height)

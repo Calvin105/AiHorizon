@@ -18,6 +18,15 @@ class Dot:
     r: float
     squash: float = 1.0  # x/y aspect ratio of the fill ellipse
 
+    # Where the recipe actually placed this dot -- frozen at layout time and
+    # never touched by a defect operator. `cx`/`cy`/`r` above are the final,
+    # possibly-defected values; these are what an inspection profile checks
+    # the image against. Without keeping both, "misaligned" would have
+    # nothing to compare its own wrong position to.
+    nominal_cx: float = 0.0
+    nominal_cy: float = 0.0
+    nominal_r: float = 0.0
+
     present: bool = True  # False -> nothing rendered (Missing)
     ring_only: bool = False  # True -> faint low-contrast halo, no fill (Ghost)
 
