@@ -80,42 +80,46 @@ def _draw_bridge(img: np.ndarray, a: Dot, b: Dot) -> None:
 
 
 def _draw_bubble(img: np.ndarray, dot: Dot, rng: np.random.Generator) -> None:
-    """Local heightfield patch: shade the dot as a dome, then perturb the
-    shading (not the outline) at the bubble offset. This is the one class
-    whose signature can't be produced by silhouette fill alone.
+    """Same flat fill as every other dot -- the bubble must not change the
+    dot's overall appearance, only perturb a small patch inside it. A
+    previous version shaded the *whole* dot as a dome, which made it look
+    like a different material rather than a normal dot with one internal
+    anomaly.
     """
-    r = int(dot.r) + 2
-    x0, y0 = int(dot.cx - r), int(dot.cy - r)
-    size = 2 * r
+    cv2.ellipse(img, (int(dot.cx), int(dot.cy)), (int(dot.r * dot.squash), int(dot.r / dot.squash)), 0, 0, 360, FILL_COLOUR, -1)
+
+    bubble_r = dot.r * 0.3
+    # Keep the anomaly patch well inside the fill, whatever the offset was.
+    max_off = dot.r * 0.4
+    bx = dot.cx + np.clip(dot.bubble_dx * dot.r, -max_off, max_off)
+    by = dot.cy + np.clip(dot.bubble_dy * dot.r, -max_off, max_off)
+
+    pad = int(bubble_r) + 2
+    x0, y0 = int(bx - pad), int(by - pad)
+    size = 2 * pad
     h, w = img.shape[:2]
     x1, y1 = max(0, x0), max(0, y0)
     x2, y2 = min(w, x0 + size), min(h, y0 + size)
     if x2 <= x1 or y2 <= y1:
         return
 
-    yy, xx = np.mgrid[y1 - dot.cy:y2 - dot.cy, x1 - dot.cx:x2 - dot.cx]
-    dist = np.sqrt((xx / dot.squash) ** 2 + (yy * dot.squash) ** 2)
-    inside = dist <= dot.r
-    if not inside.any():
+    yy, xx = np.mgrid[y1 - by:y2 - by, x1 - bx:x2 - bx]
+    dist = np.sqrt(xx ** 2 + yy ** 2)
+    bubble_mask = dist <= bubble_r
+    if not bubble_mask.any():
         return
-
-    # Lambertian-ish dome shading: brighter toward the centre.
-    height = np.clip(1 - (dist / dot.r) ** 2, 0, 1)
-    shade = FILL_COLOUR[0] + height * 55
-
-    # Bubble anomaly: a small offset patch with inverted shading (a lighter
-    # ring where the surface normal flips over the trapped void).
-    bx, by = dot.bubble_dx * dot.r, dot.bubble_dy * dot.r
-    bubble_r = dot.r * 0.32
-    bdist = np.sqrt((xx - bx) ** 2 + (yy - by) ** 2)
-    bubble_mask = (bdist <= bubble_r) & inside
-    ring_mask = (bdist > bubble_r * 0.55) & bubble_mask
-    shade = np.where(ring_mask, shade + 45, shade)
-    shade = np.where(bubble_mask & ~ring_mask, shade - 20, shade)
+    # A lighter ring where the surface normal flips over the trapped void,
+    # with a slightly darker core -- a specular anomaly, not a shape change.
+    # The ring itself is a thin annulus near the patch edge, not half the disc.
+    ring_mask = (dist > bubble_r * 0.72) & (dist <= bubble_r * 0.92)
+    core_mask = bubble_mask & (dist <= bubble_r * 0.6)
 
     patch = img[y1:y2, x1:x2].astype(np.float32)
     for c in range(3):
-        patch[..., c] = np.where(inside, np.clip(shade, 0, 255), patch[..., c])
+        band = patch[..., c]
+        band = np.where(ring_mask, np.clip(band + 42, 0, 255), band)
+        band = np.where(core_mask, np.clip(band - 16, 0, 255), band)
+        patch[..., c] = band
     img[y1:y2, x1:x2] = patch.astype(np.uint8)
     cv2.GaussianBlur(img[y1:y2, x1:x2], (3, 3), 0, dst=img[y1:y2, x1:x2])
 
