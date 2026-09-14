@@ -35,6 +35,7 @@ def detect(raw: bytes, profile_data: dict | None = None) -> dict:
     matches, extra = align(blobs, profile)
 
     dots = [_classify.classify_point(m) for m in matches]
+    _classify.classify_array(dots)  # inconsistent volume: an array-level property
     extras = [_classify.classify_extra(b) for b in extra]
 
     counts: dict[str, int] = {}

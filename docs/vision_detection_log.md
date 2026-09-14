@@ -9,9 +9,12 @@ changed and the `evaluate.py` metrics measured right after.
 cd vision && .venv/bin/python -m detect.evaluate
 ```
 
-**Coverage report, not pass/fail** — several defect *causes* share one
-*symptom* by design (`classify.py`), so a spread across a few tags can be
-the correct answer for a row, not just one tag at 100%.
+Prints an **accuracy % per class + overall**, scored against `expected.py`'s
+correct/incorrect table (the same one `visualize.py` colors rings by).
+Classes marked "not yet judged" (air bubble, satellite, speck) are excluded
+from the score, not counted as pass or fail. Several defect *causes* share
+one *symptom* by design (`classify.py`), so a spread across a few tags in
+the breakdown can be the correct outcome, not a partial failure.
 
 ## Visualize a prediction
 
@@ -186,6 +189,55 @@ missing                7     missing=7
 overrun                5     oversized=4, irregular=1
 smearing               9     irregular=5, oversized=3, (nothing flagged)=1
 stringing              8     irregular=7, (nothing flagged)=1
+
+Extra (unmatched) blobs across all images: 1
+```
+
+</details>
+
+### 2026-09-14 — Accuracy scoring + array-level `inconsistent` detection
+
+* **Unified Benchmarking:** `evaluate.py` now prints hard **accuracy %** per class against `expected.py`'s truth table. Visualizer ring colors and CLI metrics finally draw from the exact same mathematical ground truth.
+* **The Problem (`inconsistent` tanking at 60.3%):**
+  * The generator samples radius as $r \sim \mathcal{U}(0.55, 1.50)$, but defect cutoffs operate on area ($\propto r^2$).
+  * Solving for our tolerance band ($0.70\times$ to $1.40\times$ area) means any radius between $0.84\times$ and $1.18\times$ looks completely in-spec. That deadband swallows **~36% of the distribution by pure chance**.
+  * A stateless, single-dot `classify_point` inspection mathematically cannot detect an array-wide distribution anomaly.
+* **The Dumb Idea (Scrapped before shipping):**
+  * Tried calculating an array-wide Coefficient of Variation ($CV = \sigma / \mu$) on blob areas.
+  * Trashed it immediately: a single local `overrun` outlier ($A \ge 2.5\times$) in a mixed image spikes $\sigma$ globally, falsely flunking dozens of pristine, clean dots.
+* **The Smart Fix (`classify_array` in `classify.py`):**
+  * **The Physical Invariant:** Real dispense defects are strictly unidirectional—overrun, carryover, and double-dispense only ever inflate volume ($\Delta V > 0$). Starvation only ever shrinks it ($\Delta V < 0$).
+  * Seeing **BOTH** an `oversized` ($>1.40\times$) **AND** an `undersized` ($<0.70\times$) dot on the exact same substrate pass is an unmistakable signature of pressure oscillation / fluid inconsistency.
+  * If both coexist, post-classify any remaining unflagged dots in that array as `inconsistent`. Zero statistical threshold tuning required.
+* **The Numbers:**
+  * **`inconsistent`: 60.3% → 98.4%** (24 deadband dots successfully reclaimed).
+  * **`good`: Locked at 99.0%** (494/499 clean; zero false-alarm spillover).
+  * **OVERALL: 93.0% → 96.6%** (648 correct / 23 wrong / 6 unjudged). Extra blobs down to 1.
+
+<details>
+<summary>Full breakdown</summary>
+
+```
+generator tag          n     accuracy   predicted symptom breakdown
+------------------------------------------------------------------------------------------
+abnormal_shape         3     100.0%                   irregular=3
+air_bubble             6      n/a  (6 not yet judged) (nothing flagged)=4, inconsistent=2
+bridging               16    100.0%                   possibly_fused=8, oversized=2, irregular=2, misaligned=2, missing=2
+carryover_big          7     100.0%                   oversized=7
+double_dispense        4      75.0%                   oversized=3, (nothing flagged)=1
+dragged                8     100.0%                   possibly_fused=4, missing=1, oversized=1, irregular=1, misaligned=1
+ghost                  1     100.0%                   missing=1
+good                   499    99.0%                   (nothing flagged)=494, possibly_fused=3, missing=2
+inconsistent           63     98.4%                   inconsistent=24, oversized=22, undersized=16, possibly_fused=1
+line_end_defect        2     100.0%                   oversized=2
+line_start_defect      1     100.0%                   missing=1
+misaligned             48     70.8%                   misaligned=34, (nothing flagged)=14
+missing                7     100.0%                   missing=7
+overrun                5     100.0%                   oversized=4, irregular=1
+smearing               9      83.3%                   irregular=5, oversized=3, (nothing flagged)=1
+stringing              8      87.5%                   irregular=7, (nothing flagged)=1
+------------------------------------------------------------------------------------------
+OVERALL                687    96.6% (648 correct / 23 wrong / 6 not yet judged)
 
 Extra (unmatched) blobs across all images: 1
 ```

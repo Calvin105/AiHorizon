@@ -61,3 +61,31 @@ def classify_point(match: Match) -> dict:
 def classify_extra(blob: dict) -> dict:
     """A blob with no matching profile position at all -- stray material."""
     return {"cx": blob["cx"], "cy": blob["cy"], "tags": ["extra"], "area": blob["area"]}
+
+
+def classify_array(dots: list[dict]) -> None:
+    """Inconsistent volume is a property of the *array*, not any one dot --
+    a dot whose size happens to land near nominal by chance is genuinely
+    size-consistent for that one instance, even inside a scattered batch.
+    classify_point can only ever judge one dot at a time, so it can never
+    catch this; this pass runs after, over every matched dot in one image.
+
+    Rule: if the same image already has at least one dot flagged oversized
+    AND at least one flagged undersized, that's the actual fingerprint of
+    scatter -- every other size-affecting defect here only ever pushes area
+    in one direction (overrun, carryover, double-dispense all inflate;
+    none shrink), so seeing both directions at once isn't explainable by
+    any single-cause defect. A plain coefficient-of-variation over the
+    whole array was tried first and rejected: one unrelated oversized
+    outlier (e.g. a single overrun dot) could inflate it enough to
+    wrongly re-flag every genuinely clean dot in that image, which is
+    exactly the false-positive problem the 2026-09-14 fixes just removed.
+    Mutates `dots` in place.
+    """
+    has_oversized = any("oversized" in d["tags"] for d in dots)
+    has_undersized = any("undersized" in d["tags"] for d in dots)
+    if not (has_oversized and has_undersized):
+        return
+    for d in dots:
+        if "area_ratio" in d and not d["tags"]:
+            d["tags"].append("inconsistent")

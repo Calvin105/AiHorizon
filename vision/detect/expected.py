@@ -24,7 +24,7 @@ EXPECTED_SYMPTOMS: dict[str, set[str]] = {
     "line_end_defect": {"oversized", "irregular"},
     "line_start_defect": {"missing", "possibly_fused"},
     "ghost": {"missing", "possibly_fused"},
-    "inconsistent": {"oversized", "undersized"},
+    "inconsistent": {"oversized", "undersized", "inconsistent"},
     "smearing": {"oversized", "irregular", "misaligned"},
     "stringing": {"irregular", "oversized", "misaligned"},
     # Fusing two positions is inherently ambiguous about which position
