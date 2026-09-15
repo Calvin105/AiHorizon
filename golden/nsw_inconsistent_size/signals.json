@@ -1,0 +1,16 @@
+[
+  {
+    "key": "size_cv",
+    "label": "Deposit size coefficient of variation",
+    "value": 0.486,
+    "unit": "ratio",
+    "note": "Population coefficient of variation of dots[].area_ratio across all 15 matched deposits in cv_output.json (pstdev/mean = 0.5023/1.034), which is the real detect() output for inconsistent.png. Exceeds the 0.15 threshold packs/nsw/index.ts checks for the air_entrapment cause."
+  },
+  {
+    "key": "mean_circularity",
+    "label": "Mean deposit circularity",
+    "value": 0.896,
+    "unit": "ratio",
+    "note": "Mean of dots[].circularity across all 15 matched deposits in cv_output.json. Above the 0.8 threshold packs/nsw/index.ts checks for nozzle_blockage, so that rule correctly does not fire for this case."
+  }
+]

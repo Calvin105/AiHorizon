@@ -1,0 +1,54 @@
+{
+  "assumption": "Retrieval is treated as 100% correct for this golden case -- this file is a fixed, hand-verified extract of the source document, not the output of a live retriever. Any query paraphrasing the same defect ('inconsistent size shot to shot', 'scattered deposit volume', 'some dots big some small') should resolve to this same golden output.",
+  "source_document": "docs/personal/matc82.pdf",
+  "source_document_title": "NPL Report MATC(A)82 -- A Guide to Best Practice for Electronic Materials Dispensing",
+  "retrieved_passages": [
+    {
+      "section": "3.4 Dot Shape (Solder Paste)",
+      "page": 17,
+      "text": "For a given needle size dispensing a larger volume will produce a flatter paste deposit. Volume is directly proportional to dispense time; deposit diameter increases with volume, rate of increase reducing with volume; the deposit height remains unchanged i.e. it is defined by the footed needle design."
+    },
+    {
+      "section": "3.5 Missing Dots and Big Dot Small Dot Defect (Solder Paste)",
+      "page": 18,
+      "text": "If the volume of paste dispensed from the needle is too small the paste may not make contact, or properly wet and adhere to the copper PCB pad. This results in a dispensing defect known as a missed dot or big dot/small dot. The hallmark of this problem is a very small or missing dot, followed by a larger over-sized dot at the next deposition point."
+    },
+    {
+      "section": "4.4 Dot Shape (SM Adhesive)",
+      "page": 23,
+      "text": "For a given needle size dispensing a larger volume of adhesive will produce a taller, thinner adhesive deposit. Volume is directly proportional to dispense time; deposit radius increases with volume, but this rate of increase reduces with increasing volume; the deposit height also increases with volume."
+    },
+    {
+      "section": "4.5 Missing Dots, and, Big Dot Small Dot Defect (SM Adhesive)",
+      "page": 25,
+      "text": "If the volume of adhesive dispensed from the needle is too small it may not make contact, or properly wet and so adhere to the copper PCB pad. This results in a dispensing defect known as a missed dot, or big dot/small dot, as was discussed in section 3.5. The hallmark of this problem is a very small or missing dot, followed by a larger over-sized dot at the next deposition point."
+    },
+    {
+      "section": "5.4 Dot Shape (Isotropic Conductive Adhesive)",
+      "page": 29,
+      "text": "For a given needle size dispensing a larger volume will produce a flatter ICA deposit. Volume is directly proportional to dispense time; deposit radius increases with volume, the rate of increase being greater than for height; the deposit height increases with volume."
+    },
+    {
+      "section": "5.5 Missing Dots and Big Dot Small Dot Defect (ICA)",
+      "page": 31,
+      "text": "This is very similar to the issues encountered previously with solder paste and SM adhesive, as discussed in sections 3.5 and 4.5."
+    },
+    {
+      "section": "Visual signature reference (curated, not matc82 itself)",
+      "page": null,
+      "source_document_override": "docs/personal/visual signature.md",
+      "text": "Row 11 -- Inconsistent size/shape/volume: not a single-dot signature, array-level -- diameters scattered across many positions with no fixed direction (not uniformly big or small). Only visible comparing across the array, not from any one dot. Source: matc82 sections 3.4/4.4/5.4 trend framing."
+    }
+  ],
+  "synthesized_answer": "Across all three material classes matc82 covers (solder paste, SM adhesive, ICA), dispensed volume is directly proportional to dispense time, and deposit size grows with volume (secs 3.4/4.4/5.4). When the commanded volume sits near the marginal-wetting boundary, the material intermittently fails to properly wet the pad: that shot reads as a small or missing dot, and the un-deposited material carries over onto the needle tip and adds to the *next* dispense, which then reads oversized (secs 3.5/4.5/5.5, the 'missing dot / big dot-small dot' mechanism). Because this carryover is triggered by a marginal, not-always-true condition, it does not push every dot in one direction -- it produces a scatter of both oversized and undersized dots across the array with no fixed bias, which is exactly the array-level signature distinguishing 'inconsistent size' from a uniform over- or under-dispense.",
+  "root_cause_hypothesis": "Marginal dispense volume / wetting failure with carryover to the next shot (matc82 secs 3.5, 4.5, 5.5), evidenced at the array level by simultaneous oversized and undersized deposits rather than a one-directional shift.",
+  "citations": [
+    "matc82.pdf p.17 sec 3.4",
+    "matc82.pdf p.18 sec 3.5",
+    "matc82.pdf p.23 sec 4.4",
+    "matc82.pdf p.25 sec 4.5",
+    "matc82.pdf p.29 sec 5.4",
+    "matc82.pdf p.31 sec 5.5",
+    "docs/personal/visual signature.md row 11"
+  ]
+}
