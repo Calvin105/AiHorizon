@@ -62,6 +62,10 @@ def annotate(name: str) -> pathlib.Path | None:
         return None
 
     img = cv2.imread(str(img_path))
+    if img is None:
+        print(f"skip {name}: failed to load image {img_path}")
+        return None
+
     predicted_by_index = {d["index"]: d for d in result["dots"]}
     n_profile = len(sidecar["profile"])
     counts = {"correct": 0, "wrong": 0, "unjudged": 0}
