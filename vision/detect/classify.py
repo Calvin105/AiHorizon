@@ -35,7 +35,7 @@ def classify_point(match: Match) -> dict:
     if match.blob is None:
         tags = ["possibly_fused"] if match.fused_with is not None else ["missing"]
         return {
-            "index": p.index, "cx": p.cx, "cy": p.cy,
+            "index": p.index, "cx": round(p.cx, 2), "cy": round(p.cy, 2),
             "tags": tags, "fused_with": match.fused_with,
         }
 
@@ -52,7 +52,7 @@ def classify_point(match: Match) -> dict:
         tags.append("misaligned")
 
     return {
-        "index": p.index, "cx": b["cx"], "cy": b["cy"], "tags": tags,
+        "index": p.index, "cx": round(b["cx"], 2), "cy": round(b["cy"], 2), "tags": tags,
         "area_ratio": round(ratio, 3), "circularity": round(b["circularity"], 3),
         "deviation_px": round(match.deviation, 2),
     }
@@ -60,7 +60,7 @@ def classify_point(match: Match) -> dict:
 
 def classify_extra(blob: dict) -> dict:
     """A blob with no matching profile position at all -- stray material."""
-    return {"cx": blob["cx"], "cy": blob["cy"], "tags": ["extra"], "area": blob["area"]}
+    return {"cx": round(blob["cx"], 2), "cy": round(blob["cy"], 2), "tags": ["extra"], "area": round(blob["area"], 1)}
 
 
 def classify_array(dots: list[dict]) -> None:

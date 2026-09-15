@@ -43,9 +43,19 @@ def detect(raw: bytes, profile_data: dict | None = None) -> dict:
         for t in d["tags"]:
             counts[t] = counts.get(t, 0) + 1
 
+    flagged = sum(1 for d in dots if d["tags"])
     return {
         "profile_supplied": True,
         "pattern": profile.pattern,
+        # A downstream consumer (dashboard, MES, line-stop signal) usually
+        # just needs pass/fail plus a count -- added here so it doesn't have
+        # to re-derive that by scanning every dot's tags itself.
+        "summary": {
+            "status": "fail" if (flagged or extras) else "pass",
+            "dot_count": len(dots),
+            "flagged_count": flagged,
+            "extra_count": len(extras),
+        },
         "dots": dots,
         "extra": extras,
         "counts": counts,
