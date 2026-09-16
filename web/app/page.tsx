@@ -64,7 +64,7 @@ export default function Home() {
       <footer className="mt-10 rounded-xl border border-line bg-panel p-5">
         <h2 className="text-sm font-semibold">Before demoing</h2>
         <ul className="mt-2 space-y-1.5 text-xs text-muted">
-          <li>— Prototype A calls Gemini. Without <code className="text-accent">GEMINI_API_KEY</code> it falls back to the deterministic baseline and says so on screen.</li>
+          <li>— Prototype A calls Groq. Without <code className="text-accent">GROQ_API_KEY</code> it falls back to the deterministic baseline and says so on screen.</li>
           <li>— NSW Prototype B needs the metrology service: <code className="text-accent">cd vision &amp;&amp; .venv/bin/uvicorn main:app --port 8000</code></li>
           <li>— Sample dispensing images are in <code className="text-accent">vision/samples/</code>. Regenerate with <code className="text-accent">generate_samples.py</code>.</li>
           <li>— Every report prints to PDF from the browser, which covers the PDF bonus in both briefs.</li>

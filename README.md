@@ -28,7 +28,7 @@ cd vision && uv venv && uv pip install -r <(echo -e "fastapi\nuvicorn[standard]\
 .venv/bin/uvicorn main:app --port 8000
 ```
 
-Copy `web/.env.example` to `web/.env.local` and add a `GEMINI_API_KEY` to enable the
+Copy `web/.env.example` to `web/.env.local` and add a `GROQ_API_KEY` to enable the
 A variants. Without a key they fall back to the deterministic baseline **and say so
 on screen** — so a demo never dies on a failed network call.
 
@@ -36,7 +36,7 @@ on screen** — so a demo never dies on a failed network call.
 
 ```
 web/
-  core/        types · Gemini adapter (with offline fallback) · log-odds inference · math
+  core/        types · Groq adapter (with offline fallback) · log-odds inference · math
   packs/nsw/   fault tree: 7 causes, weighted rules, defect taxonomy
   packs/exa/   maturity rubric · service catalog · pain-point model · ROI
   engines/     llmReasoner (A) · deterministic (B) — same Engine interface

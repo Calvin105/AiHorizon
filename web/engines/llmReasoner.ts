@@ -72,7 +72,7 @@ export const llmReasonerEngine: Engine = {
       return {
         ...baseline,
         meta: { ...baseline.meta, engine: "llm-reasoner", reproducible: false,
-          notes: ["No GEMINI_API_KEY set - showing the deterministic baseline instead of model reasoning.", ...baseline.meta.notes] },
+          notes: ["No GROQ_API_KEY set - showing the deterministic baseline instead of model reasoning.", ...baseline.meta.notes] },
       };
     }
 
