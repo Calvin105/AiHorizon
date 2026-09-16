@@ -1,57 +1,79 @@
 # Golden test cases
 
-Fixture-only harness for validating NSW-automation reasoning logic before it
-exists as real code. **Not an app** — no server, no UI, no dependency on
-`web/` or `vision/`, and nothing here is imported by either. It exists so the
-combination logic (user input + RAG knowledge + CV output → diagnosis) can be
-exercised against fixed, hand-verified inputs while that logic is still being
-built, instead of needing a live PDF-RAG pipeline, a live CV model, and a live
-user in the loop all at once.
+Fixed inputs and hand-checked answer keys for NSW diagnostic reasoning.
+**Not an app** — no server, no UI, no dependency on `web/` or `vision/`, and
+nothing here is imported by either. Nothing here calls a model, a retriever
+or a detector at check time.
 
-## Why "golden"
+## The idea
 
-Each case fixes all three inputs to the NSW reasoning pipeline so the only
-thing left to test is the combination logic itself:
+Each case fixes all three inputs to the reasoning so the only thing being
+tested is the reasoning itself:
 
-1. **User input** — the operator always reports the defect the same way.
-2. **RAG output** — retrieval is assumed 100% correct (that's what makes this
-   a *golden* case rather than an evaluation of the retriever), so the RAG
-   output is a fixed, pre-verified extract of `docs/personal/matc82.pdf`
-   rather than something an actual retriever produces at test time.
-3. **CV output** — a fixed JSON detection result, shaped exactly like
-   `vision/detect/report.py`'s `detect()` return value, captured from an
-   actual run against a real image that contains the defect in question
-   (not hand-typed).
+1. **What the operator says** — always the same complaint.
+2. **What the camera measured** — a real `vision/detect/` run over a real
+   sample image, frozen.
+3. **What the documents say** — passages quoted from the two project PDFs,
+   treated as a complete and correct lookup.
 
-Nothing here is *called* live — no model, no retriever, no CV pipeline runs
-when you check a golden case. The CV fixture was generated once, by running
-the real pipeline against a real image, then frozen; the RAG fixture was
-written once, by reading the real source PDF, then frozen. Every fixture is
-static and versioned so runs stay reproducible without any of those systems
-being available.
+The answer key is not our opinion. It comes from the generator that made the
+image, in `vision/synth/defects.py`, which is the only source here
+independent of the people writing the rules.
 
-## Structure
+## The pair
+
+The two cases exist together on purpose:
+
+| Case | Image | Carryover (matc82 sec 3.5) |
+|---|---|---|
+| `nsw_inconsistent_size` | sizes scatter at random | **must not** rank first — the signature is absent |
+| `nsw_missing_carryover` | every miss is followed by an oversized dot | **must** rank first — the signature is present on all three misses |
+
+The measurement that separates them is `small_then_big_count` in each
+`signals.json`: 1 of 4 small dots for the first case, which chance gives 62%
+of the time, against 3 of 3 for the second, which chance gives about 1% of
+the time.
+
+An engine that always likes the carryover answer passes one case and fails
+the other. So does an engine that never considers it. That is the point.
+
+## Layout
 
 ```
 golden/
-  README.md                       -- this file
-  check_golden.py                  -- stdlib-only sanity check over every case
-  nsw_inconsistent_size/           -- the one case that exists so far
-    README.md                      -- case-specific notes, citations, caveats
-    user_input.json                 -- Answer[] (web/core/types.ts contract)
-    inconsistent.png                 -- raw CV input image (real, not synthetic-only-in-JSON)
-    inconsistent_profile.json        -- nominal dot-position recipe fed to detect()
-    inconsistent_annotated.png       -- visualize.py's rendering of cv_output.json over the image
-    cv_output.json                   -- real detect() output (vision/detect/report.py contract)
-    signals.json                     -- Signal[] derived from cv_output.json (web/core/types.ts contract)
-    rag_output.json                  -- golden retrieval result from matc82.pdf
-    expected_reasoning.md            -- hand-authored expectation to check a real engine against
+  README.md                  -- this file
+  causes.json                 -- the candidate causes both cases grade against,
+                                 with sources and the matching ids in web/packs/nsw
+  check_golden.py             -- structural checks over every case
+  nsw_inconsistent_size/      -- negative control
+  nsw_missing_carryover/      -- positive control
+    README.md                 -- what the case is, and where each file came from
+    expected.json             -- the answer key, for a script
+    expected_reasoning.md     -- the answer key in prose, plus how the app scores today
+    user_input.json           -- the operator's complaint
+    sidecar.json              -- the recipe and the generator's ground truth
+    cv_output.json            -- real detect() output
+    signals.json              -- numbers derived from cv_output.json
+    rag_output.json           -- document passages, no conclusion
+    img/                      -- the image, and the annotated version
 ```
 
-More cases (other defect classes, other tracks) get their own sibling folder
-under `golden/` following the same five-file shape. Run all current checks
-with:
+## Running the checks
 
 ```bash
 python3 golden/check_golden.py
 ```
+
+This verifies that each `signals.json` really follows from its
+`cv_output.json`, that each answer key matches the generator's own ground
+truth and the operator's complaint, and that each document lookup covers
+every candidate cause while stating no conclusion. It does not grade an
+engine; there isn't one to grade yet.
+
+## Where these cases stand today
+
+Both were run against `web/engines/deterministic.ts`. The inconsistent case
+gets an acceptable top cause but makes a false "spreading" claim from a
+vision signal. The carryover case fails outright, because the pack has no
+carryover cause to rank. Each case's `expected_reasoning.md` has the
+measured numbers.

@@ -1,55 +1,59 @@
 # Golden case: nsw_inconsistent_size
 
-One fixed defect scenario for the NSW track: the user always reports
-**"Inconsistent size shot to shot"**, the CV pipeline always sees the same
-real 15-dot array (`inconsistent.png`, actually run through `detect()`, not
-hand-typed) with a scattered-size signature, and RAG retrieval against
-`docs/personal/matc82.pdf` is treated as 100% correct and pinned to a
-hand-verified extract. This isolates the one thing that doesn't exist yet --
-the logic that combines the three -- from the three retrieval/inference
-systems that could each independently be wrong or not-yet-built.
+Dot sizes scatter at random across one array. The operator always reports
+**"Inconsistent size shot to shot"**, the vision result is a real detector
+run over a real sample image, and the document lookup is fixed and
+hand-verified.
+
+This is the **negative control** of the pair: the carryover mechanism from
+matc82 sec 3.5 must *not* come first here, because its signature is absent
+from the measurements. `../nsw_missing_carryover/` is the positive control,
+where the same cause must come first.
 
 ## Files
 
-| File | Contract | Notes |
+| File | What it is | Where it came from |
 |---|---|---|
-| `user_input.json` | `Answer[]` from `web/core/types.ts` | Matches the `deviation` question's real option string from `web/packs/nsw/index.ts` (`NSW_QUESTIONS`), so it's usable verbatim wherever that pack is loaded. |
-| `inconsistent.png` | raw CV input | Copied from `vision/samples/inconsistent.png` -- the actual synthetic-but-rendered image fed to `detect()`, a 5x3 grid. |
-| `inconsistent_profile.json` | `detect()`'s `--profile` argument | Copied from `vision/samples/inconsistent.json` -- the nominal dot-position recipe (and this sample's generator ground truth) used to align blobs against. Kept so the run below is reproducible from this folder alone, without needing `vision/samples/`. |
-| `inconsistent_annotated.png` | visualization | Copied from `vision/detect/annotated/inconsistent_annotated.png` -- `visualize.py`'s rendering of `cv_output.json` over `inconsistent.png`, right/wrong colour-coded per `vision/detect/expected.py`. |
-| `cv_output.json` | `detect()` return value from `vision/detect/report.py` | **Not hand-typed** -- the literal output of running `.venv/bin/python -m detect.run samples/inconsistent.png --profile samples/inconsistent.json` from `vision/`. `classify_array`'s array-level scatter rule tags 4 dots `undersized`, 3 `oversized`, and 8 otherwise-clean dots `inconsistent`. |
-| `signals.json` | `Signal[]` from `web/core/types.ts` | Derived by hand from `cv_output.json` (see the `note` field on each entry for the exact arithmetic). **No code in this repo currently computes this aggregation** -- `vision/detect/` returns per-dot tags, not the `size_cv`/`mean_circularity` scalars `web/packs/nsw/index.ts`'s rules key off. Something will need to compute `signals.json` from `cv_output.json` when NSW automation is actually wired up; this file is what that function's output should look like for this case. |
-| `rag_output.json` | ad hoc golden-retrieval shape | Six passages, all page/section-verified by reading the PDF directly, plus one curated cross-reference to `docs/personal/visual signature.md` row 11. |
-| `expected_reasoning.md` | prose | What a correct combined analysis should conclude, and a specific gap it surfaces in the current hardcoded `NSW_CAUSES` pack (see below). |
+| `expected.json` | The answer key, in a form a script can grade against | Written from what the generator does |
+| `expected_reasoning.md` | The same thing in prose, plus how the current system scores | — |
+| `user_input.json` | The operator's fixed complaint, as an `Answer[]` (`web/core/types.ts`) | Uses the real option text from `NSW_QUESTIONS` |
+| `img/inconsistent.png` | The image the detector ran on | Copy of `vision/samples/inconsistent.png` |
+| `sidecar.json` | The recipe (nominal dot positions) **and** the generator's per-dot ground truth | Copy of `vision/samples/inconsistent.json`, verified identical |
+| `img/inconsistent_annotated.png` | `visualize.py`'s drawing of the result over the image | Copy of `vision/detect/annotated/inconsistent_annotated.png` |
+| `cv_output.json` | Real `detect()` output, verified identical to a fresh run | See below |
+| `signals.json` | Numbers derived from `cv_output.json` | `check_golden.py` recomputes each one |
+| `rag_output.json` | The document lookup: passages only, no conclusion | Quoted from the two project PDFs |
 
-## Reproducing cv_output.json
+`rag_output.json` deliberately holds no answer. An earlier version carried a
+`synthesized_answer` and a `root_cause_hypothesis`, which meant the fixture
+was handing over the conclusion it was supposed to be testing.
+
+## Reproduce
 
 ```bash
+# cv_output.json
 cd vision && .venv/bin/python -m detect.run samples/inconsistent.png --profile samples/inconsistent.json
-```
 
-Deterministic (classical CV, no model) -- re-running this should reproduce
-`cv_output.json` exactly.
-
-## The one finding this case already surfaced
-
-The existing `air_entrapment` cause in `web/packs/nsw/index.ts` already
-matches this exact input (deviation = "Inconsistent...", `size_cv = 0.486 >
-0.15`) and would rank first today under engine B. But matc82 never attributes
-alternating small/big dots to air -- its own explanation is the
-wetting/carryover mechanism in secs 3.5/4.5/5.5. Full writeup in
-`expected_reasoning.md`. Worth resolving (new cause vs. rewritten
-justification text) before or while building the RAG-grounded reasoning
-this folder is a rehearsal for.
-
-## Running the check
-
-From the repo root:
-
-```bash
+# signals.json, and every other structural check
 python3 golden/check_golden.py
 ```
 
-Validates shapes and the internal arithmetic (`size_cv`/`mean_circularity`
-in `signals.json` actually follow from `cv_output.json`), not any reasoning
-output -- there's no reasoning engine to call yet.
+The detector is classical computer vision with no model, so a rerun
+reproduces `cv_output.json` exactly.
+
+## Using it
+
+Feed an engine `user_input.json`, plus `cv_output.json` or `signals.json`,
+plus the passages in `rag_output.json`. Then check its output against
+`expected.json`: the defect it names, whether a forbidden cause leads,
+whether it asks the frequency question, and whether it makes any claim in
+`forbidden_claims`.
+
+## Known issues recorded here
+
+- `vision/main.py` reports a "spreading" signal on this image although
+  nothing is smeared, which feeds a false claim into the needle-height
+  cause. Details in `expected_reasoning.md`.
+- Row 2 of the array does read smaller than rows 1 and 3, but within
+  chance. The numbers, and a correction to an earlier claim of ours, are in
+  `expected_reasoning.md`.
