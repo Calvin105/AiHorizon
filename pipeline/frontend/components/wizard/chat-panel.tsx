@@ -100,8 +100,8 @@ export function ChatPanel({
   }, [messages, pending]);
 
   return (
-    <div className="flex h-full flex-col">
-      <ScrollArea className="flex-1 px-4">
+    <div className="flex h-full min-h-0 flex-col">
+      <ScrollArea className="min-h-0 flex-1 px-4">
         <div className="flex flex-col gap-4 py-4">
           {messages.map((m) => (
             <div key={m.id} className={`flex gap-2 ${m.role === "user" ? "flex-row-reverse" : ""}`}>

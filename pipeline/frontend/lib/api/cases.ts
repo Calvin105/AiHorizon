@@ -1,5 +1,13 @@
 import { apiRequest } from "@/lib/api/client";
-import type { Case, CaseOpenInput, CheckResultInput, Ranking } from "@/lib/api/types";
+import type { Case, CaseOpenInput, CheckResultInput, Page, Ranking } from "@/lib/api/types";
+
+export function listCases(params?: { limit?: number; offset?: number }) {
+  const query = new URLSearchParams();
+  if (params?.limit != null) query.set("limit", String(params.limit));
+  if (params?.offset != null) query.set("offset", String(params.offset));
+  const qs = query.toString();
+  return apiRequest<Page<Case>>(`/cases${qs ? `?${qs}` : ""}`);
+}
 
 export function openCase(data: CaseOpenInput) {
   return apiRequest<Case>("/cases", { method: "POST", body: data });

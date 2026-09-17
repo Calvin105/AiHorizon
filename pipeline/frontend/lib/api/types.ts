@@ -25,19 +25,51 @@ export interface DispenseStation {
   camera_available: boolean;
 }
 
+export interface GeometryPoint {
+  index?: number;
+  cx?: number;
+  cy?: number;
+  x?: number;
+  y?: number;
+  r?: number | null;
+}
+
+export interface Geometry {
+  pattern: string;
+  width?: number | null;
+  height?: number | null;
+  profile?: GeometryPoint[];
+  points?: GeometryPoint[];
+}
+
 export interface FluidMaterial {
   material_id: number;
   name: string;
   part_number: string | null;
   family: MaterialFamily;
+  two_part?: boolean;
+  thixotropic?: boolean;
+  requires_thaw?: boolean;
+  pot_life_hours?: number | null;
+  out_time_hours?: number | null;
+  storage_temp_c?: number | null;
+  filler_particle_um?: number | null;
 }
 
 export interface DispenseProfile {
   profile_id: number;
   name: string;
   material_id: number;
+  needle_gauge?: string | null;
+  needle_id_um?: number | null;
+  set_pressure_kpa?: number | null;
+  set_time_ms?: number | null;
+  standoff_um?: number | null;
+  speed_mm_s?: number | null;
+  set_temp_c?: number | null;
   spec_metric: string | null;
   spec_limit: string | null;
+  geometry?: Geometry | null;
   material: FluidMaterial;
 }
 

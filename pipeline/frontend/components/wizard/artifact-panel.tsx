@@ -5,6 +5,7 @@ import * as React from "react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { ProfileGeometryPattern } from "@/components/profile-geometry-pattern";
 import type {
   Case, CauseComparison, CheckResult, CloseCaseResponse, CoarseMatch, FingerprintAxes,
   Ranking, Report, VisionResult,
@@ -41,14 +42,27 @@ export function ArtifactPanel({ artifacts }: { artifacts: Artifacts }) {
   const hasAxes = Object.values(artifacts.axes).some((v) => (Array.isArray(v) ? v.length : v));
 
   return (
-    <ScrollArea className="h-full">
+    <ScrollArea className="h-full min-h-0">
       <div className="space-y-4 p-4">
-        <ArtifactCard title="Case">
+        <ArtifactCard title="Case & Profile">
           <p className="font-medium">#{caseData.case_id} &middot; {caseData.complaint ?? "unclassified"}</p>
           <p className="text-muted-foreground">
             {caseData.station.name} ({caseData.station.line}) &middot; {caseData.profile.name} &middot;{" "}
             {caseData.profile.material.name}
           </p>
+          {caseData.profile.geometry && (
+            <div className="mt-3 border-t pt-2.5">
+              <div className="mb-1 text-xs font-medium text-muted-foreground">
+                Dispense Pattern Geometry
+              </div>
+              <ProfileGeometryPattern
+                geometry={caseData.profile.geometry}
+                specMetric={caseData.profile.spec_metric}
+                specLimit={caseData.profile.spec_limit}
+                canvasClassName="h-64"
+              />
+            </div>
+          )}
         </ArtifactCard>
 
         {artifacts.photoUrl && (

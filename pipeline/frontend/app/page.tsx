@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { FilePlus2 } from "lucide-react";
+import { FilePlus2, History } from "lucide-react";
 
 import { buttonVariants } from "@/components/ui/button";
 
@@ -11,13 +11,19 @@ export default function HomePage() {
         Dispense-defect troubleshooting pipeline — intake, vision, ranking, the
         troubleshooting loop, and the report, end to end.
       </p>
-      <Link
-        href="/troubleshoot"
-        className={buttonVariants({ size: "lg", className: "mt-4 gap-2" })}
-      >
-        <FilePlus2 />
-        Troubleshoot a case
-      </Link>
+      <div className="mt-4 flex flex-wrap items-center justify-center gap-3">
+        <Link href="/troubleshoot" className={buttonVariants({ size: "lg", className: "gap-2" })}>
+          <FilePlus2 />
+          Troubleshoot a case
+        </Link>
+        <Link
+          href="/cases"
+          className={buttonVariants({ size: "lg", variant: "outline", className: "gap-2" })}
+        >
+          <History />
+          View past cases
+        </Link>
+      </div>
     </div>
   );
 }

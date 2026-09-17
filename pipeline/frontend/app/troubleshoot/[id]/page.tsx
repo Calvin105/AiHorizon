@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { ArtifactPanel, type Artifacts } from "@/components/wizard/artifact-panel";
 import { ChatPanel } from "@/components/wizard/chat-panel";
 import { nextId, type ChatMessage, type ChipOption, type PendingPrompt } from "@/components/wizard/chat-types";
+import { StageBar, type Phase } from "@/components/wizard/stage-bar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { apiRequest, ApiError } from "@/lib/api/client";
 import { createCheckResult, getCase } from "@/lib/api/cases";
@@ -27,6 +28,31 @@ function toChips(q: Question): ChipOption[] {
   return q.options.map((o) => ({ value: o.value, label: o.value.replaceAll("_", " "), helpText: o.help_text }));
 }
 
+const STAGE_HINTS: Record<StepId, Phase> = {
+  intro: { n: 1, label: "Interview", hint: "Getting the case set up…" },
+  ask_signature: { n: 1, label: "Interview", hint: "Answer the questions on the left — five quick ones about the defect." },
+  ask_trajectory: { n: 1, label: "Interview", hint: "Answer the questions on the left — five quick ones about the defect." },
+  ask_footprint: { n: 1, label: "Interview", hint: "Answer the questions on the left — five quick ones about the defect." },
+  ask_inputs: { n: 1, label: "Interview", hint: "Answer the questions on the left — five quick ones about the defect." },
+  ask_response: { n: 1, label: "Interview", hint: "Answer the questions on the left — five quick ones about the defect." },
+  save_fingerprint: { n: 1, label: "Interview", hint: "Saving your answers…" },
+  ask_photo: { n: 2, label: "Evidence", hint: "Attach a photo of the deposits if you have one — it sharpens the ranking. Optional, you can skip it." },
+  retrieve_coarse: { n: 2, label: "Evidence", hint: "Checking for similar past cases…" },
+  rank: { n: 3, label: "Ranking", hint: "Comparing candidate causes against your answers and the photo." },
+  loop_prompt: { n: 4, label: "Troubleshooting", hint: "Log a check to test the top candidate cause, or move straight to the report if you're confident." },
+  loop_check_name: { n: 4, label: "Troubleshooting", hint: "Say what you tried, in a few words." },
+  loop_check_cause: { n: 4, label: "Troubleshooting", hint: "Pick which candidate cause that check was meant to test." },
+  loop_check_outcome: { n: 4, label: "Troubleshooting", hint: "Say what happened — this re-ranks the causes." },
+  loop_check_detail: { n: 4, label: "Troubleshooting", hint: "Add any detail worth keeping, or leave it blank." },
+  loop_submit: { n: 4, label: "Troubleshooting", hint: "Logging the check and re-ranking…" },
+  report: { n: 5, label: "Report", hint: "Compiling the findings…" },
+  verify_prompt: { n: 5, label: "Report", hint: "Optionally attach a fresh photo to confirm the fix held, or skip straight to closing." },
+  verify_photo: { n: 5, label: "Report", hint: "Re-measuring from the new photo…" },
+  close_prompt: { n: 6, label: "Close", hint: "Confirm to close the case and record the outcome." },
+  close: { n: 6, label: "Close", hint: "Closing the case…" },
+  done: { n: 6, label: "Close", hint: "Case closed — see the summary on the right." },
+};
+
 export default function CaseWizardPage() {
   const params = useParams<{ id: string }>();
   const caseId = Number(params.id);
@@ -36,12 +62,18 @@ export default function CaseWizardPage() {
   const [pending, setPending] = React.useState<PendingPrompt>({ kind: "none" });
   const [busy, setBusy] = React.useState(false);
   const [artifacts, setArtifacts] = React.useState<Artifacts | null>(null);
+  const [phase, setPhase] = React.useState<Phase>(STAGE_HINTS.intro);
 
   const questionsRef = React.useRef<Question[]>([]);
   const axesRef = React.useRef<Partial<FingerprintAxes>>({});
   const draftCheckRef = React.useRef<{ check_name?: string; cause_id?: string; outcome?: string }>({});
   const artifactsRef = React.useRef<Artifacts | null>(null);
   const currentStepRef = React.useRef<StepId>("intro");
+
+  function setStage(step: StepId) {
+    currentStepRef.current = step;
+    setPhase(STAGE_HINTS[step]);
+  }
 
   function say(text: string) {
     setMessages((prev) => [...prev, { id: nextId(), role: "bot", text }]);
@@ -59,7 +91,7 @@ export default function CaseWizardPage() {
   }
 
   async function runStep(step: StepId, caseData: Case, arg?: unknown) {
-    currentStepRef.current = step;
+    setStage(step);
     switch (step) {
       case "intro": {
         say(
@@ -121,7 +153,7 @@ export default function CaseWizardPage() {
         } finally {
           setBusy(false);
         }
-        currentStepRef.current = "ask_photo";
+        setStage("ask_photo");
         setPending({ kind: "photo-or-skip", skipLabel: "Skip — no photo" });
         return;
       }
@@ -260,7 +292,7 @@ export default function CaseWizardPage() {
         } finally {
           setBusy(false);
         }
-        currentStepRef.current = "verify_prompt";
+        setStage("verify_prompt");
         say("Want to verify the fix with a fresh photo?");
         setPending({ kind: "photo-or-skip", skipLabel: "Skip verification" });
         return;
@@ -305,7 +337,7 @@ export default function CaseWizardPage() {
         } finally {
           setBusy(false);
         }
-        currentStepRef.current = "done";
+        setStage("done");
         setPending({ kind: "none" });
         return;
       }
@@ -447,13 +479,16 @@ export default function CaseWizardPage() {
   }
 
   return (
-    <div className="grid flex-1 grid-cols-1 divide-x md:grid-cols-2" style={{ height: "100vh" }}>
-      <ChatPanel
-        messages={messages} pending={pending} busy={busy}
-        onChipSingle={handleChipSingle} onChipsMulti={handleChipsMulti}
-        onText={handleText} onPhoto={handlePhoto} onSkip={handleSkip}
-      />
-      <ArtifactPanel artifacts={artifacts} />
+    <div className="flex flex-1 flex-col" style={{ height: "100vh" }}>
+      <StageBar phase={phase} />
+      <div className="grid min-h-0 flex-1 grid-cols-1 divide-x md:grid-cols-2">
+        <ChatPanel
+          messages={messages} pending={pending} busy={busy}
+          onChipSingle={handleChipSingle} onChipsMulti={handleChipsMulti}
+          onText={handleText} onPhoto={handlePhoto} onSkip={handleSkip}
+        />
+        <ArtifactPanel artifacts={artifacts} />
+      </div>
     </div>
   );
 }
