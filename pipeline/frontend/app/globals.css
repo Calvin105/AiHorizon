@@ -135,22 +135,27 @@
   }
 }
 
-@utility thin-scrollbar {
-  scrollbar-width: thin;
-  scrollbar-color: rgba(155, 155, 155, 0.35) transparent;
+/* Independent Thin Scrollbars */
+.thin-scrollbar {
+  scrollbar-width: thin !important;
+  scrollbar-color: rgba(140, 140, 140, 0.45) transparent !important;
+}
 
-  &::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
-  }
-  &::-webkit-scrollbar-track {
-    background: transparent;
-  }
-  &::-webkit-scrollbar-thumb {
-    background-color: rgba(155, 155, 155, 0.35);
-    border-radius: 9999px;
-  }
-  &::-webkit-scrollbar-thumb:hover {
-    background-color: rgba(155, 155, 155, 0.6);
-  }
+.thin-scrollbar::-webkit-scrollbar {
+  width: 6px !important;
+  height: 6px !important;
+  display: block !important;
+}
+
+.thin-scrollbar::-webkit-scrollbar-track {
+  background: transparent !important;
+}
+
+.thin-scrollbar::-webkit-scrollbar-thumb {
+  background-color: rgba(140, 140, 140, 0.45) !important;
+  border-radius: 9999px !important;
+}
+
+.thin-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(140, 140, 140, 0.75) !important;
 }

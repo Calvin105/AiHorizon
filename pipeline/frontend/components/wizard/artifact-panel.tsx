@@ -4,7 +4,6 @@ import * as React from "react";
 
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { ProfileGeometryPattern } from "@/components/profile-geometry-pattern";
 import { TierInfo } from "@/components/tier-info";
 import type {
@@ -56,8 +55,7 @@ export function ArtifactPanel({ artifacts }: { artifacts: Artifacts }) {
   const hasAxes = Object.values(artifacts.axes).some((v) => (Array.isArray(v) ? v.length : v));
 
   return (
-    <ScrollArea className="h-full min-h-0 thin-scrollbar">
-      <div className="space-y-4 p-4">
+    <div className="h-full min-h-0 flex-1 overflow-y-scroll thin-scrollbar p-4 space-y-4">
         <ArtifactCard title="Case & Profile">
           <p className="font-medium">#{caseData.case_id} &middot; {caseData.complaint ?? "unclassified"}</p>
           <p className="text-muted-foreground">
@@ -240,7 +238,6 @@ export function ArtifactPanel({ artifacts }: { artifacts: Artifacts }) {
 
         {/* Extra bottom space allowing scrolling with content on top */}
         <div className="h-[50vh] shrink-0 pointer-events-none" aria-hidden="true" />
-      </div>
-    </ScrollArea>
+    </div>
   );
 }

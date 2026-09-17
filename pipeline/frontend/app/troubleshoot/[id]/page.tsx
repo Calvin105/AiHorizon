@@ -606,15 +606,19 @@ export default function CaseWizardPage() {
   }
 
   return (
-    <div className="flex flex-1 flex-col" style={{ height: "100vh" }}>
+    <div className="fixed inset-0 flex flex-col overflow-hidden bg-background">
       <StageBar phase={phase} />
-      <div className="grid min-h-0 flex-1 grid-cols-1 divide-x md:grid-cols-2">
-        <ChatPanel
-          messages={messages} pending={pending} busy={busy}
-          onChipSingle={handleChipSingle} onChipsMulti={handleChipsMulti}
-          onText={handleText} onPhoto={handlePhoto} onSkip={handleSkip}
-        />
-        <ArtifactPanel artifacts={artifacts} />
+      <div className="grid min-h-0 flex-1 grid-cols-1 divide-x overflow-hidden md:grid-cols-2">
+        <div className="flex h-full min-h-0 flex-col overflow-hidden">
+          <ChatPanel
+            messages={messages} pending={pending} busy={busy}
+            onChipSingle={handleChipSingle} onChipsMulti={handleChipsMulti}
+            onText={handleText} onPhoto={handlePhoto} onSkip={handleSkip}
+          />
+        </div>
+        <div className="flex h-full min-h-0 flex-col overflow-hidden">
+          <ArtifactPanel artifacts={artifacts} />
+        </div>
       </div>
     </div>
   );

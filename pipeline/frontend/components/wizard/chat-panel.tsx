@@ -6,7 +6,6 @@ import { Bot, ImagePlus, Send, User } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import type { ChatMessage, ChipOption, PendingPrompt } from "@/components/wizard/chat-types";
 
 /** Local pick-state, reset for free by remounting (parent keys this by
@@ -101,7 +100,7 @@ export function ChatPanel({
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <ScrollArea className="min-h-0 flex-1 px-4 thin-scrollbar">
+      <div className="min-h-0 flex-1 overflow-y-scroll thin-scrollbar px-4">
         <div className="flex flex-col gap-4 py-4">
           {messages.map((m) => (
             <div key={m.id} className={`flex gap-2 ${m.role === "user" ? "flex-row-reverse" : ""}`}>
@@ -127,7 +126,7 @@ export function ChatPanel({
           {/* Extra bottom space allowing scrolling with conversation items on top */}
           <div className="h-[45vh] shrink-0 pointer-events-none" aria-hidden="true" />
         </div>
-      </ScrollArea>
+      </div>
 
       <div className="border-t p-3">
         {pending.kind === "chips-single" && (
