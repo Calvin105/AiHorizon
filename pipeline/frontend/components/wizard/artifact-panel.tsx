@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ProfileGeometryPattern } from "@/components/profile-geometry-pattern";
+import { TierInfo } from "@/components/tier-info";
 import type {
   Case, CauseComparison, CheckResult, CloseCaseResponse, CoarseMatch, FingerprintAxes,
   Ranking, Report, VisionResult,
@@ -28,13 +29,26 @@ const TIER_VARIANT: Record<string, "default" | "secondary" | "destructive"> = {
   T1: "default", T2: "secondary", T3: "secondary", T4: "destructive",
 };
 
-function ArtifactCard({ title, children }: { title: string; children: React.ReactNode }) {
+function ArtifactCard({
+  title, extra, children,
+}: {
+  title: string;
+  extra?: React.ReactNode;
+  children: React.ReactNode;
+}) {
   return (
     <Card>
-      <CardHeader className="pb-2"><CardTitle className="text-sm">{title}</CardTitle></CardHeader>
+      <CardHeader className="flex flex-row items-center justify-between gap-2 pb-2">
+        <CardTitle className="text-sm">{title}</CardTitle>
+        {extra}
+      </CardHeader>
       <CardContent className="text-sm">{children}</CardContent>
     </Card>
   );
+}
+
+function causeLabel(ranking: Ranking, causeId: string): string {
+  return ranking.pass1.find((c) => c.cause_id === causeId)?.label ?? causeId;
 }
 
 export function ArtifactPanel({ artifacts }: { artifacts: Artifacts }) {
@@ -131,11 +145,48 @@ export function ArtifactPanel({ artifacts }: { artifacts: Artifacts }) {
         )}
 
         {artifacts.ranking && (
-          <ArtifactCard title="Ranking (step 5)">
-            <div className="mb-2 flex flex-wrap gap-2">
+          <ArtifactCard title="Ranking (step 5)" extra={<TierInfo />}>
+            <div className="mb-3 flex flex-wrap gap-2">
               <Badge variant={TIER_VARIANT[artifacts.ranking.tier]}>{artifacts.ranking.tier}</Badge>
               <Badge variant="outline">{artifacts.ranking.agree ? "passes agree" : "passes disagree"}</Badge>
             </div>
+
+            {!artifacts.ranking.agree && (
+              <div className="mb-3 grid grid-cols-2 gap-2 rounded-md border bg-muted/40 p-2 text-xs">
+                <div>
+                  <div className="text-muted-foreground">Pass 1 &middot; rule engine</div>
+                  <div className="font-medium">{artifacts.ranking.pass1[0]?.label ?? "—"}</div>
+                </div>
+                <div>
+                  <div className="text-muted-foreground">Pass 2 &middot; LLM critic</div>
+                  <div className="font-medium">
+                    {artifacts.ranking.pass2 && artifacts.ranking.pass2.length > 0
+                      ? causeLabel(
+                          artifacts.ranking,
+                          artifacts.ranking.pass2.reduce((a, b) => (b.likelihood_pct > a.likelihood_pct ? b : a)).cause_id,
+                        )
+                      : "not run — no LLM key configured"}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div className="mb-3 space-y-2 text-xs">
+              <div className="flex items-start gap-2">
+                <Badge variant={artifacts.ranking.gate_a.above_chance ? "outline" : "secondary"} className="shrink-0">
+                  {artifacts.ranking.gate_a.above_chance ? "above chance" : "at chance"}
+                </Badge>
+                <span className="text-muted-foreground">{artifacts.ranking.gate_a.note}</span>
+              </div>
+              <div className="flex items-start gap-2">
+                <Badge variant={artifacts.ranking.gate_b.applied ? "outline" : "secondary"} className="shrink-0">
+                  {artifacts.ranking.gate_b.matched_count} precedent{artifacts.ranking.gate_b.matched_count === 1 ? "" : "s"}
+                </Badge>
+                <span className="text-muted-foreground">{artifacts.ranking.gate_b.note}</span>
+              </div>
+            </div>
+
+            <div className="mb-1 text-xs font-medium text-muted-foreground">All candidates (pass 1)</div>
             <div className="space-y-2">
               {artifacts.ranking.pass1.slice(0, 4).map((c) => (
                 <div key={c.cause_id}>

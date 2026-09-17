@@ -16,7 +16,52 @@ import { getIntakeSpec } from "@/lib/api/intake";
 import { rankCase } from "@/lib/api/ranking";
 import { closeCase, getReport, verifyCase } from "@/lib/api/report";
 import { analysePhoto } from "@/lib/api/vision";
-import type { Case, CoarseMatch, Fingerprint, FingerprintAxes, Question } from "@/lib/api/types";
+import type {
+  Case, CoarseMatch, Fingerprint, FingerprintAxes, Question, Ranking, VisionResult,
+} from "@/lib/api/types";
+
+function describeRanking(ranking: Ranking): string {
+  const top = ranking.pass1[0];
+  const pct = Math.round(top.likelihood * 100);
+  switch (ranking.tier) {
+    case "T1":
+      return (
+        `Tier T1 — a clear lead: ${top.label} at ${pct}%. The rule engine and a second, ` +
+        "independent read agree, the evidence beats chance, and past confirmed cases back it up."
+      );
+    case "T2":
+      return (
+        `Tier T2 — a likely lead: ${top.label} at ${pct}%, but it isn't backed by a strong ` +
+        "measurement or precedent yet — see the panel on the right for why."
+      );
+    case "T3":
+      return (
+        `Tier T3 — the rule engine and a second, independent read disagree, but the ` +
+        `measurement still points to ${top.label} at ${pct}%. See the panel on the right for ` +
+        "the breakdown of what each one said."
+      );
+    default:
+      return (
+        "No lead cause yet — the rule engine and a second, independent read of your complaint " +
+        "picked different top causes, and the measurement that would break the tie isn't strong " +
+        "enough to trust on its own. See the panel on the right for exactly why. A troubleshooting " +
+        "check will settle it faster than more questions would."
+      );
+  }
+}
+
+/** Which axis question is still unanswered, in interview order — `null`
+ * once all five are in. Used both to resume mid-interview after a reload
+ * and (implicitly) to know when the interview is complete. */
+function nextUnansweredAxis(axes: FingerprintAxes | undefined):
+  | "ask_signature" | "ask_trajectory" | "ask_footprint" | "ask_inputs" | "ask_response" | null {
+  if (!axes || axes.signature.length === 0) return "ask_signature";
+  if (!axes.trajectory) return "ask_trajectory";
+  if (!axes.footprint) return "ask_footprint";
+  if (axes.inputs.length === 0) return "ask_inputs";
+  if (!axes.response) return "ask_response";
+  return null;
+}
 
 type StepId =
   | "intro" | "ask_signature" | "ask_trajectory" | "ask_footprint" | "ask_inputs" | "ask_response"
@@ -88,6 +133,29 @@ export default function CaseWizardPage() {
       artifactsRef.current = next;
       return next;
     });
+  }
+
+  /** Saves whatever's in axesRef so far — fired after every answer, not
+   * just at the end of the interview, so a reload mid-interview resumes
+   * instead of losing the answers already given. Best-effort: a failure
+   * here just means the next answer (or the final save) retries it. */
+  async function persistAxes(caseId: number) {
+    try {
+      const fingerprint: Fingerprint = {
+        axes: {
+          signature: axesRef.current.signature ?? [],
+          trajectory: axesRef.current.trajectory ?? null,
+          footprint: axesRef.current.footprint ?? null,
+          inputs: axesRef.current.inputs ?? [],
+          response: axesRef.current.response ?? null,
+        },
+        signals: {},
+      };
+      await updateCase(caseId, { fingerprint });
+      patchArtifacts({ axes: { ...axesRef.current } });
+    } catch {
+      // best-effort — see comment above
+    }
   }
 
   async function runStep(step: StepId, caseData: Case, arg?: unknown) {
@@ -205,12 +273,7 @@ export default function CaseWizardPage() {
         try {
           const ranking = await rankCase(caseData.case_id);
           patchArtifacts({ ranking });
-          const top = ranking.pass1[0];
-          say(
-            ranking.tier === "T4"
-              ? "No lead cause — pass 1 and pass 2 disagree and no signal breaks the tie. Let's troubleshoot to find out."
-              : `Tier ${ranking.tier}. Top candidate: ${top.label} at ${Math.round(top.likelihood * 100)}%.`,
-          );
+          say(describeRanking(ranking));
         } catch (err) {
           toast.error(err instanceof ApiError ? err.message : "Could not rank causes.");
         } finally {
@@ -353,14 +416,76 @@ export default function CaseWizardPage() {
       .then(([caseData, questions]) => {
         if (cancelled) return;
         questionsRef.current = questions;
+
+        const axes = caseData.fingerprint?.axes;
+        axesRef.current = axes ? { ...axes } : {};
+
+        // Hydrate from whatever the case already has on file — a reload or
+        // a "Continue troubleshooting" link both land here with a case
+        // that may already be partway through the pipeline, and the panel
+        // (and the resume point below) need to reflect that, not blank.
         const initial: Artifacts = {
-          caseData, photoUrl: null, axes: {}, vision: null, coarse: null,
-          ranking: null, comparison: null, checks: caseData.check_results, report: null, close: null,
+          caseData, photoUrl: null,
+          axes: axes ?? {},
+          vision: (caseData.vision_result as VisionResult | null) ?? null,
+          coarse: null,
+          ranking: caseData.ranking,
+          comparison: null,
+          checks: caseData.check_results,
+          report: null,
+          close: caseData.tier ? { tier: caseData.tier, gaps: [] } : null,
         };
         artifactsRef.current = initial;
         setArtifacts(initial);
         setLoading(false);
-        void runStep("intro", caseData);
+
+        const hasProgress =
+          Boolean(caseData.closed_at) || Boolean(caseData.ranking) || Boolean(caseData.vision_result) ||
+          Boolean(axes && (axes.signature.length > 0 || axes.trajectory || axes.footprint
+            || axes.inputs.length > 0 || axes.response));
+
+        if (!hasProgress) {
+          void runStep("intro", caseData);
+          return;
+        }
+
+        // Resuming a case that already has something on file — recap
+        // instead of replaying the whole conversation, then pick up at
+        // the first step that isn't already done.
+        say(
+          `Welcome back to case #${caseData.case_id} on ${caseData.station.name}, running ` +
+            `${caseData.profile.name} (${caseData.profile.material.name}).`,
+        );
+
+        if (caseData.closed_at) {
+          setStage("done");
+          say(caseData.tier ? `This case is already closed as ${caseData.tier}.` : "This case is already closed.");
+          setPending({ kind: "none" });
+          return;
+        }
+        if (caseData.verification) {
+          say("Verification is already on file. Ready to close whenever you are.");
+          void runStep("close_prompt", caseData);
+          return;
+        }
+        if (caseData.ranking) {
+          say(`Ranking is already done — tier ${caseData.ranking.tier}. You can log another check or revisit the report.`);
+          void runStep("loop_prompt", caseData);
+          return;
+        }
+        if (caseData.vision_result) {
+          void runStep("retrieve_coarse", caseData);
+          return;
+        }
+        const nextAxis = nextUnansweredAxis(axes);
+        if (nextAxis === null) {
+          say("Your answers are already on file. Want to attach a photo, or skip straight to ranking?");
+          setStage("ask_photo");
+          setPending({ kind: "photo-or-skip", skipLabel: "Skip — no photo" });
+          return;
+        }
+        say("Picking up where we left off.");
+        void runStep(nextAxis, caseData);
       })
       .catch((err) => toast.error(err instanceof ApiError ? err.message : "Could not load the case."));
     return () => {
@@ -378,8 +503,8 @@ export default function CaseWizardPage() {
     if (!caseData) return;
     const step = currentStepRef.current;
 
-    if (step === "ask_trajectory") { axesRef.current.trajectory = value; echo(labelFor("trajectory", value)); void runStep("ask_footprint", caseData); return; }
-    if (step === "ask_footprint") { axesRef.current.footprint = value; echo(labelFor("footprint", value)); void runStep("ask_inputs", caseData); return; }
+    if (step === "ask_trajectory") { axesRef.current.trajectory = value; echo(labelFor("trajectory", value)); void persistAxes(caseData.case_id); void runStep("ask_footprint", caseData); return; }
+    if (step === "ask_footprint") { axesRef.current.footprint = value; echo(labelFor("footprint", value)); void persistAxes(caseData.case_id); void runStep("ask_inputs", caseData); return; }
     if (step === "ask_response") { axesRef.current.response = value; echo(labelFor("response", value)); void runStep("save_fingerprint", caseData); return; }
     if (step === "loop_prompt") {
       echo(value === "log" ? "Log a check" : "Continue to report");
@@ -414,12 +539,14 @@ export default function CaseWizardPage() {
     if (step === "ask_signature") {
       axesRef.current.signature = values;
       echo(values.map((v) => labelFor("signature", v)).join(", "));
+      void persistAxes(caseData.case_id);
       void runStep("ask_trajectory", caseData);
       return;
     }
     if (step === "ask_inputs") {
       axesRef.current.inputs = values;
       echo(values.map((v) => labelFor("inputs", v)).join(", "));
+      void persistAxes(caseData.case_id);
       void runStep("ask_response", caseData);
       return;
     }

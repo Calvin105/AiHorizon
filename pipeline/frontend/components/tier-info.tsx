@@ -28,6 +28,33 @@ export function TierInfo() {
       </HoverCardTrigger>
       <HoverCardContent className="w-80 space-y-3 text-xs">
         <div>
+          <p className="mb-1 font-medium text-foreground">How the ranking is built</p>
+          <ul className="space-y-1 text-muted-foreground">
+            <li>
+              <span className="text-foreground">Pass 1 (rule engine)</span> — a fixed set of
+              rules over your answers and the photo&apos;s signals. No database lookup here, and
+              no guessing: every weight is visible.
+            </li>
+            <li>
+              <span className="text-foreground">Pass 2 (LLM critic)</span> — a second, independent
+              read of the complaint text alone, with none of pass 1&apos;s signals or answers. It
+              only runs if an LLM key is configured; if not, it&apos;s skipped and counted as
+              agreeing with pass 1.
+            </li>
+            <li>
+              <span className="text-foreground">Gate A (chance check)</span> — asks whether the
+              measurement separating the top candidates is actually above its statistical chance
+              baseline, or could just be noise.
+            </li>
+            <li>
+              <span className="text-foreground">Gate B (precedent)</span> — the one place this
+              does search the database: it looks for confirmed past cases matching this
+              fingerprint. Needs at least 3 to count for anything, and it can only ever demote the
+              top cause, never promote one — agreement isn&apos;t allowed to inflate confidence.
+            </li>
+          </ul>
+        </div>
+        <div>
           <p className="mb-1 font-medium text-foreground">Rank (T1–T4, step 5)</p>
           <p className="text-muted-foreground">
             How much the ranking trusts its top candidate cause, right now — not whether it&apos;s
