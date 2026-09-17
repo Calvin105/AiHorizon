@@ -56,7 +56,7 @@ export function ArtifactPanel({ artifacts }: { artifacts: Artifacts }) {
   const hasAxes = Object.values(artifacts.axes).some((v) => (Array.isArray(v) ? v.length : v));
 
   return (
-    <ScrollArea className="h-full min-h-0">
+    <ScrollArea className="h-full min-h-0 thin-scrollbar">
       <div className="space-y-4 p-4">
         <ArtifactCard title="Case & Profile">
           <p className="font-medium">#{caseData.case_id} &middot; {caseData.complaint ?? "unclassified"}</p>
@@ -237,6 +237,9 @@ export function ArtifactPanel({ artifacts }: { artifacts: Artifacts }) {
             )}
           </ArtifactCard>
         )}
+
+        {/* Extra bottom space allowing scrolling with content on top */}
+        <div className="h-[50vh] shrink-0 pointer-events-none" aria-hidden="true" />
       </div>
     </ScrollArea>
   );

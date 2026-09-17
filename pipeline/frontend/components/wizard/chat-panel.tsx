@@ -101,7 +101,7 @@ export function ChatPanel({
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <ScrollArea className="min-h-0 flex-1 px-4">
+      <ScrollArea className="min-h-0 flex-1 px-4 thin-scrollbar">
         <div className="flex flex-col gap-4 py-4">
           {messages.map((m) => (
             <div key={m.id} className={`flex gap-2 ${m.role === "user" ? "flex-row-reverse" : ""}`}>
@@ -124,6 +124,8 @@ export function ChatPanel({
             </div>
           )}
           <div ref={bottomRef} />
+          {/* Extra bottom space allowing scrolling with conversation items on top */}
+          <div className="h-[45vh] shrink-0 pointer-events-none" aria-hidden="true" />
         </div>
       </ScrollArea>
 
