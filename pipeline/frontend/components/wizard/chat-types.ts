@@ -15,6 +15,13 @@ export type PendingPrompt =
   | { kind: "chips-single"; options: ChipOption[] }
   | { kind: "chips-multi"; options: ChipOption[]; maxPicks?: number; confirmLabel: string }
   | { kind: "text"; placeholder: string; confirmLabel: string; allowEmpty?: boolean }
+  | {
+      kind: "text-with-suggestions";
+      suggestions: ChipOption[];
+      placeholder: string;
+      confirmLabel: string;
+      skipLabel: string;
+    }
   | { kind: "photo-or-skip"; skipLabel: string }
   | { kind: "confirm"; options: ChipOption[] }
   | { kind: "none" };

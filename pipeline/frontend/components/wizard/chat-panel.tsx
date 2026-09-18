@@ -163,6 +163,27 @@ export function ChatPanel({
           />
         )}
 
+        {pending.kind === "text-with-suggestions" && (
+          <div className="space-y-2">
+            {pending.suggestions.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {pending.suggestions.map((s) => (
+                  <Button key={s.value} variant="outline" size="sm" disabled={busy} onClick={() => onText(s.label)}>
+                    {s.label}
+                  </Button>
+                ))}
+                <Button variant="ghost" size="sm" disabled={busy} onClick={onSkip}>
+                  {pending.skipLabel}
+                </Button>
+              </div>
+            )}
+            <TextForm
+              key={turnKey} placeholder={pending.placeholder} confirmLabel={pending.confirmLabel}
+              allowEmpty={false} busy={busy} onSubmit={onText}
+            />
+          </div>
+        )}
+
         {pending.kind === "photo-or-skip" && (
           <div className="flex items-center gap-2">
             <input

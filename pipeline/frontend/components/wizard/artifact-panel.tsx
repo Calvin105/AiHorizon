@@ -113,7 +113,7 @@ export function ArtifactPanel({ artifacts }: { artifacts: Artifacts }) {
             </Badge>
             {artifacts.vision.quality_ok && (
               <dl className="grid grid-cols-2 gap-x-2 gap-y-1 text-xs">
-                {Object.entries(artifacts.vision.signals).map(([k, v]) => (
+                {Object.entries(artifacts.vision.signals ?? {}).map(([k, v]) => (
                   <React.Fragment key={k}>
                     <dt className="text-muted-foreground">{k}</dt>
                     <dd>{typeof v === "number" ? v.toFixed(3) : String(v)}</dd>
@@ -144,6 +144,19 @@ export function ArtifactPanel({ artifacts }: { artifacts: Artifacts }) {
 
         {artifacts.ranking && (
           <ArtifactCard title="Ranking (step 5)" extra={<TierInfo />}>
+            <div className="mb-3 rounded-md border bg-muted/40 p-2 text-xs">
+              <div className="text-muted-foreground">Recognized defect — what&apos;s wrong</div>
+              <div className="font-medium">
+                {artifacts.axes.signature && artifacts.axes.signature.length > 0
+                  ? artifacts.axes.signature.map((s) => s.replaceAll("_", " ")).join(", ")
+                  : "not classified"}
+                {artifacts.vision?.quality_ok && ` · ${artifacts.vision.magnitude} magnitude`}
+              </div>
+              <div className="mt-1 text-muted-foreground">
+                The candidates below are <span className="font-medium text-foreground">causes</span> — why that
+                defect might be happening, not other defects.
+              </div>
+            </div>
             <div className="mb-3 flex flex-wrap gap-2">
               <Badge variant={TIER_VARIANT[artifacts.ranking.tier]}>{artifacts.ranking.tier}</Badge>
               <Badge variant="outline">{artifacts.ranking.agree ? "passes agree" : "passes disagree"}</Badge>
@@ -184,7 +197,7 @@ export function ArtifactPanel({ artifacts }: { artifacts: Artifacts }) {
               </div>
             </div>
 
-            <div className="mb-1 text-xs font-medium text-muted-foreground">All candidates (pass 1)</div>
+            <div className="mb-1 text-xs font-medium text-muted-foreground">Candidate causes (pass 1)</div>
             <div className="space-y-2">
               {artifacts.ranking.pass1.slice(0, 4).map((c) => (
                 <div key={c.cause_id}>

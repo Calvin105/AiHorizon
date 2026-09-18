@@ -53,6 +53,21 @@ function describeRanking(ranking: Ranking): string {
 /** Which axis question is still unanswered, in interview order — `null`
  * once all five are in. Used both to resume mid-interview after a reload
  * and (implicitly) to know when the interview is complete. */
+/** One concrete, grounded remedy per cause — the same "Response: X helps"
+ * actions already cited in ranking/rules.py, so the loop can suggest a
+ * check instead of asking the user to invent one from nothing. Per
+ * DESIGN.md W4: never invent a parameter number, so pressure/time gets the
+ * "small steps, engineer to confirm" phrasing rather than a made-up figure. */
+const SUGGESTED_CHECKS: Record<string, string> = {
+  volume_too_small_carryover: "Purge and re-prime the syringe",
+  pressure_time_instability: "Adjust pressure or dispense time in small steps within your process spec, engineer to confirm",
+  air_in_fluid_path: "Purge the line, or swap in a fresh syringe",
+  material_rheology_change: "Let the material warm up, and check it's within pot life / out-time",
+  nozzle_blockage: "Wipe or change the needle",
+  dispense_height_or_board_bending: "Re-check dispense height and board clamping",
+  equipment_condition: "Restart or re-home the machine",
+};
+
 function nextUnansweredAxis(axes: FingerprintAxes | undefined):
   | "ask_signature" | "ask_trajectory" | "ask_footprint" | "ask_inputs" | "ask_response" | null {
   if (!axes || axes.signature.length === 0) return "ask_signature";
@@ -85,8 +100,8 @@ const STAGE_HINTS: Record<StepId, Phase> = {
   retrieve_coarse: { n: 2, label: "Evidence", hint: "Checking for similar past cases…" },
   rank: { n: 3, label: "Ranking", hint: "Comparing candidate causes against your answers and the photo." },
   loop_prompt: { n: 4, label: "Troubleshooting", hint: "Log a check to test the top candidate cause, or move straight to the report if you're confident." },
-  loop_check_name: { n: 4, label: "Troubleshooting", hint: "Say what you tried, in a few words." },
-  loop_check_cause: { n: 4, label: "Troubleshooting", hint: "Pick which candidate cause that check was meant to test." },
+  loop_check_cause: { n: 4, label: "Troubleshooting", hint: "Pick which candidate cause you want to test." },
+  loop_check_name: { n: 4, label: "Troubleshooting", hint: "Try the suggested check, describe your own, or say you're not sure." },
   loop_check_outcome: { n: 4, label: "Troubleshooting", hint: "Say what happened — this re-ranks the causes." },
   loop_check_detail: { n: 4, label: "Troubleshooting", hint: "Add any detail worth keeping, or leave it blank." },
   loop_submit: { n: 4, label: "Troubleshooting", hint: "Logging the check and re-ranking…" },
@@ -291,16 +306,28 @@ export default function CaseWizardPage() {
         return;
       }
 
-      case "loop_check_name": {
-        say("What did you try?");
-        setPending({ kind: "text", placeholder: "e.g. purge and re-prime", confirmLabel: "Next" });
-        return;
-      }
       case "loop_check_cause": {
         const ranking = artifactsRef.current?.ranking;
         const options: ChipOption[] = (ranking?.pass1 ?? []).slice(0, 4).map((c) => ({ value: c.cause_id, label: c.label }));
-        say("Which candidate cause does that test?");
+        say("Which candidate cause do you want to test?");
         setPending({ kind: "chips-single", options });
+        return;
+      }
+      case "loop_check_name": {
+        const causeId = draftCheckRef.current.cause_id;
+        const suggestion = causeId ? SUGGESTED_CHECKS[causeId] : undefined;
+        say(
+          suggestion
+            ? "Here's a check that would test that — or describe your own."
+            : "What did you try, or want to try?",
+        );
+        setPending({
+          kind: "text-with-suggestions",
+          suggestions: suggestion ? [{ value: suggestion, label: suggestion }] : [],
+          placeholder: "e.g. purge and re-prime",
+          confirmLabel: "Next",
+          skipLabel: "Not sure — skip this check",
+        });
         return;
       }
       case "loop_check_outcome": {
@@ -424,10 +451,24 @@ export default function CaseWizardPage() {
         // a "Continue troubleshooting" link both land here with a case
         // that may already be partway through the pipeline, and the panel
         // (and the resume point below) need to reflect that, not blank.
+        // The backend stores a reduced subset onto case.vision_result — the
+        // signals it derived live on in fingerprint.signals instead (the
+        // canonical place for them), so a resume has to recombine the two
+        // rather than casting vision_result straight to VisionResult.
+        const storedVision = caseData.vision_result as Omit<VisionResult, "signals" | "small_then_big_above_chance"> | null;
+        const numericSignals = Object.fromEntries(
+          Object.entries(caseData.fingerprint?.signals ?? {}).filter(
+            (entry): entry is [string, number] => typeof entry[1] === "number",
+          ),
+        );
+        const vision: VisionResult | null = storedVision
+          ? { ...storedVision, signals: numericSignals, small_then_big_above_chance: false }
+          : null;
+
         const initial: Artifacts = {
           caseData, photoUrl: null,
           axes: axes ?? {},
-          vision: (caseData.vision_result as VisionResult | null) ?? null,
+          vision,
           coarse: null,
           ranking: caseData.ranking,
           comparison: null,
@@ -449,13 +490,30 @@ export default function CaseWizardPage() {
           return;
         }
 
-        // Resuming a case that already has something on file — recap
-        // instead of replaying the whole conversation, then pick up at
-        // the first step that isn't already done.
+        // Resuming a case that already has something on file. Rather than
+        // one generic "you already answered these" line, replay each
+        // question/answer pair that's actually on record — the transcript
+        // should show your own prior replies, not just the bot's recap of
+        // them — then pick up at the first step that isn't already done.
         say(
           `Welcome back to case #${caseData.case_id} on ${caseData.station.name}, running ` +
             `${caseData.profile.name} (${caseData.profile.material.name}).`,
         );
+
+        const axisOrder: { id: "signature" | "trajectory" | "footprint" | "inputs" | "response"; value: string[] | string | undefined }[] = [
+          { id: "signature", value: axes?.signature && axes.signature.length > 0 ? axes.signature : undefined },
+          { id: "trajectory", value: axes?.trajectory ?? undefined },
+          { id: "footprint", value: axes?.footprint ?? undefined },
+          { id: "inputs", value: axes?.inputs && axes.inputs.length > 0 ? axes.inputs : undefined },
+          { id: "response", value: axes?.response ?? undefined },
+        ];
+        for (const a of axisOrder) {
+          if (a.value === undefined) break; // answered in order — stop at the first gap
+          const q = questionsRef.current.find((x) => x.id === a.id);
+          if (!q) continue;
+          say(q.prompt);
+          echo(Array.isArray(a.value) ? a.value.map((v) => labelFor(a.id, v)).join(", ") : labelFor(a.id, a.value));
+        }
 
         if (caseData.closed_at) {
           setStage("done");
@@ -469,7 +527,10 @@ export default function CaseWizardPage() {
           return;
         }
         if (caseData.ranking) {
-          say(`Ranking is already done — tier ${caseData.ranking.tier}. You can log another check or revisit the report.`);
+          const checkNote = caseData.check_results.length > 0
+            ? ` ${caseData.check_results.length} check(s) already logged.`
+            : "";
+          say(`Ranking is already done — tier ${caseData.ranking.tier}.${checkNote} You can log another check or revisit the report.`);
           void runStep("loop_prompt", caseData);
           return;
         }
@@ -479,7 +540,7 @@ export default function CaseWizardPage() {
         }
         const nextAxis = nextUnansweredAxis(axes);
         if (nextAxis === null) {
-          say("Your answers are already on file. Want to attach a photo, or skip straight to ranking?");
+          say("Want to attach a photo, or skip straight to ranking?");
           setStage("ask_photo");
           setPending({ kind: "photo-or-skip", skipLabel: "Skip — no photo" });
           return;
@@ -508,14 +569,14 @@ export default function CaseWizardPage() {
     if (step === "ask_response") { axesRef.current.response = value; echo(labelFor("response", value)); void runStep("save_fingerprint", caseData); return; }
     if (step === "loop_prompt") {
       echo(value === "log" ? "Log a check" : "Continue to report");
-      void runStep(value === "log" ? "loop_check_name" : "report", caseData);
+      void runStep(value === "log" ? "loop_check_cause" : "report", caseData);
       return;
     }
     if (step === "loop_check_cause") {
       draftCheckRef.current.cause_id = value;
       const label = artifactsRef.current?.ranking?.pass1.find((c) => c.cause_id === value)?.label ?? value;
       echo(label);
-      void runStep("loop_check_outcome", caseData);
+      void runStep("loop_check_name", caseData);
       return;
     }
     if (step === "loop_check_outcome") {
@@ -560,7 +621,7 @@ export default function CaseWizardPage() {
     if (step === "loop_check_name") {
       draftCheckRef.current.check_name = value;
       echo(value);
-      void runStep("loop_check_cause", caseData);
+      void runStep("loop_check_outcome", caseData);
       return;
     }
     if (step === "loop_check_detail") {
@@ -585,6 +646,10 @@ export default function CaseWizardPage() {
     if (step === "verify_prompt") {
       echo("Skip verification");
       void runStep("close_prompt", caseData);
+    } else if (step === "loop_check_name") {
+      echo("Not sure — skip this check");
+      draftCheckRef.current = {};
+      void runStep("loop_prompt", caseData);
     } else {
       echo("Skip — no photo");
       void runStep("retrieve_coarse", caseData);

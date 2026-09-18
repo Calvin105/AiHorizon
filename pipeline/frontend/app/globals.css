@@ -132,6 +132,9 @@
   }
   html {
     @apply font-sans;
+    /* Tailwind's text-xs/sm/base/etc are all rem-based, so bumping the root
+       size scales every size in the app proportionally, not just one class. */
+    font-size: 18px;
   }
 }
 
