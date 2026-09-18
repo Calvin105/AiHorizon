@@ -25,13 +25,33 @@ export interface DispenseStation {
   camera_available: boolean;
 }
 
+export interface DispenseStationCreate {
+  name: string;
+  line: string;
+  dispenser_class: DispenserClass;
+  valve_model?: string | null;
+  heated_reservoir?: boolean;
+  reports_dispense_order?: boolean;
+  camera_available?: boolean;
+}
+
+export interface DispenseStationUpdate {
+  name?: string;
+  line?: string;
+  dispenser_class?: DispenserClass;
+  valve_model?: string | null;
+  heated_reservoir?: boolean;
+  reports_dispense_order?: boolean;
+  camera_available?: boolean;
+}
+
 export interface GeometryPoint {
   index?: number;
   cx?: number;
   cy?: number;
+  r?: number;
   x?: number;
   y?: number;
-  r?: number | null;
 }
 
 export interface Geometry {
@@ -56,6 +76,32 @@ export interface FluidMaterial {
   filler_particle_um?: number | null;
 }
 
+export interface FluidMaterialCreate {
+  name: string;
+  part_number?: string | null;
+  family: MaterialFamily;
+  two_part?: boolean;
+  thixotropic?: boolean;
+  requires_thaw?: boolean;
+  pot_life_hours?: number | null;
+  out_time_hours?: number | null;
+  storage_temp_c?: number | null;
+  filler_particle_um?: number | null;
+}
+
+export interface FluidMaterialUpdate {
+  name?: string;
+  part_number?: string | null;
+  family?: MaterialFamily;
+  two_part?: boolean;
+  thixotropic?: boolean;
+  requires_thaw?: boolean;
+  pot_life_hours?: number | null;
+  out_time_hours?: number | null;
+  storage_temp_c?: number | null;
+  filler_particle_um?: number | null;
+}
+
 export interface DispenseProfile {
   profile_id: number;
   name: string;
@@ -71,6 +117,36 @@ export interface DispenseProfile {
   spec_limit: string | null;
   geometry?: Geometry | null;
   material: FluidMaterial;
+}
+
+export interface DispenseProfileCreate {
+  name: string;
+  material_id: number;
+  needle_gauge?: string | null;
+  needle_id_um?: number | null;
+  set_pressure_kpa?: number | null;
+  set_time_ms?: number | null;
+  standoff_um?: number | null;
+  speed_mm_s?: number | null;
+  set_temp_c?: number | null;
+  spec_metric?: string | null;
+  spec_limit?: string | null;
+  geometry?: Geometry | null;
+}
+
+export interface DispenseProfileUpdate {
+  name?: string;
+  material_id?: number;
+  needle_gauge?: string | null;
+  needle_id_um?: number | null;
+  set_pressure_kpa?: number | null;
+  set_time_ms?: number | null;
+  standoff_um?: number | null;
+  speed_mm_s?: number | null;
+  set_temp_c?: number | null;
+  spec_metric?: string | null;
+  spec_limit?: string | null;
+  geometry?: Geometry | null;
 }
 
 // ---- Intake (steps 1-2) ----------------------------------------------------
@@ -325,6 +401,37 @@ export interface CheckLogRow {
   result_detail: string | null;
 }
 
+export interface CauseTally {
+  cause_id: string;
+  label: string;
+  count: number;
+  share: number;
+}
+
+/** The learning-database read: how often a problem shaped like this one
+ * has been seen, and what it turned out to be. `sentence` is null when the
+ * history is too thin to summarise — show `note` instead. */
+export interface Precedents {
+  total: number;
+  diagnosed_total: number;
+  matched_axes: string[];
+  by_cause: CauseTally[];
+  sentence: string | null;
+  note: string;
+}
+
+/** What to check next, in order — distinct from `check_log`, which is what
+ * was already done. */
+export interface RecommendedAction {
+  step: number;
+  check_name: string;
+  cause_id: string;
+  cause_label: string;
+  is_change: boolean;
+  help: string;
+  likelihood: number | null;
+}
+
 export interface Report {
   case_id: number;
   complaint: string | null;
@@ -336,6 +443,8 @@ export interface Report {
   causes: Pass1Cause[];
   explanation: string | null;
   explanation_used_llm: boolean;
+  recommended_actions: RecommendedAction[];
+  precedents: Precedents | null;
   check_log: CheckLogRow[];
   diagnosis: Diagnosis | null;
   verification: Verification | null;

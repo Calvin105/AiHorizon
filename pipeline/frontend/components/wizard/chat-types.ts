@@ -41,13 +41,24 @@ export type PendingPrompt =
        * axis 1, there to be confirmed or corrected rather than retyped. */
       preselected?: string[];
     }
-  | { kind: "text"; placeholder: string; confirmLabel: string; allowEmpty?: boolean }
+  | {
+      kind: "text";
+      placeholder: string;
+      confirmLabel: string;
+      allowEmpty?: boolean;
+      /** A textarea instead of a one-line input. Set wherever the honest
+       * answer is an observation rather than a phrase — a single-line
+       * input silently swallows the paragraph breaks in a pasted
+       * observation, and there is no way to type one in the first place. */
+      multiline?: boolean;
+    }
   | {
       kind: "text-with-suggestions";
       suggestions: ChipOption[];
       placeholder: string;
       confirmLabel: string;
       skipLabel: string;
+      multiline?: boolean;
     }
   | { kind: "photo-or-skip"; skipLabel: string }
   | { kind: "confirm"; options: ChipOption[] }

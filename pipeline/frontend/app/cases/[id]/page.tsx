@@ -3,11 +3,13 @@
 import * as React from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { ArrowRight, Compass, Sparkles } from "lucide-react";
+import { ArrowLeft, ArrowRight, Compass, FileText, Sparkles } from "lucide-react";
+import { toast } from "sonner";
 
 import { ArtifactPanel, type Artifacts } from "@/components/wizard/artifact-panel";
 import { Badge } from "@/components/ui/badge";
-import { buttonVariants } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -15,7 +17,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TierInfo } from "@/components/tier-info";
 import { ApiError } from "@/lib/api/client";
-import { getCase } from "@/lib/api/cases";
+import { getCase, updateCase } from "@/lib/api/cases";
 import { getIntakeSpec } from "@/lib/api/intake";
 import { getReport } from "@/lib/api/report";
 import type { Case, CheckOutcome, VisionResult } from "@/lib/api/types";
@@ -60,6 +62,9 @@ export default function CaseDetailPage() {
           axisNotes: c.fingerprint?.axis_notes ?? {},
           vision: (c.vision_result as VisionResult | null) ?? null,
           coarse: null,
+          // The report already carries the same tally, so it's reused
+          // rather than re-fetched.
+          precedents: report?.precedents ?? null,
           ranking: c.ranking,
           comparison: null,
           checks: c.check_results ?? [],
@@ -96,6 +101,14 @@ export default function CaseDetailPage() {
 
   return (
     <div className="mx-auto max-w-5xl space-y-6 px-6 py-8">
+      <Link
+        href="/cases"
+        className={buttonVariants({ variant: "ghost", size: "sm", className: "-ml-2 gap-1.5" })}
+      >
+        <ArrowLeft className="size-4" />
+        All Cases
+      </Link>
+
       {/* Header bar */}
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
@@ -109,10 +122,23 @@ export default function CaseDetailPage() {
         <div className="flex items-center gap-2">
           {caseData.tier && <Badge>{caseData.tier}</Badge>}
           <Badge variant="outline">{caseData.diagnosed.replaceAll("_", " ")}</Badge>
-          <Badge variant={caseData.resolved ? "default" : "secondary"}>
-            {caseData.resolved ? "resolved" : "open"}
+          {/* Three different facts, so three different badges. "Closed"
+              says the investigation was wrapped up; "resolved" says it was
+              fixed and proved. A case can be closed and not resolved —
+              case #8 is — and one badge covering both would have to lie
+              about one of them. */}
+          <Badge variant={caseData.closed_at ? "outline" : "secondary"}>
+            {caseData.closed_at ? "closed" : "open"}
           </Badge>
+          {caseData.resolved && <Badge>resolved</Badge>}
           <TierInfo />
+          <Link
+            href={`/cases/${caseData.case_id}/report`}
+            className={buttonVariants({ size: "sm", variant: "outline", className: "ml-2 gap-1.5" })}
+          >
+            <FileText className="size-3.5" />
+            Report
+          </Link>
           <Link
             href={`/troubleshoot/${caseData.case_id}`}
             className={buttonVariants({
@@ -122,7 +148,7 @@ export default function CaseDetailPage() {
             })}
           >
             <Sparkles className="size-3.5" />
-            {caseData.closed_at ? "Re-diagnose Case" : "Start Troubleshooting"}
+            {caseData.closed_at ? "Reopen Case" : "Start Troubleshooting"}
             <ArrowRight className="size-3.5" />
           </Link>
         </div>
@@ -135,13 +161,20 @@ export default function CaseDetailPage() {
             <Badge variant="outline" className="border-primary/40 bg-primary/10 text-xs font-medium text-primary">
               Interactive Diagnosis
             </Badge>
+            {/* Was "Case resolved & closed" on anything with a closed_at,
+                which claimed a fix on every PLAUSIBLE case — closed means
+                the investigation ended, not that it worked. */}
             <span className="text-xs text-muted-foreground">
-              {caseData.closed_at ? "Case resolved & closed" : "Step-by-step diagnostic assistant"}
+              {!caseData.closed_at
+                ? "Step-by-step diagnostic assistant"
+                : caseData.resolved
+                  ? `Closed as ${caseData.tier} — fixed and proved`
+                  : `Closed as ${caseData.tier ?? "unverified"} — not proved fixed`}
             </span>
           </div>
           <p className="text-sm font-semibold text-foreground">
             {caseData.closed_at
-              ? "Need to re-evaluate this defect or test another check?"
+              ? "Reopen it to log another check — the case re-ranks and can be closed again."
               : "Ready to diagnose? Start the interview, ranking, and troubleshooting loop."}
           </p>
         </div>
@@ -150,7 +183,7 @@ export default function CaseDetailPage() {
           className={buttonVariants({ size: "default", className: "gap-2 font-medium shadow" })}
         >
           <Sparkles className="size-4" />
-          {caseData.closed_at ? "Launch Troubleshooting Wizard Again" : "Start Troubleshooting Now"}
+          {caseData.closed_at ? "Reopen & Log Another Check" : "Start Troubleshooting Now"}
           <ArrowRight className="size-4" />
         </Link>
       </div>
@@ -345,16 +378,17 @@ export default function CaseDetailPage() {
             </CardContent>
           </Card>
 
-          {/* Engineer notes */}
-          {caseData.engineer_notes && (
-            <>
-              <Separator />
-              <div>
-                <h2 className="mb-1 text-sm font-medium">Engineer notes</h2>
-                <p className="text-sm text-muted-foreground">{caseData.engineer_notes}</p>
-              </div>
-            </>
-          )}
+          {/* Engineer notes — the one field on the case a human writes in
+              their own words. It was render-only until now, so the report
+              had a section nothing could ever fill. */}
+          <Separator />
+          <EngineerNotes
+            caseId={caseId}
+            initial={caseData.engineer_notes}
+            onSaved={(notes) =>
+              setCaseData((prev) => (prev ? { ...prev, engineer_notes: notes } : prev))
+            }
+          />
         </TabsContent>
 
         <TabsContent value="artifacts">
@@ -363,6 +397,53 @@ export default function CaseDetailPage() {
           </div>
         </TabsContent>
       </Tabs>
+    </div>
+  );
+}
+
+/** The engineer's own words on the case. Saved explicitly rather than on
+ * blur or on a timer: this is the field a human is held to, and a note
+ * that saves itself halfway through a sentence is worse than one that
+ * waits to be told. */
+function EngineerNotes({
+  caseId, initial, onSaved,
+}: {
+  caseId: number;
+  initial: string | null;
+  onSaved: (notes: string | null) => void;
+}) {
+  const [value, setValue] = React.useState(initial ?? "");
+  const [saving, setSaving] = React.useState(false);
+  const dirty = value.trim() !== (initial ?? "").trim();
+
+  async function save() {
+    setSaving(true);
+    try {
+      const notes = value.trim() || null;
+      await updateCase(caseId, { engineer_notes: notes });
+      onSaved(notes);
+      toast.success("Engineer notes saved.");
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.message : "Could not save the notes.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div>
+      <div className="mb-1 flex items-center justify-between gap-2">
+        <h2 className="text-sm font-medium">Engineer notes</h2>
+        <Button size="sm" variant={dirty ? "default" : "outline"} disabled={!dirty || saving} onClick={save}>
+          {saving ? "Saving…" : "Save notes"}
+        </Button>
+      </div>
+      <Textarea
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        placeholder="Anything the next person on this machine should know — what you saw, what you ruled out, what you'd try next."
+        className="min-h-24 text-sm"
+      />
     </div>
   );
 }

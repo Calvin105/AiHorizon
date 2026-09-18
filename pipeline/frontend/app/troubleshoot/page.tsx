@@ -9,14 +9,17 @@ import {
   Check,
   Compass,
   Cpu,
+  Database,
   Droplets,
   ExternalLink,
   Eye,
+  FilePlus2,
   FlaskConical,
   Gauge,
   History,
   Info,
   Layers,
+  Plus,
   Search,
   Sliders,
   Sparkles,
@@ -51,10 +54,19 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { ApiError } from "@/lib/api/client";
 import { openCase } from "@/lib/api/cases";
-import { listMaterials } from "@/lib/api/materials";
-import { listProfiles } from "@/lib/api/profiles";
-import { listStations } from "@/lib/api/stations";
-import type { DispenseProfile, DispenseStation, FluidMaterial } from "@/lib/api/types";
+import { createMaterial, listMaterials } from "@/lib/api/materials";
+import { createProfile, listProfiles } from "@/lib/api/profiles";
+import { createStation, listStations } from "@/lib/api/stations";
+import type {
+  DispenserClass,
+  DispenseProfile,
+  DispenseProfileCreate,
+  DispenseStation,
+  DispenseStationCreate,
+  FluidMaterial,
+  FluidMaterialCreate,
+  MaterialFamily,
+} from "@/lib/api/types";
 
 const COMPLAINT_PRESETS = [
   "Inconsistent size shot to shot",
@@ -64,6 +76,23 @@ const COMPLAINT_PRESETS = [
   "Satellite / splashing droplets",
   "Deposit height drift",
 ];
+
+const DISPENSER_CLASSES: { value: DispenserClass; label: string }[] = [
+  { value: "pressure_time", label: "Pressure-Time (Syringe)" },
+  { value: "auger", label: "Auger Screw Valve" },
+  { value: "piston", label: "Positive Displacement Piston" },
+  { value: "jetting", label: "High-Speed Jetting Valve" },
+];
+
+const MATERIAL_FAMILIES: { value: MaterialFamily; label: string }[] = [
+  { value: "epoxy", label: "Epoxy" },
+  { value: "solder_paste", label: "Solder Paste" },
+  { value: "silicone", label: "Silicone" },
+  { value: "uv_cure", label: "UV-Cure Acrylic" },
+  { value: "cyanoacrylate", label: "Cyanoacrylate" },
+];
+
+const DRAFT_STORAGE_KEY = "aihorizon_troubleshoot_draft";
 
 function Field({ label, value }: { label: string; value: React.ReactNode }) {
   return (
@@ -87,6 +116,7 @@ export default function OpenCasePage() {
   const [loadingOptions, setLoadingOptions] = React.useState(true);
   const [submitting, setSubmitting] = React.useState(false);
 
+  // Form selections
   const [stationId, setStationId] = React.useState("");
   const [materialId, setMaterialId] = React.useState("");
   const [profileId, setProfileId] = React.useState("");
@@ -94,10 +124,9 @@ export default function OpenCasePage() {
   const [complaint, setComplaint] = React.useState("");
   const [complaintText, setComplaintText] = React.useState("");
 
-  // Search queries for the item lists
-  const [searchMaterial, setSearchMaterial] = React.useState("");
-  const [searchStation, setSearchStation] = React.useState("");
-  const [searchProfile, setSearchProfile] = React.useState("");
+  // Top quick browser filter & search
+  const [topSearch, setTopSearch] = React.useState("");
+  const [topFilterTab, setTopFilterTab] = React.useState<"all" | "materials" | "stations" | "profiles">("all");
 
   // Inspector Modal State
   const [inspectItem, setInspectItem] = React.useState<{
@@ -107,30 +136,125 @@ export default function OpenCasePage() {
     profile?: DispenseProfile;
   } | null>(null);
 
-  // Close inspector on Escape key
+  // Inline Creation Modal State
+  const [createModal, setCreateModal] = React.useState<"station" | "material" | "profile" | null>(null);
+  const [savingItem, setSavingItem] = React.useState(false);
+
+  // Creation forms
+  const [newStation, setNewStation] = React.useState<DispenseStationCreate>({
+    name: "",
+    line: "Line 1",
+    dispenser_class: "pressure_time",
+    valve_model: "",
+    heated_reservoir: false,
+    camera_available: true,
+    reports_dispense_order: true,
+  });
+
+  const [newMaterial, setNewMaterial] = React.useState<FluidMaterialCreate>({
+    name: "",
+    part_number: "",
+    family: "epoxy",
+    two_part: false,
+    thixotropic: false,
+    requires_thaw: false,
+    pot_life_hours: null,
+    out_time_hours: null,
+    storage_temp_c: null,
+    filler_particle_um: null,
+  });
+
+  const [newProfile, setNewProfile] = React.useState<DispenseProfileCreate>({
+    name: "",
+    material_id: 0,
+    needle_gauge: "27G",
+    needle_id_um: 200,
+    set_pressure_kpa: 120,
+    set_time_ms: 100,
+    standoff_um: 150,
+    speed_mm_s: 25,
+    set_temp_c: null,
+    spec_metric: "dot_diameter_um",
+    spec_limit: "500±50",
+  });
+
+  // Helper to refresh all catalog items
+  const refreshCatalogData = React.useCallback(async () => {
+    try {
+      const [s, p, m] = await Promise.all([
+        listStations({ limit: 200 }),
+        listProfiles({ limit: 200 }),
+        listMaterials({ limit: 200 }),
+      ]);
+      setStations(s.items);
+      setProfiles(p.items);
+      setMaterials(m.items);
+      return { stations: s.items, profiles: p.items, materials: m.items };
+    } catch {
+      toast.error("Could not reach the API. Is the backend running?");
+      return null;
+    }
+  }, []);
+
+  // Initial load
+  React.useEffect(() => {
+    refreshCatalogData().finally(() => setLoadingOptions(false));
+  }, [refreshCatalogData]);
+
+  // Restore draft from sessionStorage and handle URL select params on mount
+  React.useEffect(() => {
+    try {
+      const saved = sessionStorage.getItem(DRAFT_STORAGE_KEY);
+      if (saved) {
+        const draft = JSON.parse(saved);
+        if (draft.stationId) setStationId(draft.stationId);
+        if (draft.materialId) setMaterialId(draft.materialId);
+        if (draft.profileId) setProfileId(draft.profileId);
+        if (draft.materialLot) setMaterialLot(draft.materialLot);
+        if (draft.complaint) setComplaint(draft.complaint);
+        if (draft.complaintText) setComplaintText(draft.complaintText);
+      }
+    } catch {
+      // ignore
+    }
+
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const selectType = params.get("selectType");
+      const selectId = params.get("selectId");
+      if (selectType === "station" && selectId) setStationId(selectId);
+      if (selectType === "material" && selectId) setMaterialId(selectId);
+      if (selectType === "profile" && selectId) setProfileId(selectId);
+    }
+  }, []);
+
+  // Save draft whenever state changes
+  React.useEffect(() => {
+    try {
+      const draft = {
+        stationId,
+        materialId,
+        profileId,
+        materialLot,
+        complaint,
+        complaintText,
+      };
+      sessionStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(draft));
+    } catch {
+      // ignore
+    }
+  }, [stationId, materialId, profileId, materialLot, complaint, complaintText]);
+
+  // Close modals on Escape key
   React.useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
       if (e.key === "Escape") {
         setInspectItem(null);
+        setCreateModal(null);
       }
     }
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, []);
-
-  React.useEffect(() => {
-    Promise.all([
-      listStations({ limit: 200 }),
-      listProfiles({ limit: 200 }),
-      listMaterials({ limit: 200 }),
-    ])
-      .then(([s, p, m]) => {
-        setStations(s.items);
-        setProfiles(p.items);
-        setMaterials(m.items);
-      })
-      .catch(() => toast.error("Could not reach the API. Is the backend running?"))
-      .finally(() => setLoadingOptions(false));
   }, []);
 
   // Filter profiles based on selected material if one is chosen
@@ -168,6 +292,101 @@ export default function OpenCasePage() {
     }
   }
 
+  // Inline Creation Submits
+  async function handleCreateStationSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!newStation.name.trim() || !newStation.line.trim()) {
+      toast.error("Station name and line are required.");
+      return;
+    }
+    setSavingItem(true);
+    try {
+      const created = await createStation(newStation);
+      toast.success(`Created station "${created.name}" and selected for case!`);
+      await refreshCatalogData();
+      setStationId(String(created.station_id));
+      setCreateModal(null);
+      setNewStation({
+        name: "",
+        line: "Line 1",
+        dispenser_class: "pressure_time",
+        valve_model: "",
+        heated_reservoir: false,
+        camera_available: true,
+        reports_dispense_order: true,
+      });
+    } catch {
+      toast.error("Failed to create station.");
+    } finally {
+      setSavingItem(false);
+    }
+  }
+
+  async function handleCreateMaterialSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!newMaterial.name.trim()) {
+      toast.error("Material name is required.");
+      return;
+    }
+    setSavingItem(true);
+    try {
+      const created = await createMaterial(newMaterial);
+      toast.success(`Created material "${created.name}" and selected for case!`);
+      await refreshCatalogData();
+      handleMaterialChange(String(created.material_id));
+      setCreateModal(null);
+      setNewMaterial({
+        name: "",
+        part_number: "",
+        family: "epoxy",
+        two_part: false,
+        thixotropic: false,
+        requires_thaw: false,
+        pot_life_hours: null,
+        out_time_hours: null,
+        storage_temp_c: null,
+        filler_particle_um: null,
+      });
+    } catch {
+      toast.error("Failed to create material.");
+    } finally {
+      setSavingItem(false);
+    }
+  }
+
+  async function handleCreateProfileSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!newProfile.name.trim() || !newProfile.material_id) {
+      toast.error("Profile name and associated material are required.");
+      return;
+    }
+    setSavingItem(true);
+    try {
+      const created = await createProfile(newProfile);
+      toast.success(`Created profile "${created.name}" and selected for case!`);
+      await refreshCatalogData();
+      handleProfileChange(String(created.profile_id));
+      setCreateModal(null);
+      setNewProfile({
+        name: "",
+        material_id: 0,
+        needle_gauge: "27G",
+        needle_id_um: 200,
+        set_pressure_kpa: 120,
+        set_time_ms: 100,
+        standoff_um: 150,
+        speed_mm_s: 25,
+        set_temp_c: null,
+        spec_metric: "dot_diameter_um",
+        spec_limit: "500±50",
+      });
+    } catch {
+      toast.error("Failed to create profile.");
+    } finally {
+      setSavingItem(false);
+    }
+  }
+
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
     if (!stationId) {
@@ -187,6 +406,8 @@ export default function OpenCasePage() {
         complaint: complaint || null,
         complaint_text: complaintText || null,
       });
+      // Clear draft on successful case creation
+      sessionStorage.removeItem(DRAFT_STORAGE_KEY);
       toast.success(`Case #${created.case_id} opened! Starting troubleshooting...`);
       router.push(`/troubleshoot/${created.case_id}`);
     } catch (err) {
@@ -195,6 +416,45 @@ export default function OpenCasePage() {
       setSubmitting(false);
     }
   }
+
+  // Candidate items calculation for top browser
+  const candidateItems = React.useMemo(() => {
+    const q = topSearch.toLowerCase().trim();
+    const result: Array<
+      | { kind: "material"; item: FluidMaterial; searchStr: string }
+      | { kind: "station"; item: DispenseStation; searchStr: string }
+      | { kind: "profile"; item: DispenseProfile; searchStr: string }
+    > = [];
+
+    if (topFilterTab === "all" || topFilterTab === "materials") {
+      for (const m of materials) {
+        const searchStr = `${m.name} ${m.part_number ?? ""} ${m.family} ${m.two_part ? "2-part" : ""}`.toLowerCase();
+        if (!q || searchStr.includes(q)) {
+          result.push({ kind: "material", item: m, searchStr });
+        }
+      }
+    }
+
+    if (topFilterTab === "all" || topFilterTab === "stations") {
+      for (const s of stations) {
+        const searchStr = `${s.name} ${s.line} ${s.dispenser_class} ${s.valve_model ?? ""}`.toLowerCase();
+        if (!q || searchStr.includes(q)) {
+          result.push({ kind: "station", item: s, searchStr });
+        }
+      }
+    }
+
+    if (topFilterTab === "all" || topFilterTab === "profiles") {
+      for (const p of profiles) {
+        const searchStr = `${p.name} ${p.needle_gauge ?? ""} ${p.material.name} ${p.geometry?.pattern ?? ""}`.toLowerCase();
+        if (!q || searchStr.includes(q)) {
+          result.push({ kind: "profile", item: p, searchStr });
+        }
+      }
+    }
+
+    return result;
+  }, [materials, stations, profiles, topSearch, topFilterTab]);
 
   return (
     <div className="mx-auto w-full max-w-[1520px] space-y-6 px-4 py-8 sm:px-6 lg:px-8 xl:px-12">
@@ -227,6 +487,17 @@ export default function OpenCasePage() {
 
         <div className="flex items-center gap-2">
           <Link
+            href="/catalog"
+            className={buttonVariants({
+              variant: "outline",
+              size: "sm",
+              className: "gap-1.5 text-xs font-medium border-primary/30 text-primary hover:bg-primary/10",
+            })}
+          >
+            <Database className="size-3.5" />
+            <span>Equipment & Material Catalog</span>
+          </Link>
+          <Link
             href="/profiles"
             className={buttonVariants({
               variant: "ghost",
@@ -240,13 +511,13 @@ export default function OpenCasePage() {
           <Link
             href="/cases"
             className={buttonVariants({
-              variant: "outline",
+              variant: "ghost",
               size: "sm",
-              className: "gap-1.5 text-xs font-medium",
+              className: "gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground",
             })}
           >
             <History className="size-3.5" />
-            <span>View Past Cases</span>
+            <span>Past Cases</span>
           </Link>
         </div>
       </div>
@@ -264,10 +535,299 @@ export default function OpenCasePage() {
             Open Case & Start Troubleshooting
           </h1>
           <p className="mt-1 text-sm text-muted-foreground max-w-3xl">
-            Select the hardware station, fluid material, and dispense profile. You can check the complete technical specifications and pattern geometry of any listed item at any time before proceeding.
+            Select the hardware station, fluid material, and dispense profile. You can search, browse, inspect, and add candidate items directly using the top browser or the dedicated catalog.
           </p>
         </div>
       </div>
+
+      {/* TOP QUICK SEARCH & BROWSE BAR */}
+      <Card className="border-primary/25 bg-gradient-to-r from-card to-muted/20 shadow-xs">
+        <CardHeader className="pb-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <CardTitle className="text-base flex items-center gap-2">
+                <Search className="size-4 text-primary" />
+                <span>Browse Available Options & Specs</span>
+              </CardTitle>
+              <CardDescription className="text-xs">
+                Inspect technical details of any candidate item to confirm suitability and select for intake.
+              </CardDescription>
+            </div>
+
+            {/* Quick Action Buttons */}
+            <div className="flex flex-wrap items-center gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-8 gap-1.5 text-xs font-medium"
+                onClick={() => setCreateModal("station")}
+              >
+                <Plus className="size-3.5 text-primary" />
+                <span>New Station</span>
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-8 gap-1.5 text-xs font-medium"
+                onClick={() => setCreateModal("material")}
+              >
+                <Plus className="size-3.5 text-primary" />
+                <span>New Material</span>
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-8 gap-1.5 text-xs font-medium"
+                onClick={() => {
+                  if (materials.length > 0) {
+                    setNewProfile((prev) => ({ ...prev, material_id: materials[0].material_id }));
+                  }
+                  setCreateModal("profile");
+                }}
+              >
+                <Plus className="size-3.5 text-primary" />
+                <span>New Profile</span>
+              </Button>
+              <Link
+                href="/catalog"
+                className={buttonVariants({
+                  variant: "ghost",
+                  size: "sm",
+                  className: "h-8 gap-1 text-xs text-muted-foreground hover:text-foreground",
+                })}
+              >
+                <span>Full Catalog</span>
+                <ExternalLink className="size-3" />
+              </Link>
+            </div>
+          </div>
+        </CardHeader>
+
+        <CardContent className="space-y-3">
+          {/* Search bar and category filter tabs */}
+          <div className="flex flex-col md:flex-row items-stretch md:items-center gap-3">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-2.5 size-4 text-muted-foreground" />
+              <Input
+                placeholder="Search material name, part #, station line, valve, or profile pattern..."
+                value={topSearch}
+                onChange={(e) => setTopSearch(e.target.value)}
+                className="h-9 pl-9 text-sm bg-background"
+              />
+              {topSearch && (
+                <button
+                  type="button"
+                  onClick={() => setTopSearch("")}
+                  className="absolute right-2.5 top-2.5 text-muted-foreground hover:text-foreground"
+                >
+                  <X className="size-4" />
+                </button>
+              )}
+            </div>
+
+            <div className="flex items-center gap-1.5 shrink-0 overflow-x-auto pb-1 md:pb-0">
+              <Button
+                type="button"
+                size="sm"
+                variant={topFilterTab === "all" ? "default" : "outline"}
+                className="h-8 text-xs px-2.5"
+                onClick={() => setTopFilterTab("all")}
+              >
+                All ({materials.length + stations.length + profiles.length})
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant={topFilterTab === "materials" ? "default" : "outline"}
+                className="h-8 text-xs px-2.5"
+                onClick={() => setTopFilterTab("materials")}
+              >
+                Materials ({materials.length})
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant={topFilterTab === "stations" ? "default" : "outline"}
+                className="h-8 text-xs px-2.5"
+                onClick={() => setTopFilterTab("stations")}
+              >
+                Stations ({stations.length})
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant={topFilterTab === "profiles" ? "default" : "outline"}
+                className="h-8 text-xs px-2.5"
+                onClick={() => setTopFilterTab("profiles")}
+              >
+                Profiles ({profiles.length})
+              </Button>
+            </div>
+          </div>
+
+          {/* Candidate Items Horizontal / Grid Scroll */}
+          <div className="max-h-56 overflow-y-auto pr-1 space-y-2">
+            <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+              {candidateItems.map((entry) => {
+                if (entry.kind === "material") {
+                  const m = entry.item;
+                  const isSelected = String(m.material_id) === materialId;
+                  return (
+                    <div
+                      key={`mat-${m.material_id}`}
+                      className={`flex flex-col justify-between rounded-lg border p-2.5 text-xs transition-colors bg-card ${
+                        isSelected ? "border-primary ring-1 ring-primary bg-primary/5" : "hover:border-primary/40 hover:bg-muted/30"
+                      }`}
+                    >
+                      <div className="space-y-1">
+                        <div className="flex items-center justify-between gap-1">
+                          <div className="font-semibold text-foreground flex items-center gap-1.5 truncate">
+                            <FlaskConical className="size-3.5 text-amber-500 shrink-0" />
+                            <span className="truncate">{m.name}</span>
+                          </div>
+                          <Badge variant="outline" className="text-[10px] shrink-0 font-medium text-amber-600 dark:text-amber-400">
+                            Material
+                          </Badge>
+                        </div>
+                        <div className="text-[11px] text-muted-foreground truncate">
+                          {m.part_number ? `#${m.part_number} · ` : ""}{m.family} · {m.two_part ? "2-part" : "1-comp"}
+                          {m.pot_life_hours ? ` · pot life ${m.pot_life_hours}h` : ""}
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between pt-2 mt-2 border-t gap-1">
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="ghost"
+                          className="h-6 px-1.5 text-[11px] gap-1 text-muted-foreground hover:text-foreground"
+                          onClick={() => setInspectItem({ type: "material", material: m })}
+                        >
+                          <Eye className="size-3" />
+                          <span>Specs</span>
+                        </Button>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant={isSelected ? "secondary" : "outline"}
+                          className="h-6 text-[11px] font-medium px-2"
+                          onClick={() => handleMaterialChange(String(m.material_id))}
+                        >
+                          {isSelected ? <Check className="size-3 text-emerald-600 mr-1" /> : null}
+                          {isSelected ? "Selected" : "Select Material"}
+                        </Button>
+                      </div>
+                    </div>
+                  );
+                } else if (entry.kind === "station") {
+                  const s = entry.item;
+                  const isSelected = String(s.station_id) === stationId;
+                  return (
+                    <div
+                      key={`stn-${s.station_id}`}
+                      className={`flex flex-col justify-between rounded-lg border p-2.5 text-xs transition-colors bg-card ${
+                        isSelected ? "border-primary ring-1 ring-primary bg-primary/5" : "hover:border-primary/40 hover:bg-muted/30"
+                      }`}
+                    >
+                      <div className="space-y-1">
+                        <div className="flex items-center justify-between gap-1">
+                          <div className="font-semibold text-foreground flex items-center gap-1.5 truncate">
+                            <Wrench className="size-3.5 text-sky-500 shrink-0" />
+                            <span className="truncate">{s.name}</span>
+                          </div>
+                          <Badge variant="outline" className="text-[10px] shrink-0 font-medium text-sky-600 dark:text-sky-400">
+                            Station
+                          </Badge>
+                        </div>
+                        <div className="text-[11px] text-muted-foreground truncate">
+                          {s.line} · {s.dispenser_class} {s.valve_model ? `(${s.valve_model})` : ""}
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between pt-2 mt-2 border-t gap-1">
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="ghost"
+                          className="h-6 px-1.5 text-[11px] gap-1 text-muted-foreground hover:text-foreground"
+                          onClick={() => setInspectItem({ type: "station", station: s })}
+                        >
+                          <Eye className="size-3" />
+                          <span>Specs</span>
+                        </Button>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant={isSelected ? "secondary" : "outline"}
+                          className="h-6 text-[11px] font-medium px-2"
+                          onClick={() => setStationId(String(s.station_id))}
+                        >
+                          {isSelected ? <Check className="size-3 text-emerald-600 mr-1" /> : null}
+                          {isSelected ? "Selected" : "Select Station"}
+                        </Button>
+                      </div>
+                    </div>
+                  );
+                } else {
+                  const p = entry.item;
+                  const isSelected = String(p.profile_id) === profileId;
+                  return (
+                    <div
+                      key={`prof-${p.profile_id}`}
+                      className={`flex flex-col justify-between rounded-lg border p-2.5 text-xs transition-colors bg-card ${
+                        isSelected ? "border-primary ring-1 ring-primary bg-primary/5" : "hover:border-primary/40 hover:bg-muted/30"
+                      }`}
+                    >
+                      <div className="space-y-1">
+                        <div className="flex items-center justify-between gap-1">
+                          <div className="font-semibold text-foreground flex items-center gap-1.5 truncate">
+                            <Compass className="size-3.5 text-violet-500 shrink-0" />
+                            <span className="truncate">{p.name}</span>
+                          </div>
+                          <Badge variant="outline" className="text-[10px] shrink-0 font-medium text-violet-600 dark:text-violet-400">
+                            Profile
+                          </Badge>
+                        </div>
+                        <div className="text-[11px] text-muted-foreground truncate">
+                          {p.material.name} · {p.needle_gauge ?? "gauge N/A"} · {p.set_pressure_kpa ? `${p.set_pressure_kpa} kPa` : "nominal"}
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between pt-2 mt-2 border-t gap-1">
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="ghost"
+                          className="h-6 px-1.5 text-[11px] gap-1 text-muted-foreground hover:text-foreground"
+                          onClick={() => setInspectItem({ type: "profile", profile: p })}
+                        >
+                          <Eye className="size-3" />
+                          <span>Specs</span>
+                        </Button>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant={isSelected ? "secondary" : "outline"}
+                          className="h-6 text-[11px] font-medium px-2"
+                          onClick={() => handleProfileChange(String(p.profile_id))}
+                        >
+                          {isSelected ? <Check className="size-3 text-emerald-600 mr-1" /> : null}
+                          {isSelected ? "Selected" : "Select Profile"}
+                        </Button>
+                      </div>
+                    </div>
+                  );
+                }
+              })}
+            </div>
+            {candidateItems.length === 0 && (
+              <div className="rounded-lg border border-dashed p-6 text-center text-xs text-muted-foreground">
+                No items match your search &quot;{topSearch}&quot;. Use the quick buttons above to create a new one.
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Main Wide 2-Column Dashboard Grid */}
       <div className="grid gap-8 lg:grid-cols-12">
@@ -289,15 +849,27 @@ export default function OpenCasePage() {
                       <Wrench className="size-3.5 text-primary" />
                       Dispense Station
                     </Label>
-                    {selectedStation && (
+                    <div className="flex items-center gap-2">
                       <button
                         type="button"
-                        onClick={() => setInspectItem({ type: "station", station: selectedStation })}
+                        onClick={() => setCreateModal("station")}
                         className="inline-flex items-center gap-1 text-[11px] font-medium text-primary hover:underline"
                       >
-                        <Eye className="size-3" /> Check station details
+                        <Plus className="size-3" /> New Station
                       </button>
-                    )}
+                      {selectedStation && (
+                        <>
+                          <span className="text-muted-foreground/30">·</span>
+                          <button
+                            type="button"
+                            onClick={() => setInspectItem({ type: "station", station: selectedStation })}
+                            className="inline-flex items-center gap-1 text-[11px] font-medium text-muted-foreground hover:text-foreground"
+                          >
+                            <Eye className="size-3" /> Check station details
+                          </button>
+                        </>
+                      )}
+                    </div>
                   </div>
                   <Select
                     value={stationId}
@@ -356,19 +928,27 @@ export default function OpenCasePage() {
                       <FlaskConical className="size-3.5 text-primary" />
                       Fluid Material
                     </Label>
-                    {selectedMaterial ? (
+                    <div className="flex items-center gap-2">
                       <button
                         type="button"
-                        onClick={() => setInspectItem({ type: "material", material: selectedMaterial })}
+                        onClick={() => setCreateModal("material")}
                         className="inline-flex items-center gap-1 text-[11px] font-medium text-primary hover:underline"
                       >
-                        <Eye className="size-3" /> Check material details
+                        <Plus className="size-3" /> New Material
                       </button>
-                    ) : (
-                      <span className="text-[11px] text-muted-foreground">
-                        Filters suitable profiles
-                      </span>
-                    )}
+                      {selectedMaterial && (
+                        <>
+                          <span className="text-muted-foreground/30">·</span>
+                          <button
+                            type="button"
+                            onClick={() => setInspectItem({ type: "material", material: selectedMaterial })}
+                            className="inline-flex items-center gap-1 text-[11px] font-medium text-muted-foreground hover:text-foreground"
+                          >
+                            <Eye className="size-3" /> Check material details
+                          </button>
+                        </>
+                      )}
+                    </div>
                   </div>
                   <Select
                     value={materialId}
@@ -428,19 +1008,34 @@ export default function OpenCasePage() {
                       <Compass className="size-3.5 text-primary" />
                       Dispense Profile & Pattern
                     </Label>
-                    {selectedProfile ? (
+                    <div className="flex items-center gap-2">
                       <button
                         type="button"
-                        onClick={() => setInspectItem({ type: "profile", profile: selectedProfile })}
+                        onClick={() => {
+                          if (materialId) {
+                            setNewProfile((prev) => ({ ...prev, material_id: Number(materialId) }));
+                          } else if (materials.length > 0) {
+                            setNewProfile((prev) => ({ ...prev, material_id: materials[0].material_id }));
+                          }
+                          setCreateModal("profile");
+                        }}
                         className="inline-flex items-center gap-1 text-[11px] font-medium text-primary hover:underline"
                       >
-                        <Eye className="size-3" /> Check profile & pattern geometry
+                        <Plus className="size-3" /> New Profile
                       </button>
-                    ) : filteredProfiles.length > 0 ? (
-                      <span className="text-[11px] text-muted-foreground">
-                        {filteredProfiles.length} suitable profile{filteredProfiles.length === 1 ? "" : "s"}
-                      </span>
-                    ) : null}
+                      {selectedProfile && (
+                        <>
+                          <span className="text-muted-foreground/30">·</span>
+                          <button
+                            type="button"
+                            onClick={() => setInspectItem({ type: "profile", profile: selectedProfile })}
+                            className="inline-flex items-center gap-1 text-[11px] font-medium text-muted-foreground hover:text-foreground"
+                          >
+                            <Eye className="size-3" /> Check profile specs
+                          </button>
+                        </>
+                      )}
+                    </div>
                   </div>
                   <Select
                     value={profileId}
@@ -595,9 +1190,8 @@ export default function OpenCasePage() {
           </form>
         </div>
 
-        {/* Right Column: Live Confirmation & Option Reference (5 cols) */}
+        {/* Right Column: Live Confirmation Card (5 cols) */}
         <div className="space-y-6 lg:col-span-5">
-          {/* Live Confirmation Card */}
           <Card className="border-primary/20 bg-muted/10 shadow-xs">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
@@ -756,7 +1350,7 @@ export default function OpenCasePage() {
                           onClick={() => setInspectItem({ type: "profile", profile: selectedProfile })}
                           className="inline-flex items-center gap-1 text-[11px] font-medium text-primary hover:underline"
                         >
-                          <Eye className="size-3" /> Inspect Pattern
+                          <Eye className="size-3" /> Inspect
                         </button>
                         <Link
                           href={`/profiles/${selectedProfile.profile_id}`}
@@ -772,251 +1366,6 @@ export default function OpenCasePage() {
                   </div>
                 </div>
               </div>
-            </CardContent>
-          </Card>
-
-          {/* Quick Option Reference: Browse & Pick From All with Search and Details Inspection */}
-          <Card className="shadow-xs">
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="text-sm font-semibold">Browse Available Options & Specs</CardTitle>
-                  <CardDescription className="text-xs">
-                    Inspect technical details of any candidate item to confirm suitability.
-                  </CardDescription>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <Tabs defaultValue="materials" className="w-full">
-                <TabsList className="grid w-full grid-cols-3">
-                  <TabsTrigger value="materials" className="text-xs">
-                    Materials ({materials.length})
-                  </TabsTrigger>
-                  <TabsTrigger value="stations" className="text-xs">
-                    Stations ({stations.length})
-                  </TabsTrigger>
-                  <TabsTrigger value="profiles" className="text-xs">
-                    Profiles ({profiles.length})
-                  </TabsTrigger>
-                </TabsList>
-
-                {/* Materials Tab */}
-                <TabsContent value="materials" className="mt-3 space-y-2">
-                  <div className="relative mb-2">
-                    <Search className="absolute left-2.5 top-2.5 size-3.5 text-muted-foreground" />
-                    <Input
-                      placeholder="Search material name, part #, or chemistry..."
-                      value={searchMaterial}
-                      onChange={(e) => setSearchMaterial(e.target.value)}
-                      className="h-8 pl-8 text-xs"
-                    />
-                  </div>
-                  <div className="max-h-72 overflow-y-auto pr-1 space-y-2">
-                    {materials
-                      .filter((m) => {
-                        if (!searchMaterial.trim()) return true;
-                        const q = searchMaterial.toLowerCase();
-                        return (
-                          m.name.toLowerCase().includes(q) ||
-                          (m.part_number && m.part_number.toLowerCase().includes(q)) ||
-                          m.family.toLowerCase().includes(q)
-                        );
-                      })
-                      .map((m) => {
-                        const isSelected = String(m.material_id) === materialId;
-                        return (
-                          <div
-                            key={m.material_id}
-                            className={`flex items-center justify-between rounded-md border p-2.5 text-xs transition-colors ${
-                              isSelected ? "border-primary bg-primary/5 shadow-xs" : "bg-card hover:bg-muted/40"
-                            }`}
-                          >
-                            <div className="space-y-0.5 max-w-[62%]">
-                              <div className="font-semibold text-foreground flex items-center gap-1.5 flex-wrap">
-                                {m.name}
-                                {m.part_number && (
-                                  <span className="font-mono text-[10px] text-muted-foreground">
-                                    #{m.part_number}
-                                  </span>
-                                )}
-                              </div>
-                              <div className="text-[11px] text-muted-foreground">
-                                {m.family} &middot; {m.two_part ? "2-part" : "1-component"}
-                                {m.pot_life_hours ? ` · pot life ${m.pot_life_hours}h` : ""}
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-1.5 shrink-0">
-                              <Button
-                                type="button"
-                                size="sm"
-                                variant="ghost"
-                                className="h-7 px-2 text-xs gap-1 text-muted-foreground hover:text-foreground"
-                                onClick={() => setInspectItem({ type: "material", material: m })}
-                              >
-                                <Eye className="size-3" />
-                                <span>Details</span>
-                              </Button>
-                              <Button
-                                type="button"
-                                size="sm"
-                                variant={isSelected ? "secondary" : "outline"}
-                                className="h-7 text-xs font-medium"
-                                onClick={() => handleMaterialChange(String(m.material_id))}
-                              >
-                                {isSelected ? <Check className="size-3 text-emerald-600 mr-1" /> : null}
-                                {isSelected ? "Selected" : "Use this"}
-                              </Button>
-                            </div>
-                          </div>
-                        );
-                      })}
-                  </div>
-                </TabsContent>
-
-                {/* Stations Tab */}
-                <TabsContent value="stations" className="mt-3 space-y-2">
-                  <div className="relative mb-2">
-                    <Search className="absolute left-2.5 top-2.5 size-3.5 text-muted-foreground" />
-                    <Input
-                      placeholder="Search station name, line, or valve..."
-                      value={searchStation}
-                      onChange={(e) => setSearchStation(e.target.value)}
-                      className="h-8 pl-8 text-xs"
-                    />
-                  </div>
-                  <div className="max-h-72 overflow-y-auto pr-1 space-y-2">
-                    {stations
-                      .filter((s) => {
-                        if (!searchStation.trim()) return true;
-                        const q = searchStation.toLowerCase();
-                        return (
-                          s.name.toLowerCase().includes(q) ||
-                          s.line.toLowerCase().includes(q) ||
-                          s.dispenser_class.toLowerCase().includes(q) ||
-                          (s.valve_model && s.valve_model.toLowerCase().includes(q))
-                        );
-                      })
-                      .map((s) => {
-                        const isSelected = String(s.station_id) === stationId;
-                        return (
-                          <div
-                            key={s.station_id}
-                            className={`flex items-center justify-between rounded-md border p-2.5 text-xs transition-colors ${
-                              isSelected ? "border-primary bg-primary/5 shadow-xs" : "bg-card hover:bg-muted/40"
-                            }`}
-                          >
-                            <div className="space-y-0.5 max-w-[62%]">
-                              <div className="font-semibold text-foreground flex items-center gap-1.5 flex-wrap">
-                                {s.name}
-                                <Badge variant="outline" className="text-[10px]">{s.line}</Badge>
-                              </div>
-                              <div className="text-[11px] text-muted-foreground">
-                                {s.dispenser_class} {s.valve_model ? `· ${s.valve_model}` : ""}
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-1.5 shrink-0">
-                              <Button
-                                type="button"
-                                size="sm"
-                                variant="ghost"
-                                className="h-7 px-2 text-xs gap-1 text-muted-foreground hover:text-foreground"
-                                onClick={() => setInspectItem({ type: "station", station: s })}
-                              >
-                                <Eye className="size-3" />
-                                <span>Details</span>
-                              </Button>
-                              <Button
-                                type="button"
-                                size="sm"
-                                variant={isSelected ? "secondary" : "outline"}
-                                className="h-7 text-xs font-medium"
-                                onClick={() => setStationId(String(s.station_id))}
-                              >
-                                {isSelected ? <Check className="size-3 text-emerald-600 mr-1" /> : null}
-                                {isSelected ? "Selected" : "Use this"}
-                              </Button>
-                            </div>
-                          </div>
-                        );
-                      })}
-                  </div>
-                </TabsContent>
-
-                {/* Profiles Tab */}
-                <TabsContent value="profiles" className="mt-3 space-y-2">
-                  <div className="relative mb-2">
-                    <Search className="absolute left-2.5 top-2.5 size-3.5 text-muted-foreground" />
-                    <Input
-                      placeholder="Search profile name, needle, or material..."
-                      value={searchProfile}
-                      onChange={(e) => setSearchProfile(e.target.value)}
-                      className="h-8 pl-8 text-xs"
-                    />
-                  </div>
-                  <div className="max-h-72 overflow-y-auto pr-1 space-y-2">
-                    {profiles
-                      .filter((p) => {
-                        if (!searchProfile.trim()) return true;
-                        const q = searchProfile.toLowerCase();
-                        return (
-                          p.name.toLowerCase().includes(q) ||
-                          (p.needle_gauge && p.needle_gauge.toLowerCase().includes(q)) ||
-                          p.material.name.toLowerCase().includes(q) ||
-                          (p.geometry?.pattern && p.geometry.pattern.toLowerCase().includes(q))
-                        );
-                      })
-                      .map((p) => {
-                        const isSelected = String(p.profile_id) === profileId;
-                        return (
-                          <div
-                            key={p.profile_id}
-                            className={`flex items-center justify-between rounded-md border p-2.5 text-xs transition-colors ${
-                              isSelected ? "border-primary bg-primary/5 shadow-xs" : "bg-card hover:bg-muted/40"
-                            }`}
-                          >
-                            <div className="space-y-0.5 max-w-[62%]">
-                              <div className="font-semibold text-foreground flex items-center gap-1.5 flex-wrap">
-                                {p.name}
-                                {p.needle_gauge && (
-                                  <Badge variant="secondary" className="text-[10px]">{p.needle_gauge}</Badge>
-                                )}
-                                {p.geometry?.pattern && (
-                                  <Badge variant="outline" className="text-[9px] uppercase">{p.geometry.pattern}</Badge>
-                                )}
-                              </div>
-                              <div className="text-[11px] text-muted-foreground">
-                                {p.material.name} &middot; {p.set_pressure_kpa ? `${p.set_pressure_kpa} kPa` : "nominal pressure"}
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-1.5 shrink-0">
-                              <Button
-                                type="button"
-                                size="sm"
-                                variant="ghost"
-                                className="h-7 px-2 text-xs gap-1 text-muted-foreground hover:text-foreground"
-                                onClick={() => setInspectItem({ type: "profile", profile: p })}
-                              >
-                                <Eye className="size-3" />
-                                <span>Details</span>
-                              </Button>
-                              <Button
-                                type="button"
-                                size="sm"
-                                variant={isSelected ? "secondary" : "outline"}
-                                className="h-7 text-xs font-medium"
-                                onClick={() => handleProfileChange(String(p.profile_id))}
-                              >
-                                {isSelected ? <Check className="size-3 text-emerald-600 mr-1" /> : null}
-                                {isSelected ? "Selected" : "Use this"}
-                              </Button>
-                            </div>
-                          </div>
-                        );
-                      })}
-                  </div>
-                </TabsContent>
-              </Tabs>
             </CardContent>
           </Card>
         </div>
@@ -1048,238 +1397,206 @@ export default function OpenCasePage() {
                       {inspectItem.type === "profile" && "Dispense Profile & Pattern Geometry"}
                     </Badge>
                   </div>
-                  <h2 className="text-lg font-bold text-foreground mt-0.5">
-                    {inspectItem.station?.name}
-                    {inspectItem.material?.name}
-                    {inspectItem.profile?.name}
-                  </h2>
+                  <h3 className="text-lg font-bold text-foreground mt-0.5">
+                    {inspectItem.type === "station" && inspectItem.station?.name}
+                    {inspectItem.type === "material" && inspectItem.material?.name}
+                    {inspectItem.type === "profile" && inspectItem.profile?.name}
+                  </h3>
                 </div>
               </div>
-              <Button
+              <button
                 type="button"
-                variant="ghost"
-                size="icon"
-                className="size-8 rounded-full"
                 onClick={() => setInspectItem(null)}
+                className="rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
               >
-                <X className="size-4" />
-                <span className="sr-only">Close</span>
-              </Button>
+                <X className="size-5" />
+              </button>
             </div>
 
-            {/* Modal Body */}
+            {/* Modal Scrollable Content */}
             <div className="flex-1 overflow-y-auto p-6 space-y-6">
-              {/* Station Inspector */}
               {inspectItem.type === "station" && inspectItem.station && (
-                <div className="space-y-6">
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                    <div className="rounded-lg border bg-muted/10 p-3 space-y-1">
-                      <span className="text-[11px] text-muted-foreground uppercase font-semibold">Production Line</span>
-                      <p className="text-sm font-semibold">{inspectItem.station.line}</p>
-                    </div>
-                    <div className="rounded-lg border bg-muted/10 p-3 space-y-1">
-                      <span className="text-[11px] text-muted-foreground uppercase font-semibold">Dispenser Class</span>
-                      <p className="text-sm font-semibold font-mono">{inspectItem.station.dispenser_class}</p>
-                    </div>
-                    <div className="rounded-lg border bg-muted/10 p-3 space-y-1">
-                      <span className="text-[11px] text-muted-foreground uppercase font-semibold">Valve Model</span>
-                      <p className="text-sm font-semibold font-mono">{inspectItem.station.valve_model ?? "Standard"}</p>
-                    </div>
-                    <div className="rounded-lg border bg-muted/10 p-3 space-y-1">
-                      <span className="text-[11px] text-muted-foreground uppercase font-semibold">Heated Reservoir</span>
-                      <p className="text-sm font-semibold">{yesNo(inspectItem.station.heated_reservoir)}</p>
-                    </div>
-                    <div className="rounded-lg border bg-muted/10 p-3 space-y-1">
-                      <span className="text-[11px] text-muted-foreground uppercase font-semibold">Camera Available</span>
-                      <p className="text-sm font-semibold">{yesNo(inspectItem.station.camera_available)}</p>
-                    </div>
-                    <div className="rounded-lg border bg-muted/10 p-3 space-y-1">
-                      <span className="text-[11px] text-muted-foreground uppercase font-semibold">Station ID</span>
-                      <p className="text-sm font-semibold font-mono">#{inspectItem.station.station_id}</p>
-                    </div>
-                  </div>
-
-                  {/* Candidate Profiles for this station */}
-                  <div className="rounded-lg border p-4 space-y-3">
-                    <div className="flex items-center justify-between">
-                      <h3 className="text-xs font-bold uppercase text-muted-foreground">
-                        Candidate Dispense Profiles for this Machine Class ({inspectItem.station.dispenser_class})
-                      </h3>
-                      <span className="text-[11px] text-muted-foreground">
-                        {profiles.length} profiles available
-                      </span>
-                    </div>
-                    <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
-                      {profiles.map((p) => (
-                        <div key={p.profile_id} className="flex items-center justify-between rounded-md border bg-muted/5 p-2.5 text-xs">
-                          <div>
-                            <span className="font-semibold">{p.name}</span>
-                            {p.needle_gauge && <Badge variant="secondary" className="text-[10px] ml-1.5">{p.needle_gauge}</Badge>}
-                            <span className="text-muted-foreground ml-2">· {p.material.name}</span>
-                          </div>
-                          <Button
-                            type="button"
-                            size="sm"
-                            variant="outline"
-                            className="h-6 text-[11px]"
-                            onClick={() => {
-                              setStationId(String(inspectItem.station?.station_id));
-                              handleProfileChange(String(p.profile_id));
-                              setInspectItem(null);
-                              toast.success(`Selected ${inspectItem.station?.name} & ${p.name}`);
-                            }}
-                          >
-                            Pair this profile
-                          </Button>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Material Inspector */}
-              {inspectItem.type === "material" && inspectItem.material && (
-                <div className="space-y-6">
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                    <div className="rounded-lg border bg-muted/10 p-3 space-y-1">
-                      <span className="text-[11px] text-muted-foreground uppercase font-semibold">Part Number</span>
-                      <p className="text-sm font-semibold font-mono">{inspectItem.material.part_number ?? "—"}</p>
-                    </div>
-                    <div className="rounded-lg border bg-muted/10 p-3 space-y-1">
-                      <span className="text-[11px] text-muted-foreground uppercase font-semibold">Chemical Family</span>
-                      <p className="text-sm font-semibold capitalize">{inspectItem.material.family}</p>
-                    </div>
-                    <div className="rounded-lg border bg-muted/10 p-3 space-y-1">
-                      <span className="text-[11px] text-muted-foreground uppercase font-semibold">Formulation</span>
-                      <p className="text-sm font-semibold">{inspectItem.material.two_part ? "2-part mixture" : "1-part component"}</p>
-                    </div>
-                    <div className="rounded-lg border bg-muted/10 p-3 space-y-1">
-                      <span className="text-[11px] text-muted-foreground uppercase font-semibold">Thixotropic</span>
-                      <p className="text-sm font-semibold">{yesNo(inspectItem.material.thixotropic)}</p>
-                    </div>
-                    <div className="rounded-lg border bg-muted/10 p-3 space-y-1">
-                      <span className="text-[11px] text-muted-foreground uppercase font-semibold">Pot Life Limit</span>
-                      <p className="text-sm font-semibold">{inspectItem.material.pot_life_hours ? `${inspectItem.material.pot_life_hours} hours` : "N/A"}</p>
-                    </div>
-                    <div className="rounded-lg border bg-muted/10 p-3 space-y-1">
-                      <span className="text-[11px] text-muted-foreground uppercase font-semibold">Out-Time Limit</span>
-                      <p className="text-sm font-semibold">{inspectItem.material.out_time_hours ? `${inspectItem.material.out_time_hours} hours` : "N/A"}</p>
-                    </div>
-                    <div className="rounded-lg border bg-muted/10 p-3 space-y-1">
-                      <span className="text-[11px] text-muted-foreground uppercase font-semibold">Storage Temp</span>
-                      <p className="text-sm font-semibold">{inspectItem.material.storage_temp_c != null ? `${inspectItem.material.storage_temp_c} °C` : "Ambient"}</p>
-                    </div>
-                    <div className="rounded-lg border bg-muted/10 p-3 space-y-1">
-                      <span className="text-[11px] text-muted-foreground uppercase font-semibold">Filler Particle</span>
-                      <p className="text-sm font-semibold">{inspectItem.material.filler_particle_um ? `${inspectItem.material.filler_particle_um} µm` : "None (Unfilled)"}</p>
-                    </div>
-                  </div>
-
-                  {/* Matching Profiles that use this material */}
-                  <div className="rounded-lg border p-4 space-y-3">
-                    <h3 className="text-xs font-bold uppercase text-muted-foreground">
-                      Compatible Dispense Profiles Using {inspectItem.material.name}
-                    </h3>
-                    <div className="space-y-2">
-                      {profiles
-                        .filter((p) => p.material_id === inspectItem.material?.material_id)
-                        .map((p) => (
-                          <div key={p.profile_id} className="flex items-center justify-between rounded-md border bg-muted/5 p-2.5 text-xs">
-                            <div>
-                              <span className="font-semibold">{p.name}</span>
-                              {p.needle_gauge && <Badge variant="secondary" className="text-[10px] ml-2">{p.needle_gauge}</Badge>}
-                              {p.geometry?.pattern && <span className="text-muted-foreground ml-2">· Pattern: {p.geometry.pattern}</span>}
-                            </div>
-                            <Button
-                              type="button"
-                              size="sm"
-                              variant="outline"
-                              className="h-6 text-[11px]"
-                              onClick={() => {
-                                handleMaterialChange(String(inspectItem.material?.material_id));
-                                handleProfileChange(String(p.profile_id));
-                                setInspectItem(null);
-                                toast.success(`Selected material and profile ${p.name}`);
-                              }}
-                            >
-                              Use this profile
-                            </Button>
-                          </div>
-                        ))}
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Profile Inspector with Pattern Geometry */}
-              {inspectItem.type === "profile" && inspectItem.profile && (
-                <div className="space-y-6">
-                  {/* Parameter Grid */}
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                    <div className="rounded-lg border bg-muted/10 p-3 space-y-1">
-                      <span className="text-[11px] text-muted-foreground uppercase font-semibold">Needle Gauge</span>
-                      <p className="text-sm font-semibold">{inspectItem.profile.needle_gauge ?? "—"}</p>
-                    </div>
-                    <div className="rounded-lg border bg-muted/10 p-3 space-y-1">
-                      <span className="text-[11px] text-muted-foreground uppercase font-semibold">Needle Inner Diam.</span>
-                      <p className="text-sm font-semibold">{inspectItem.profile.needle_id_um ? `${inspectItem.profile.needle_id_um} µm` : "—"}</p>
-                    </div>
-                    <div className="rounded-lg border bg-muted/10 p-3 space-y-1">
-                      <span className="text-[11px] text-muted-foreground uppercase font-semibold">Dispense Pressure</span>
-                      <p className="text-sm font-semibold">{inspectItem.profile.set_pressure_kpa ? `${inspectItem.profile.set_pressure_kpa} kPa` : "—"}</p>
-                    </div>
-                    <div className="rounded-lg border bg-muted/10 p-3 space-y-1">
-                      <span className="text-[11px] text-muted-foreground uppercase font-semibold">Dispense Shot Time</span>
-                      <p className="text-sm font-semibold">{inspectItem.profile.set_time_ms ? `${inspectItem.profile.set_time_ms} ms` : "—"}</p>
-                    </div>
-                    <div className="rounded-lg border bg-muted/10 p-3 space-y-1">
-                      <span className="text-[11px] text-muted-foreground uppercase font-semibold">Standoff Height</span>
-                      <p className="text-sm font-semibold">{inspectItem.profile.standoff_um ? `${inspectItem.profile.standoff_um} µm` : "—"}</p>
-                    </div>
-                    <div className="rounded-lg border bg-muted/10 p-3 space-y-1">
-                      <span className="text-[11px] text-muted-foreground uppercase font-semibold">Robot Speed</span>
-                      <p className="text-sm font-semibold">{inspectItem.profile.speed_mm_s ? `${inspectItem.profile.speed_mm_s} mm/s` : "—"}</p>
-                    </div>
-                    <div className="rounded-lg border bg-muted/10 p-3 space-y-1">
-                      <span className="text-[11px] text-muted-foreground uppercase font-semibold">Set Temperature</span>
-                      <p className="text-sm font-semibold">{inspectItem.profile.set_temp_c ? `${inspectItem.profile.set_temp_c} °C` : "—"}</p>
-                    </div>
-                    <div className="rounded-lg border bg-muted/10 p-3 space-y-1">
-                      <span className="text-[11px] text-muted-foreground uppercase font-semibold">Inspection Spec</span>
-                      <p className="text-sm font-semibold">{inspectItem.profile.spec_metric ? `${inspectItem.profile.spec_metric} ${inspectItem.profile.spec_limit}` : "Nominal"}</p>
-                    </div>
-                  </div>
-
-                  {/* Associated Fluid Material */}
-                  <div className="rounded-lg border p-3 bg-muted/10 flex items-center justify-between">
+                <div className="space-y-4 text-sm">
+                  <div className="grid grid-cols-2 gap-4 rounded-lg border bg-muted/20 p-4">
                     <div>
-                      <span className="text-[11px] text-muted-foreground uppercase font-semibold">Configured Fluid Material</span>
-                      <p className="text-sm font-semibold">{inspectItem.profile.material.name} ({inspectItem.profile.material.family})</p>
+                      <span className="text-xs text-muted-foreground">Line Designation</span>
+                      <p className="font-semibold text-foreground">{inspectItem.station.line}</p>
                     </div>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="text-xs text-primary gap-1"
-                      onClick={() => setInspectItem({ type: "material", material: inspectItem.profile?.material })}
-                    >
-                      <Eye className="size-3" /> Inspect Material Specs
-                    </Button>
+                    <div>
+                      <span className="text-xs text-muted-foreground">Dispenser Class</span>
+                      <p className="font-semibold font-mono text-foreground">{inspectItem.station.dispenser_class}</p>
+                    </div>
+                    <div>
+                      <span className="text-xs text-muted-foreground">Valve Model</span>
+                      <p className="font-semibold text-foreground">{inspectItem.station.valve_model ?? "Standard"}</p>
+                    </div>
+                    <div>
+                      <span className="text-xs text-muted-foreground">System ID</span>
+                      <p className="font-mono text-xs text-foreground">#{inspectItem.station.station_id}</p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                      Subsystem & Hardware Features
+                    </h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <div className="rounded-lg border p-3">
+                        <div className="flex items-center gap-2 text-xs font-medium">
+                          <Thermometer className="size-4 text-primary" />
+                          <span>Heated Reservoir</span>
+                        </div>
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          {inspectItem.station.heated_reservoir ? "Installed & Active" : "Not equipped"}
+                        </p>
+                      </div>
+                      <div className="rounded-lg border p-3">
+                        <div className="flex items-center gap-2 text-xs font-medium">
+                          <Eye className="size-4 text-primary" />
+                          <span>Optical Camera</span>
+                        </div>
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          {inspectItem.station.camera_available ? "Vision Alignment Ready" : "Manual fiducial"}
+                        </p>
+                      </div>
+                      <div className="rounded-lg border p-3">
+                        <div className="flex items-center gap-2 text-xs font-medium">
+                          <Cpu className="size-4 text-primary" />
+                          <span>Dispense Order Log</span>
+                        </div>
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          {inspectItem.station.reports_dispense_order ? "Sequence recorded" : "Unordered"}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {inspectItem.type === "material" && inspectItem.material && (
+                <div className="space-y-4 text-sm">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 rounded-lg border bg-muted/20 p-4">
+                    <div>
+                      <span className="text-xs text-muted-foreground">Part Number</span>
+                      <p className="font-mono font-medium text-foreground">{inspectItem.material.part_number ?? "—"}</p>
+                    </div>
+                    <div>
+                      <span className="text-xs text-muted-foreground">Polymer Family</span>
+                      <p className="font-semibold text-foreground uppercase">{inspectItem.material.family}</p>
+                    </div>
+                    <div>
+                      <span className="text-xs text-muted-foreground">Formulation</span>
+                      <p className="font-semibold text-foreground">{inspectItem.material.two_part ? "2-Part Reactive" : "1-Component"}</p>
+                    </div>
+                    <div>
+                      <span className="text-xs text-muted-foreground">Thixotropic Index</span>
+                      <p className="font-medium text-foreground">{yesNo(inspectItem.material.thixotropic)}</p>
+                    </div>
+                    <div>
+                      <span className="text-xs text-muted-foreground">Thaw Requirement</span>
+                      <p className="font-medium text-foreground">{yesNo(inspectItem.material.requires_thaw)}</p>
+                    </div>
+                    <div>
+                      <span className="text-xs text-muted-foreground">Storage Temp</span>
+                      <p className="font-medium text-foreground">
+                        {inspectItem.material.storage_temp_c != null ? `${inspectItem.material.storage_temp_c} °C` : "Ambient"}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                      Critical Rheology & Time Limits
+                    </h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <div className="rounded-lg border p-3">
+                        <span className="text-xs text-muted-foreground">Pot Life Window</span>
+                        <p className="text-base font-bold text-foreground">
+                          {inspectItem.material.pot_life_hours ? `${inspectItem.material.pot_life_hours} Hours` : "Unlimited"}
+                        </p>
+                        <p className="text-[11px] text-muted-foreground mt-0.5">Viscosity doubling threshold</p>
+                      </div>
+                      <div className="rounded-lg border p-3">
+                        <span className="text-xs text-muted-foreground">Maximum Out-Time</span>
+                        <p className="text-base font-bold text-foreground">
+                          {inspectItem.material.out_time_hours ? `${inspectItem.material.out_time_hours} Hours` : "Standard"}
+                        </p>
+                        <p className="text-[11px] text-muted-foreground mt-0.5">Ambient exposure limit</p>
+                      </div>
+                      <div className="rounded-lg border p-3">
+                        <span className="text-xs text-muted-foreground">Filler Particle Size</span>
+                        <p className="text-base font-bold text-foreground">
+                          {inspectItem.material.filler_particle_um ? `${inspectItem.material.filler_particle_um} µm` : "Unfilled"}
+                        </p>
+                        <p className="text-[11px] text-muted-foreground mt-0.5">Determines minimum needle ID</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {inspectItem.type === "profile" && inspectItem.profile && (
+                <div className="space-y-4 text-sm">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 rounded-lg border bg-muted/20 p-4">
+                    <div>
+                      <span className="text-xs text-muted-foreground">Fluid Material</span>
+                      <p className="font-semibold text-foreground">{inspectItem.profile.material.name}</p>
+                    </div>
+                    <div>
+                      <span className="text-xs text-muted-foreground">Needle Gauge</span>
+                      <p className="font-semibold font-mono text-foreground">{inspectItem.profile.needle_gauge ?? "—"}</p>
+                    </div>
+                    <div>
+                      <span className="text-xs text-muted-foreground">Needle Internal Dia (ID)</span>
+                      <p className="font-semibold font-mono text-foreground">
+                        {inspectItem.profile.needle_id_um ? `${inspectItem.profile.needle_id_um} µm` : "—"}
+                      </p>
+                    </div>
+                    <div>
+                      <span className="text-xs text-muted-foreground">Dispense Pressure</span>
+                      <p className="font-medium text-foreground">
+                        {inspectItem.profile.set_pressure_kpa ? `${inspectItem.profile.set_pressure_kpa} kPa` : "—"}
+                      </p>
+                    </div>
+                    <div>
+                      <span className="text-xs text-muted-foreground">Shot Duration (Time)</span>
+                      <p className="font-medium text-foreground">
+                        {inspectItem.profile.set_time_ms ? `${inspectItem.profile.set_time_ms} ms` : "—"}
+                      </p>
+                    </div>
+                    <div>
+                      <span className="text-xs text-muted-foreground">Dispense Standoff</span>
+                      <p className="font-medium text-foreground">
+                        {inspectItem.profile.standoff_um ? `${inspectItem.profile.standoff_um} µm` : "—"}
+                      </p>
+                    </div>
+                    <div>
+                      <span className="text-xs text-muted-foreground">Robot Speed</span>
+                      <p className="font-medium text-foreground">
+                        {inspectItem.profile.speed_mm_s ? `${inspectItem.profile.speed_mm_s} mm/s` : "—"}
+                      </p>
+                    </div>
+                    <div>
+                      <span className="text-xs text-muted-foreground">Nozzle Set Temp</span>
+                      <p className="font-medium text-foreground">
+                        {inspectItem.profile.set_temp_c != null ? `${inspectItem.profile.set_temp_c} °C` : "Ambient"}
+                      </p>
+                    </div>
+                    <div>
+                      <span className="text-xs text-muted-foreground">Spec Metric / Limit</span>
+                      <p className="font-medium text-foreground">
+                        {inspectItem.profile.spec_metric ? `${inspectItem.profile.spec_metric}: ${inspectItem.profile.spec_limit}` : "Nominal"}
+                      </p>
+                    </div>
                   </div>
 
                   {/* Pattern Geometry Preview */}
                   {inspectItem.profile.geometry ? (
-                    <div className="rounded-lg border p-4 space-y-3">
+                    <div className="space-y-2">
                       <div className="flex items-center justify-between">
-                        <div>
-                          <h3 className="text-xs font-bold uppercase text-foreground">
-                            Dispense Pattern Geometry ({inspectItem.profile.geometry.pattern.toUpperCase()})
-                          </h3>
-                          <p className="text-[11px] text-muted-foreground">
-                            Hover over coordinates and points to inspect calibrated Cartesian positions (mm).
-                          </p>
-                        </div>
+                        <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                          Pattern Geometry Blueprint: {inspectItem.profile.geometry.pattern.toUpperCase()}
+                        </h4>
                         <Link
                           href={`/profiles/${inspectItem.profile.profile_id}`}
                           target="_blank"
@@ -1288,12 +1605,12 @@ export default function OpenCasePage() {
                           Open Blueprint Page <ExternalLink className="size-3" />
                         </Link>
                       </div>
-                      <div className="rounded-lg border bg-black/95 overflow-hidden">
+
+                      <div className="rounded-xl border bg-muted/10 p-4">
                         <ProfileGeometryPattern
                           geometry={inspectItem.profile.geometry}
                           specMetric={inspectItem.profile.spec_metric}
                           specLimit={inspectItem.profile.spec_limit}
-                          className="border-0"
                         />
                       </div>
                     </div>
@@ -1335,6 +1652,382 @@ export default function OpenCasePage() {
                 <Check className="size-4" />
                 Select this {inspectItem.type} for Intake
               </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Inline Creation Dialogs for Station / Material / Profile */}
+      {createModal && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 sm:p-6"
+          onClick={() => setCreateModal(null)}
+        >
+          <div
+            className="w-full max-w-xl max-h-[90vh] flex flex-col rounded-xl border bg-card text-card-foreground shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="flex items-center justify-between border-b px-6 py-4 bg-muted/20">
+              <div className="flex items-center gap-2.5">
+                {createModal === "station" && <Wrench className="size-5 text-primary" />}
+                {createModal === "material" && <FlaskConical className="size-5 text-primary" />}
+                {createModal === "profile" && <Compass className="size-5 text-primary" />}
+                <div>
+                  <h3 className="text-lg font-bold text-foreground">
+                    {createModal === "station" && "Create Dispense Station"}
+                    {createModal === "material" && "Create Fluid Material"}
+                    {createModal === "profile" && "Create Dispense Profile"}
+                  </h3>
+                  <p className="text-xs text-muted-foreground">
+                    Item will be saved to catalog and automatically selected for intake.
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setCreateModal(null)}
+                className="rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+              >
+                <X className="size-5" />
+              </button>
+            </div>
+
+            {/* Modal Form */}
+            <div className="flex-1 overflow-y-auto p-6">
+              {createModal === "station" && (
+                <form id="create-station-form" onSubmit={handleCreateStationSubmit} className="space-y-4 text-xs">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="stn-name" className="text-xs font-semibold">Station Name *</Label>
+                      <Input
+                        id="stn-name"
+                        value={newStation.name}
+                        onChange={(e) => setNewStation((p) => ({ ...p, name: e.target.value }))}
+                        placeholder="e.g. Line 1 Dispenser Alpha"
+                        required
+                        className="text-xs"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="stn-line" className="text-xs font-semibold">Line / Bay *</Label>
+                      <Input
+                        id="stn-line"
+                        value={newStation.line}
+                        onChange={(e) => setNewStation((p) => ({ ...p, line: e.target.value }))}
+                        placeholder="e.g. Line 1"
+                        required
+                        className="text-xs"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="stn-class" className="text-xs font-semibold">Dispenser Class *</Label>
+                      <select
+                        id="stn-class"
+                        value={newStation.dispenser_class}
+                        onChange={(e) => setNewStation((p) => ({ ...p, dispenser_class: e.target.value as DispenserClass }))}
+                        className="w-full h-8 rounded-md border bg-background px-2.5 text-xs text-foreground focus:ring-1 focus:ring-primary"
+                      >
+                        {DISPENSER_CLASSES.map((c) => (
+                          <option key={c.value} value={c.value}>{c.label}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="stn-valve" className="text-xs font-semibold">Valve Model</Label>
+                      <Input
+                        id="stn-valve"
+                        value={newStation.valve_model ?? ""}
+                        onChange={(e) => setNewStation((p) => ({ ...p, valve_model: e.target.value }))}
+                        placeholder="e.g. Jet-7000 or HP-Valv"
+                        className="text-xs"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3 pt-2">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={newStation.heated_reservoir}
+                        onChange={(e) => setNewStation((p) => ({ ...p, heated_reservoir: e.target.checked }))}
+                        className="rounded border-input text-primary"
+                      />
+                      <span className="text-xs text-foreground">Heated Reservoir</span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={newStation.camera_available}
+                        onChange={(e) => setNewStation((p) => ({ ...p, camera_available: e.target.checked }))}
+                        className="rounded border-input text-primary"
+                      />
+                      <span className="text-xs text-foreground">Camera / Vision Available</span>
+                    </label>
+                  </div>
+                </form>
+              )}
+
+              {createModal === "material" && (
+                <form id="create-material-form" onSubmit={handleCreateMaterialSubmit} className="space-y-4 text-xs">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="mat-name" className="text-xs font-semibold">Material Name *</Label>
+                      <Input
+                        id="mat-name"
+                        value={newMaterial.name}
+                        onChange={(e) => setNewMaterial((p) => ({ ...p, name: e.target.value }))}
+                        placeholder="e.g. Epoxy D-90"
+                        required
+                        className="text-xs"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="mat-pn" className="text-xs font-semibold">Part Number</Label>
+                      <Input
+                        id="mat-pn"
+                        value={newMaterial.part_number ?? ""}
+                        onChange={(e) => setNewMaterial((p) => ({ ...p, part_number: e.target.value }))}
+                        placeholder="e.g. EPX-900"
+                        className="text-xs font-mono"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="mat-family" className="text-xs font-semibold">Chemistry Family *</Label>
+                      <select
+                        id="mat-family"
+                        value={newMaterial.family}
+                        onChange={(e) => setNewMaterial((p) => ({ ...p, family: e.target.value as MaterialFamily }))}
+                        className="w-full h-8 rounded-md border bg-background px-2.5 text-xs text-foreground focus:ring-1 focus:ring-primary"
+                      >
+                        {MATERIAL_FAMILIES.map((f) => (
+                          <option key={f.value} value={f.value}>{f.label}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="mat-pot" className="text-xs font-semibold">Pot Life (Hours)</Label>
+                      <Input
+                        id="mat-pot"
+                        type="number"
+                        value={newMaterial.pot_life_hours ?? ""}
+                        onChange={(e) => setNewMaterial((p) => ({ ...p, pot_life_hours: e.target.value ? Number(e.target.value) : null }))}
+                        placeholder="e.g. 8"
+                        className="text-xs"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="mat-out" className="text-xs font-semibold">Max Out-Time (Hours)</Label>
+                      <Input
+                        id="mat-out"
+                        type="number"
+                        value={newMaterial.out_time_hours ?? ""}
+                        onChange={(e) => setNewMaterial((p) => ({ ...p, out_time_hours: e.target.value ? Number(e.target.value) : null }))}
+                        placeholder="e.g. 24"
+                        className="text-xs"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="mat-filler" className="text-xs font-semibold">Filler Particle (µm)</Label>
+                      <Input
+                        id="mat-filler"
+                        type="number"
+                        value={newMaterial.filler_particle_um ?? ""}
+                        onChange={(e) => setNewMaterial((p) => ({ ...p, filler_particle_um: e.target.value ? Number(e.target.value) : null }))}
+                        placeholder="e.g. 15"
+                        className="text-xs"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3 pt-2">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={newMaterial.two_part}
+                        onChange={(e) => setNewMaterial((p) => ({ ...p, two_part: e.target.checked }))}
+                        className="rounded border-input text-primary"
+                      />
+                      <span className="text-xs text-foreground">Two-Part Reaction</span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={newMaterial.thixotropic}
+                        onChange={(e) => setNewMaterial((p) => ({ ...p, thixotropic: e.target.checked }))}
+                        className="rounded border-input text-primary"
+                      />
+                      <span className="text-xs text-foreground">Thixotropic Fluid</span>
+                    </label>
+                  </div>
+                </form>
+              )}
+
+              {createModal === "profile" && (
+                <form id="create-profile-form" onSubmit={handleCreateProfileSubmit} className="space-y-4 text-xs">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="prof-name" className="text-xs font-semibold">Profile Name *</Label>
+                      <Input
+                        id="prof-name"
+                        value={newProfile.name}
+                        onChange={(e) => setNewProfile((p) => ({ ...p, name: e.target.value }))}
+                        placeholder="e.g. BGA Underfill Standard"
+                        required
+                        className="text-xs"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="prof-mat" className="text-xs font-semibold">Fluid Material *</Label>
+                      <select
+                        id="prof-mat"
+                        value={newProfile.material_id}
+                        onChange={(e) => setNewProfile((p) => ({ ...p, material_id: Number(e.target.value) }))}
+                        className="w-full h-8 rounded-md border bg-background px-2.5 text-xs text-foreground focus:ring-1 focus:ring-primary"
+                        required
+                      >
+                        <option value={0} disabled>Select material...</option>
+                        {materials.map((m) => (
+                          <option key={m.material_id} value={m.material_id}>
+                            {m.name} ({m.family})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="prof-needle" className="text-xs font-semibold">Needle Gauge</Label>
+                      <Input
+                        id="prof-needle"
+                        value={newProfile.needle_gauge ?? ""}
+                        onChange={(e) => setNewProfile((p) => ({ ...p, needle_gauge: e.target.value }))}
+                        placeholder="e.g. 27G"
+                        className="text-xs"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="prof-nid" className="text-xs font-semibold">Needle ID (µm)</Label>
+                      <Input
+                        id="prof-nid"
+                        type="number"
+                        value={newProfile.needle_id_um ?? ""}
+                        onChange={(e) => setNewProfile((p) => ({ ...p, needle_id_um: e.target.value ? Number(e.target.value) : null }))}
+                        placeholder="e.g. 200"
+                        className="text-xs"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-3">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="prof-press" className="text-xs font-semibold">Set Pressure (kPa)</Label>
+                      <Input
+                        id="prof-press"
+                        type="number"
+                        value={newProfile.set_pressure_kpa ?? ""}
+                        onChange={(e) => setNewProfile((p) => ({ ...p, set_pressure_kpa: e.target.value ? Number(e.target.value) : null }))}
+                        placeholder="e.g. 120"
+                        className="text-xs"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="prof-time" className="text-xs font-semibold">Shot Time (ms)</Label>
+                      <Input
+                        id="prof-time"
+                        type="number"
+                        value={newProfile.set_time_ms ?? ""}
+                        onChange={(e) => setNewProfile((p) => ({ ...p, set_time_ms: e.target.value ? Number(e.target.value) : null }))}
+                        placeholder="e.g. 100"
+                        className="text-xs"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="prof-standoff" className="text-xs font-semibold">Standoff (µm)</Label>
+                      <Input
+                        id="prof-standoff"
+                        type="number"
+                        value={newProfile.standoff_um ?? ""}
+                        onChange={(e) => setNewProfile((p) => ({ ...p, standoff_um: e.target.value ? Number(e.target.value) : null }))}
+                        placeholder="e.g. 150"
+                        className="text-xs"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="prof-metric" className="text-xs font-semibold">Spec Metric</Label>
+                      <Input
+                        id="prof-metric"
+                        value={newProfile.spec_metric ?? ""}
+                        onChange={(e) => setNewProfile((p) => ({ ...p, spec_metric: e.target.value }))}
+                        placeholder="e.g. dot_diameter_um"
+                        className="text-xs"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="prof-limit" className="text-xs font-semibold">Spec Limit / Tolerance</Label>
+                      <Input
+                        id="prof-limit"
+                        value={newProfile.spec_limit ?? ""}
+                        onChange={(e) => setNewProfile((p) => ({ ...p, spec_limit: e.target.value }))}
+                        placeholder="e.g. 500±50"
+                        className="text-xs"
+                      />
+                    </div>
+                  </div>
+                </form>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="flex items-center justify-between border-t px-6 py-4 bg-muted/20">
+              <Link
+                href="/catalog"
+                target="_blank"
+                className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1"
+              >
+                Or open full Catalog page <ExternalLink className="size-3" />
+              </Link>
+              <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCreateModal(null)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  size="sm"
+                  disabled={savingItem}
+                  form={
+                    createModal === "station"
+                      ? "create-station-form"
+                      : createModal === "material"
+                        ? "create-material-form"
+                        : "create-profile-form"
+                  }
+                  className="gap-1.5 font-semibold shadow-xs"
+                >
+                  <Plus className="size-3.5" />
+                  {savingItem ? "Saving..." : "Create & Select"}
+                </Button>
+              </div>
             </div>
           </div>
         </div>

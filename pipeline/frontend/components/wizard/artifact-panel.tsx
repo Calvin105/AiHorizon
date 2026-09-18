@@ -10,7 +10,7 @@ import { ProfileGeometryPattern } from "@/components/profile-geometry-pattern";
 import { TierInfo } from "@/components/tier-info";
 import type {
   Case, CauseComparison, CheckResult, CloseCaseResponse, CoarseMatch, FingerprintAxes,
-  Question, Ranking, Report, VisionResult,
+  Precedents, Question, Ranking, Report, VisionResult,
 } from "@/lib/api/types";
 
 export interface Artifacts {
@@ -25,6 +25,8 @@ export interface Artifacts {
   axisNotes: Record<string, string>;
   vision: VisionResult | null;
   coarse: CoarseMatch[] | null;
+  /** The learning-database tally over the coarse matches. */
+  precedents: Precedents | null;
   ranking: Ranking | null;
   comparison: CauseComparison[] | null;
   checks: CheckResult[];
@@ -34,6 +36,32 @@ export interface Artifacts {
 
 const TIER_VARIANT: Record<string, "default" | "secondary" | "destructive"> = {
   T1: "default", T2: "secondary", T3: "secondary", T4: "destructive",
+};
+
+/** What a closed case actually asserts. Closing is not the same as fixing:
+ * step 8 tiers on what was *proved*, so a case can close with the cause
+ * pinned down and nothing repaired. The tier name alone reads like a
+ * verdict on the repair, so the plain sentence is shown next to it. */
+const CLOSE_MEANING: Record<string, { headline: string; detail: string }> = {
+  CONFIRMED: {
+    headline: "Fixed and proved",
+    detail:
+      "A check confirmed the cause, exactly one thing was changed, and the deciding signal was " +
+      "re-measured in spec and held. This is the only tier that claims the fix worked, and the " +
+      "only one that feeds future rankings.",
+  },
+  PLAUSIBLE: {
+    headline: "Not proved fixed",
+    detail:
+      "Some of the five close conditions were met, but not all — so the case is a documented " +
+      "lead, not a verified repair. It's shown to a human as context and adjusts nothing.",
+  },
+  UNVERIFIED: {
+    headline: "Nothing proved",
+    detail:
+      "None of the five close conditions were met. The case is on file with what was tried, " +
+      "and it adjusts nothing.",
+  },
 };
 
 function ArtifactCard({
@@ -425,6 +453,55 @@ export function ArtifactPanel({ artifacts }: { artifacts: Artifacts }) {
           </ArtifactCard>
         )}
 
+        {artifacts.precedents && (
+          <ArtifactCard
+            cardId="card-precedents"
+            isHighlighted={highlightedCardId === "card-precedents"}
+            title="What happened last time"
+            extra={
+              <span className="text-[11px] text-muted-foreground">
+                {artifacts.precedents.total} similar case
+                {artifacts.precedents.total === 1 ? "" : "s"}
+              </span>
+            }
+          >
+            {artifacts.precedents.sentence ? (
+              <p className="font-medium text-foreground">{artifacts.precedents.sentence}</p>
+            ) : (
+              <p className="text-muted-foreground">{artifacts.precedents.note}</p>
+            )}
+
+            {artifacts.precedents.by_cause.length > 0 && (
+              <div className="mt-3 space-y-1.5">
+                {artifacts.precedents.by_cause.map((tally) => (
+                  <div key={tally.cause_id} className="text-xs">
+                    <div className="flex items-baseline justify-between gap-2">
+                      <span className="leading-snug">{tally.label}</span>
+                      <span className="shrink-0 font-mono font-semibold">
+                        {tally.count}&times;
+                      </span>
+                    </div>
+                    <div className="mt-0.5 h-1.5 w-full overflow-hidden rounded-full bg-muted">
+                      <div
+                        className="h-full rounded-full bg-sky-500/70"
+                        style={{ width: `${Math.round(tally.share * 100)}%` }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* The disclaimer is not decoration: this panel sits directly
+                above the ranking, and an operator who reads the two as one
+                number would be double-counting history that the ranking
+                deliberately never saw. */}
+            {artifacts.precedents.sentence && (
+              <p className="mt-2 text-[11px] text-muted-foreground">{artifacts.precedents.note}</p>
+            )}
+          </ArtifactCard>
+        )}
+
         {artifacts.ranking && (
           <ArtifactCard
             cardId="card-ranking"
@@ -585,32 +662,14 @@ export function ArtifactPanel({ artifacts }: { artifacts: Artifacts }) {
                       )}
                     </div>
 
-                    {/* Difference Summary Line & Mini Delta Bar */}
+                    {/* The before/after figures only. The arrow badge above
+                        already states the delta, so the second "+62%
+                        difference" readout and its mini bar that used to sit
+                        here were the same number said three times. */}
                     {hasDiff && diff !== 0 && (
-                      <div className="flex items-center justify-between text-[10px] text-muted-foreground pt-0.5">
-                        <span>
-                          Previous: <strong className="text-foreground">{prevPct}%</strong> &rarr; Now:{" "}
-                          <strong className="text-foreground">{currentPct}%</strong>
-                        </span>
-                        <div className="flex items-center gap-1.5">
-                          <span
-                            className={
-                              increased
-                                ? "font-semibold text-emerald-600 dark:text-emerald-400"
-                                : "font-semibold text-rose-600 dark:text-rose-400"
-                            }
-                          >
-                            {increased ? `+${diff}% difference` : `${diff}% difference`}
-                          </span>
-                          <div className="h-1.5 w-14 rounded-full bg-muted overflow-hidden">
-                            <div
-                              className={`h-full rounded-full transition-all duration-500 ${
-                                increased ? "bg-emerald-500" : "bg-rose-500"
-                              }`}
-                              style={{ width: `${Math.min(100, Math.abs(diff))}%` }}
-                            />
-                          </div>
-                        </div>
+                      <div className="pt-0.5 text-[10px] text-muted-foreground">
+                        Previous: <strong className="text-foreground">{prevPct}%</strong> &rarr; Now:{" "}
+                        <strong className="text-foreground">{currentPct}%</strong>
                       </div>
                     )}
                   </div>
@@ -672,11 +731,22 @@ export function ArtifactPanel({ artifacts }: { artifacts: Artifacts }) {
             isHighlighted={highlightedCardId === "card-close"}
             title="Closed (step 8)"
           >
-            <Badge>{artifacts.close.tier}</Badge>
+            <div className="flex items-center gap-2">
+              <Badge>{artifacts.close.tier}</Badge>
+              <span className="text-xs font-medium">{CLOSE_MEANING[artifacts.close.tier]?.headline}</span>
+            </div>
+            <p className="mt-1.5 text-xs text-muted-foreground">
+              {CLOSE_MEANING[artifacts.close.tier]?.detail}
+            </p>
             {artifacts.close.gaps.length > 0 && (
-              <ul className="ml-4 mt-2 list-disc text-xs text-muted-foreground">
-                {artifacts.close.gaps.map((g, i) => <li key={i}>{g}</li>)}
-              </ul>
+              <>
+                <p className="mt-2 text-xs font-medium text-foreground">
+                  What wasn&apos;t proved:
+                </p>
+                <ul className="ml-4 mt-1 list-disc text-xs text-muted-foreground">
+                  {artifacts.close.gaps.map((g, i) => <li key={i}>{g}</li>)}
+                </ul>
+              </>
             )}
           </ArtifactCard>
         )}

@@ -6,12 +6,18 @@ import { Bot, ImagePlus, Send, User } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import type { ChatMessage, ChipOption, PendingPrompt } from "@/components/wizard/chat-types";
 
 /** One answer button: the label an operator can act on, with the
  * recognisable example underneath. Stacked rather than tooltipped because
  * the example is the part that makes the option answerable, and nobody
- * hovers a chip on a shop floor. */
+ * hovers a chip on a shop floor.
+ *
+ * The label is deliberately selectable (`select-text`), so a cause name can
+ * be copied out into a notebook or another tool. That costs a guard: a drag
+ * across the label still ends in a click, so without the selection check in
+ * `handleClick`, highlighting an option would also answer with it. */
 function ChipButton({
   option, active, disabled, onClick,
 }: {
@@ -20,11 +26,22 @@ function ChipButton({
   disabled?: boolean;
   onClick: () => void;
 }) {
+  function handleClick(e: React.MouseEvent<HTMLElement>) {
+    const selection = window.getSelection();
+    if (
+      selection && !selection.isCollapsed && selection.toString().trim() &&
+      selection.anchorNode && e.currentTarget.contains(selection.anchorNode)
+    ) {
+      return; // the drag was a copy, not an answer
+    }
+    onClick();
+  }
+
   return (
     <Button
-      size="sm" disabled={disabled} onClick={onClick}
+      size="sm" disabled={disabled} onClick={handleClick}
       variant={active ? "default" : "outline"}
-      className="h-auto max-w-full flex-col items-start gap-0.5 whitespace-normal py-1.5 text-left"
+      className="h-auto max-w-full flex-col items-start gap-0.5 whitespace-normal py-1.5 text-left select-text"
     >
       <span>{option.label}</span>
       {option.helpText && (
@@ -98,25 +115,60 @@ function ChipsMultiForm({
 }
 
 function TextForm({
-  placeholder, confirmLabel, allowEmpty, busy, onSubmit,
+  placeholder, confirmLabel, allowEmpty, multiline, busy, onSubmit,
 }: {
   placeholder: string;
   confirmLabel: string;
   allowEmpty?: boolean;
+  multiline?: boolean;
   busy: boolean;
   onSubmit: (value: string) => void;
 }) {
   const [value, setValue] = React.useState("");
+  const canSubmit = Boolean(value.trim()) || Boolean(allowEmpty);
+
+  function submit() {
+    // Only the outer whitespace goes: the blank lines *inside* a pasted
+    // observation are what make it readable back on the case.
+    if (canSubmit) onSubmit(value.trim());
+  }
+
+  if (multiline) {
+    return (
+      <form className="space-y-2" onSubmit={(e) => { e.preventDefault(); submit(); }}>
+        <Textarea
+          autoFocus
+          placeholder={placeholder}
+          value={value}
+          disabled={busy}
+          onChange={(e) => setValue(e.target.value)}
+          // Enter stays a newline. These fields exist to take a pasted,
+          // multi-paragraph observation, so submitting on Enter would cut
+          // it off at the first line break.
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+              e.preventDefault();
+              submit();
+            }
+          }}
+          className="max-h-[40vh] min-h-24 resize-y text-sm"
+        />
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-[11px] text-muted-foreground">
+            Enter adds a line &middot; &#8984;/Ctrl + Enter sends
+          </span>
+          <Button type="submit" size="sm" disabled={busy || !canSubmit} className="gap-1.5">
+            {confirmLabel} <Send className="size-3.5" />
+          </Button>
+        </div>
+      </form>
+    );
+  }
+
   return (
-    <form
-      className="flex gap-2"
-      onSubmit={(e) => {
-        e.preventDefault();
-        if (value.trim() || allowEmpty) onSubmit(value.trim());
-      }}
-    >
+    <form className="flex gap-2" onSubmit={(e) => { e.preventDefault(); submit(); }}>
       <Input autoFocus placeholder={placeholder} value={value} disabled={busy} onChange={(e) => setValue(e.target.value)} />
-      <Button type="submit" size="icon" disabled={busy || (!value.trim() && !allowEmpty)} aria-label={confirmLabel}>
+      <Button type="submit" size="icon" disabled={busy || !canSubmit} aria-label={confirmLabel}>
         <Send className="size-4" />
       </Button>
     </form>
@@ -148,15 +200,18 @@ export function ChatPanel({
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <div className="min-h-0 flex-1 overflow-y-scroll thin-scrollbar px-4">
+      {/* select-text on the transcript: the whole conversation is meant to
+          be highlightable and copyable out, including a long pasted
+          observation echoed back into it. */}
+      <div className="min-h-0 flex-1 overflow-y-scroll thin-scrollbar px-4 select-text">
         <div className="flex flex-col gap-4 py-4">
           {messages.map((m) => (
             <div key={m.id} className={`flex gap-2 ${m.role === "user" ? "flex-row-reverse" : ""}`}>
-              <Avatar className="size-7 shrink-0">
+              <Avatar className="size-7 shrink-0 select-none">
                 <AvatarFallback>{m.role === "bot" ? <Bot className="size-4" /> : <User className="size-4" />}</AvatarFallback>
               </Avatar>
               <div
-                className={`max-w-[80%] rounded-lg px-3 py-2 text-sm whitespace-pre-wrap ${
+                className={`max-w-[80%] select-text rounded-lg px-3 py-2 text-sm whitespace-pre-wrap ${
                   m.role === "bot" ? "bg-muted" : "bg-primary text-primary-foreground"
                 }`}
               >
@@ -206,7 +261,7 @@ export function ChatPanel({
         {pending.kind === "text" && (
           <TextForm
             key={turnKey} placeholder={pending.placeholder} confirmLabel={pending.confirmLabel}
-            allowEmpty={pending.allowEmpty} busy={busy} onSubmit={onText}
+            allowEmpty={pending.allowEmpty} multiline={pending.multiline} busy={busy} onSubmit={onText}
           />
         )}
 
@@ -226,7 +281,7 @@ export function ChatPanel({
             </div>
             <TextForm
               key={turnKey} placeholder={pending.placeholder} confirmLabel={pending.confirmLabel}
-              allowEmpty={false} busy={busy} onSubmit={onText}
+              allowEmpty={false} multiline={pending.multiline} busy={busy} onSubmit={onText}
             />
           </div>
         )}

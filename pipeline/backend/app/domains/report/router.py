@@ -29,9 +29,13 @@ def _get_case_or_404(db: Session, case_id: int):
 )
 def get_report(case_id: int, use_llm_explanation: bool = True, db: Session = Depends(get_db)) -> ReportOut:
     case = _get_case_or_404(db, case_id)
-    report, used_llm = compile_report(case, use_llm_explanation=use_llm_explanation)
+    report, used_llm = compile_report(case, use_llm_explanation=use_llm_explanation, db=db)
     if used_llm:
         case.llm_explain_used = True
+        # Persisted here rather than regenerated on the next read — see the
+        # explanation column on Case.
+        case.explanation = report["explanation"]
+        case.explanation_used_llm = True
         db.commit()
     return ReportOut(**report)
 

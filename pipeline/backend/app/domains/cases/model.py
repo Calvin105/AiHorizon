@@ -68,6 +68,14 @@ class Case(Base):
     llm_critic_used: Mapped[bool] = mapped_column(Boolean, default=False)
     llm_explain_used: Mapped[bool] = mapped_column(Boolean, default=False)
 
+    # -- step 7: the written analysis, kept rather than regenerated --
+    # The budget above allows one explanation per case, so without storing
+    # it the report's analysis section was empty on every revisit. Keeping
+    # it also means a case re-read later shows the analysis it was closed
+    # on, not a fresh one written against a ranking that has since moved.
+    explanation: Mapped[str | None] = mapped_column(Text, default=None)
+    explanation_used_llm: Mapped[bool] = mapped_column(Boolean, default=False)
+
     # -- step 8: the close record --
     diagnosis: Mapped[dict | None] = mapped_column(JSON, default=None)
     verification: Mapped[dict | None] = mapped_column(JSON, default=None)

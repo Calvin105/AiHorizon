@@ -162,3 +162,42 @@
 .thin-scrollbar::-webkit-scrollbar-thumb:hover {
   background-color: rgba(140, 140, 140, 0.75) !important;
 }
+/* Printed troubleshooting report (BC4). The browser's own Save-as-PDF is
+   the generator, so these rules are what stand between a real document and
+   a screenshot of a web page. */
+@media print {
+  /* Dark mode must not follow the report onto paper: a dark theme prints
+     as either a black page or, with backgrounds dropped, grey-on-white
+     text nobody can read. */
+  :root {
+    --background: white;
+    --foreground: black;
+    --muted-foreground: #444;
+    --border: #bbb;
+  }
+
+  html,
+  body {
+    background: white !important;
+    color: black !important;
+    /* Print reads smaller than screen at the same nominal size, and this
+       document is read on a shop floor rather than at a desk. */
+    font-size: 12pt;
+    line-height: 1.5;
+  }
+
+  @page {
+    margin: 14mm;
+  }
+
+  /* Bar fills are the one place colour carries meaning, so they are forced
+     to print rather than being dropped as a background. */
+  [style*="width"] {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  a[href]::after {
+    content: "";
+  }
+}

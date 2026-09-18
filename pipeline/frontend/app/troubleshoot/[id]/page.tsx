@@ -21,6 +21,7 @@ import { createCheckResult, getCase } from "@/lib/api/cases";
 import { updateCase } from "@/lib/api/cases";
 import { getIntakeSpec, mapFreeText } from "@/lib/api/intake";
 import { rankCase } from "@/lib/api/ranking";
+import { getPrecedents } from "@/lib/api/retrieval";
 import { closeCase, getReport, verifyCase } from "@/lib/api/report";
 import { analysePhoto } from "@/lib/api/vision";
 import type {
@@ -129,6 +130,18 @@ const CHECK_SUGGESTIONS: Record<string, SuggestedCheck[]> = {
   ],
 };
 
+/** The sentinel behind "Something else — I'll describe my own check" at the
+ * cause step. Never sent: it drops `cause_id` from the draft, and the check
+ * is logged with a null cause.
+ *
+ * A check filed against no cause is recorded on the case and shown in the
+ * loop log, but it moves nothing in the ranking — the re-rank only folds in
+ * outcomes whose `cause_id` is one of the ranked causes (see
+ * ranking/service.py `_apply_check_results`). That's the honest behaviour,
+ * and the chip says so rather than letting the operator find out by
+ * watching the bars not move. */
+const OWN_CHECK_VALUE = "__own_check__";
+
 /** "Don't know" and "Other (describe)" are appended to every axis from
  * `has_dont_know` / `has_other`, which the API has always reported and
  * the UI used to ignore — leaving no way to answer a question the
@@ -192,7 +205,7 @@ const STAGE_HINTS: Record<StepId, Phase> = {
   retrieve_coarse: { n: 2, label: "Interview", hint: "Checking for similar past cases…" },
   rank: { n: 3, label: "Ranking", hint: "Comparing candidate causes against your answers and the photo." },
   loop_prompt: { n: 4, label: "Troubleshooting", hint: "Log a check to test the top candidate cause, or move straight to the report if you're confident." },
-  loop_check_cause: { n: 4, label: "Troubleshooting", hint: "Pick which candidate cause you want to test." },
+  loop_check_cause: { n: 4, label: "Troubleshooting", hint: "Pick which candidate cause you want to test, or describe a check of your own." },
   loop_check_name: { n: 4, label: "Troubleshooting", hint: "Look at something first if you can — it costs nothing and doesn't spend the one change the case is allowed." },
   loop_check_kind: { n: 4, label: "Troubleshooting", hint: "Did you change anything, or only look? Only changes are counted against the case." },
   loop_check_outcome: { n: 4, label: "Troubleshooting", hint: "Say what happened — this re-ranks the causes." },
@@ -366,7 +379,10 @@ export default function CaseWizardPage() {
         const axisId = otherAxisRef.current;
         const q = axisId ? questionsRef.current.find((x) => x.id === axisId) : undefined;
         say(q ? `In your own words: ${q.prompt.toLowerCase()}` : "Describe it in your own words.");
-        setPending({ kind: "text", placeholder: "e.g. it leaves a hair between the pads", confirmLabel: "Next" });
+        setPending({
+          kind: "text", placeholder: "e.g. it leaves a hair between the pads",
+          confirmLabel: "Next", multiline: true,
+        });
         return;
       }
 
@@ -388,6 +404,16 @@ export default function CaseWizardPage() {
         try {
           const matches = await apiRequest<CoarseMatch[]>(`/cases/${caseData.case_id}/retrieval/coarse`);
           patchArtifacts({ coarse: matches });
+          // The same matches, tallied by what they were diagnosed as.
+          // Best-effort and separate from the ranking on purpose — it is
+          // shown as context and feeds nothing.
+          try {
+            const precedents = await getPrecedents(caseData.case_id);
+            patchArtifacts({ precedents });
+            if (precedents.sentence) say(precedents.sentence);
+          } catch {
+            // no history endpoint or no history — the panel just stays empty
+          }
           // Says what it matched on, and claims nothing else: this step
           // orders the interview and reads past cases. It does not feed
           // the ranking, and it does not pre-load the checklist — the
@@ -433,8 +459,24 @@ export default function CaseWizardPage() {
 
       case "loop_check_cause": {
         const ranking = artifactsRef.current?.ranking;
-        const options: ChipOption[] = (ranking?.pass1 ?? []).slice(0, 4).map((c) => ({ value: c.cause_id, label: c.label }));
-        say("Which candidate cause do you want to test?");
+        // Every ranked cause, not just the top four: the list is ordered by
+        // likelihood, and hiding the tail meant the only way to test a
+        // long-shot was to not log the check at all.
+        const options: ChipOption[] = (ranking?.pass1 ?? []).map((c, i) => ({
+          value: c.cause_id,
+          label: c.label,
+          helpText: `${Math.round(c.likelihood * 100)}%${i === 0 ? " · currently ahead" : ""}`,
+        }));
+        options.push({
+          value: OWN_CHECK_VALUE,
+          label: "Something else — I'll describe my own check",
+          helpText: "logged on the case, but it moves no cause's ranking",
+          exclusive: true,
+        });
+        say(
+          "Which candidate cause do you want to test? Or describe your own check — it gets " +
+            "logged on the case either way.",
+        );
         setPending({ kind: "chips-single", options });
         return;
       }
@@ -446,7 +488,9 @@ export default function CaseWizardPage() {
             ? "Two ways to test that — the first only looks, the second changes something. " +
                 "The case can only close CONFIRMED if exactly one thing was changed, so start " +
                 "with the look if you can. Or describe your own."
-            : "What did you try, or want to try?",
+            : causeId
+              ? "What did you try, or want to try?"
+              : "Describe the check in your own words — what did you do, or what do you want to do?",
         );
         setPending({
           kind: "text-with-suggestions",
@@ -454,6 +498,7 @@ export default function CaseWizardPage() {
           placeholder: "e.g. purge and re-prime",
           confirmLabel: "Next",
           skipLabel: "Not sure — skip this check",
+          multiline: true,
         });
         return;
       }
@@ -486,16 +531,22 @@ export default function CaseWizardPage() {
       }
       case "loop_check_detail": {
         say("Any detail worth recording? (optional)");
-        setPending({ kind: "text", placeholder: "e.g. air slug expelled", confirmLabel: "Log it", allowEmpty: true });
+        setPending({
+          kind: "text",
+          placeholder:
+            "e.g. air slug expelled\n\nParagraphs are fine — paste the full observation if you have one.",
+          confirmLabel: "Log it", allowEmpty: true, multiline: true,
+        });
         return;
       }
       case "loop_submit": {
         setBusy(true);
         try {
           const detail = arg as string;
+          const causeId = draftCheckRef.current.cause_id ?? null;
           const updated = await createCheckResult(caseData.case_id, {
             check_name: draftCheckRef.current.check_name!,
-            cause_id: draftCheckRef.current.cause_id!,
+            cause_id: causeId,
             cost_minutes: null, invasive: false, safety_note: null,
             is_change: draftCheckRef.current.is_change ?? false,
             outcome: draftCheckRef.current.outcome as "confirms" | "rules_out" | "inconclusive",
@@ -503,14 +554,22 @@ export default function CaseWizardPage() {
           });
           const refreshed = await getCase(caseData.case_id);
           patchArtifacts({ ranking: updated, checks: refreshed.check_results, caseData: refreshed });
+          const actionNote =
+            refreshed.action_count === 1
+              ? "One change on the case so far, which is what CONFIRMED needs."
+              : refreshed.action_count === 0
+                ? "Nothing changed yet, so nothing is spent."
+                : `${refreshed.action_count} changes on the case now — it can't close CONFIRMED.`;
           say(
-            `Logged — re-ranked. Top candidate now: ${updated.pass1[0].label} at ` +
-              `${Math.round(updated.pass1[0].likelihood * 100)}%. ` +
-              (refreshed.action_count === 1
-                ? "One change on the case so far, which is what CONFIRMED needs."
-                : refreshed.action_count === 0
-                  ? "Nothing changed yet, so nothing is spent."
-                  : `${refreshed.action_count} changes on the case now — it can't close CONFIRMED.`),
+            causeId
+              ? `Logged — re-ranked. Top candidate now: ${updated.pass1[0].label} at ` +
+                  `${Math.round(updated.pass1[0].likelihood * 100)}%. ${actionNote}`
+              : // No cause to fold the outcome into, so the ranking is
+                // untouched. Saying "re-ranked" here would claim an update
+                // the operator can see didn't happen.
+                "Logged on the case. It isn't tied to one of the ranked causes, so the ranking is " +
+                  `unchanged — still ${updated.pass1[0].label} at ` +
+                  `${Math.round(updated.pass1[0].likelihood * 100)}%. ${actionNote}`,
           );
         } catch (err) {
           toast.error(err instanceof ApiError ? err.message : "Could not log the check.");
@@ -569,9 +628,16 @@ export default function CaseWizardPage() {
         try {
           const result = await closeCase(caseData.case_id);
           patchArtifacts({ close: result });
+          // "Closed" on its own gets read as "fixed". It isn't: the tier is
+          // a verdict on what was proved, and only CONFIRMED claims the
+          // repair worked — so the message says which one this is.
           say(
-            `Closed as ${result.tier}.` +
-              (result.gaps.length > 0 ? ` Gaps: ${result.gaps.join("; ")}.` : " Every condition was met."),
+            result.gaps.length === 0
+              ? `Closed as ${result.tier}. All five conditions were met — the cause was confirmed by a ` +
+                  "check, exactly one thing was changed, and the re-measurement came back in spec and held. " +
+                  "This case counts as fixed and proved."
+              : `Closed as ${result.tier} — that records what was proved, not that it's fixed. ` +
+                  `Still open: ${result.gaps.join("; ")}.`,
           );
         } catch (err) {
           toast.error(err instanceof ApiError ? err.message : "Could not close the case.");
@@ -624,6 +690,7 @@ export default function CaseWizardPage() {
           axisNotes: { ...axisNotesRef.current },
           vision,
           coarse: null,
+          precedents: null,
           ranking: caseData.ranking,
           comparison: null,
           checks: caseData.check_results,
@@ -633,6 +700,19 @@ export default function CaseWizardPage() {
         artifactsRef.current = initial;
         setArtifacts(initial);
         setLoading(false);
+
+        // Resuming past the retrieval step (or landing on a closed case)
+        // skips runStep("retrieve_coarse"), so the history card would only
+        // ever appear on a first run through. Fetch it here too.
+        if (axes) {
+          void getPrecedents(caseId)
+            .then((precedents) => {
+              if (!cancelled) patchArtifacts({ precedents });
+            })
+            .catch(() => {
+              // no history yet — the card stays hidden
+            });
+        }
 
         const hasProgress =
           Boolean(caseData.closed_at) || Boolean(caseData.ranking) || Boolean(caseData.vision_result) ||
@@ -669,10 +749,21 @@ export default function CaseWizardPage() {
           echo(Array.isArray(a.value) ? a.value.map((v) => labelFor(a.id, v)).join(", ") : labelFor(a.id, a.value));
         }
 
+        // A closed case is reopened into the loop rather than dead-ended.
+        // It used to stop here with "already closed" and no prompt, so
+        // every "reopen" affordance on the case page led to a screen that
+        // could do nothing. Nothing in the pipeline forbids continuing:
+        // check-results still log and re-rank, and close re-scores the
+        // case against step 8's five conditions from scratch.
         if (caseData.closed_at) {
-          setStage("done");
-          say(caseData.tier ? `This case is already closed as ${caseData.tier}.` : "This case is already closed.");
-          setPending({ kind: "none" });
+          const closedNote = caseData.tier
+            ? `This case was closed as ${caseData.tier}.`
+            : "This case was closed.";
+          say(
+            `${closedNote} You can log another check — it re-ranks the causes, and closing again ` +
+              "re-scores the case on what's been proved by then.",
+          );
+          void runStep("loop_prompt", caseData);
           return;
         }
         if (caseData.verification) {
@@ -756,6 +847,15 @@ export default function CaseWizardPage() {
       return;
     }
     if (step === "loop_check_cause") {
+      if (value === OWN_CHECK_VALUE) {
+        // No cause_id at all, rather than one picked to have something to
+        // send. The backend takes a null cause_id, and a check filed under
+        // a cause nobody tested would put fake evidence on that cause.
+        draftCheckRef.current.cause_id = undefined;
+        echo("Something else — I'll describe my own check");
+        void runStep("loop_check_name", caseData);
+        return;
+      }
       draftCheckRef.current.cause_id = value;
       const label = artifactsRef.current?.ranking?.pass1.find((c) => c.cause_id === value)?.label ?? value;
       echo(label);

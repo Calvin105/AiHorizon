@@ -5,14 +5,20 @@ stars, quality score, causes with evidence and sources, the check log,
 confirmed fix, engineer notes, rules version, whether the LLM was used,
 and the fixed disclaimer."""
 
+from sqlalchemy.orm import Session
+
 from app.domains.cases.model import Case
+from app.domains.checks.suggestions import recommended_actions
 from app.domains.report.explain import write_explanation
 from app.domains.report.stars import compute_stars
+from app.domains.retrieval.precedents import precedent_stats
 
 DISCLAIMER = "Preliminary triage aid, not a replacement for an engineer."
 
 
-def compile_report(case: Case, *, use_llm_explanation: bool) -> tuple[dict, bool]:
+def compile_report(
+    case: Case, *, use_llm_explanation: bool, db: Session | None = None
+) -> tuple[dict, bool]:
     ranking = case.ranking or {}
     pass1 = ranking.get("pass1", [])
     top3 = pass1[:3]
@@ -25,12 +31,39 @@ def compile_report(case: Case, *, use_llm_explanation: bool) -> tuple[dict, bool
             len(pass1[0]["evidence"]),
         )
 
-    explanation, explanation_used_llm = (None, False)
-    if top3 and use_llm_explanation and not case.llm_explain_used:
+    # Whatever was written for this case before wins: the budget allows one
+    # call, so a re-read has to show the stored analysis rather than an
+    # empty section (and must not try to spend the call again).
+    explanation, explanation_used_llm = case.explanation, case.explanation_used_llm
+    if explanation is None and top3 and use_llm_explanation and not case.llm_explain_used:
         explanation, explanation_used_llm = write_explanation(top3)
 
     vision = case.vision_result or {}
     fingerprint = case.fingerprint or {"axes": {}, "signals": {}}
+
+    # What to check next, minus whatever has already been checked — the
+    # loop log below says what was done, and repeating it back as advice
+    # would be a report that stopped reading the case.
+    already_done = {cr.check_name for cr in case.check_results}
+    actions = recommended_actions(pass1, already_done)
+
+    # Needs a session, so a caller that has none (tests, or any path that
+    # only wants the case's own fields) gets a report without the history
+    # rather than an error.
+    precedents = None
+    if db is not None:
+        stats = precedent_stats(db, case)
+        precedents = {
+            "total": stats.total,
+            "diagnosed_total": stats.diagnosed_total,
+            "matched_axes": stats.matched_axes,
+            "by_cause": [
+                {"cause_id": t.cause_id, "label": t.label, "count": t.count, "share": t.share}
+                for t in stats.by_cause
+            ],
+            "sentence": stats.sentence,
+            "note": stats.note,
+        }
 
     disagreement_note = None
     if ranking.get("tier") in ("T3", "T4"):
@@ -57,6 +90,8 @@ def compile_report(case: Case, *, use_llm_explanation: bool) -> tuple[dict, bool
         "causes": top3,
         "explanation": explanation,
         "explanation_used_llm": explanation_used_llm,
+        "recommended_actions": actions,
+        "precedents": precedents,
         "check_log": [
             {
                 "sequence": cr.sequence, "check_name": cr.check_name, "cause_id": cr.cause_id,

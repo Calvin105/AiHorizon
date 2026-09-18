@@ -22,7 +22,12 @@ def _code_written_explanation(top3: list[dict]) -> str:
         top_evidence = cause["evidence"][:2]
         reasons = "; ".join(f"{e['detail']} ({e['source']})" for e in top_evidence) or "no evidence fired yet"
         lines.append(f"{rank}. {cause['label']} — {pct}%: {reasons}")
-    return "Ranked by the deterministic rule engine (no LLM explanation available):\n" + "\n".join(lines)
+    return (
+        # Same scoping the LLM prompt insists on: these are this case's
+        # likelihoods, not how often each cause occurs in general.
+        "Ranked for this case by the deterministic rule engine, from this case's own evidence "
+        "(no LLM explanation available):\n" + "\n".join(lines)
+    )
 
 
 def write_explanation(top3: list[dict]) -> tuple[str, bool]:
@@ -44,7 +49,22 @@ def write_explanation(top3: list[dict]) -> tuple[str, bool]:
                 "content": (
                     "Write a short, plain-language explanation (3-5 sentences) of why the "
                     "top cause leads, mentioning the runners-up. Only cite sources exactly as "
-                    "given in brackets — never invent a section or page number."
+                    "given in brackets — never invent a section or page number.\n\n"
+                    # Without this, the model reliably opens with "the top
+                    # cause of dispensing failures is X" — reading the
+                    # posterior for this one case as an industry base rate.
+                    # A cause can lead here having started as the least
+                    # likely candidate, which is the opposite of the claim.
+                    "Scope: everything below is about ONE case. The percentages are this "
+                    "case's own likelihoods after its evidence was applied — they are not "
+                    "how often these causes occur in general, and the leading cause may "
+                    "have started as the least likely candidate before a check moved it. "
+                    "Write about what the evidence shows for this case ('the confirmed "
+                    "cause here', 'what the checks on this case point to'). Never state or "
+                    "imply that the leading cause is the most common or most likely cause "
+                    "of dispensing problems generally. Where a source is the "
+                    "troubleshooting loop, say the finding came from a check performed on "
+                    "this case."
                 ),
             },
             {"role": "user", "content": cause_block},

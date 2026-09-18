@@ -5,7 +5,13 @@ from app.core.database import get_db
 from app.domains.cases import crud as cases_crud
 from app.domains.retrieval.coarse import coarse_match
 from app.domains.retrieval.fine import fine_match
-from app.domains.retrieval.schema import CoarseMatchOut, FineMatchOut
+from app.domains.retrieval.precedents import precedent_stats
+from app.domains.retrieval.schema import (
+    CauseTallyOut,
+    CoarseMatchOut,
+    FineMatchOut,
+    PrecedentsOut,
+)
 
 router = APIRouter(prefix="/cases/{case_id}/retrieval", tags=["Retrieval (steps 2b, 5b)"])
 
@@ -47,3 +53,28 @@ def fine(case_id: int, db: Session = Depends(get_db)) -> list[FineMatchOut]:
         db, fingerprint=case.fingerprint or {"axes": {}, "signals": {}}, exclude_case_id=case_id
     )
     return [FineMatchOut(case_id=m.case_id, distance=m.distance, cause_id=m.cause_id) for m in matches]
+
+
+@router.get(
+    "/precedents",
+    response_model=PrecedentsOut,
+    summary="Learning database: how often this has happened, and what it was",
+    description="Counts what coarse retrieval's matches were diagnosed as — "
+    "'Similar problems occurred 12 times previously. In 8 cases, the main cause was air "
+    "trapped inside the syringe.' Descriptive only: this never reaches the ranking, which "
+    "takes precedent through Gate B alone and only to demote.",
+)
+def precedents(case_id: int, db: Session = Depends(get_db)) -> PrecedentsOut:
+    case = _get_case_or_404(db, case_id)
+    stats = precedent_stats(db, case)
+    return PrecedentsOut(
+        total=stats.total,
+        diagnosed_total=stats.diagnosed_total,
+        matched_axes=stats.matched_axes,
+        by_cause=[
+            CauseTallyOut(cause_id=t.cause_id, label=t.label, count=t.count, share=t.share)
+            for t in stats.by_cause
+        ],
+        sentence=stats.sentence,
+        note=stats.note,
+    )
