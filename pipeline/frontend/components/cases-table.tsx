@@ -1,7 +1,9 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { Sparkles } from "lucide-react";
 import {
   type ColumnDef,
   flexRender,
@@ -11,6 +13,7 @@ import {
 import { useVirtualizer } from "@tanstack/react-virtual";
 
 import { Badge } from "@/components/ui/badge";
+import { buttonVariants } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { TierInfo } from "@/components/tier-info";
 import type { Case, CaseTier } from "@/lib/api/types";
@@ -85,6 +88,24 @@ const columns: ColumnDef<Case>[] = [
   {
     accessorKey: "action_count",
     header: "Checks",
+  },
+  {
+    id: "actions",
+    header: "Troubleshooting",
+    cell: ({ row }) => (
+      <Link
+        href={`/troubleshoot/${row.original.case_id}`}
+        onClick={(e) => e.stopPropagation()}
+        className={buttonVariants({
+          size: "sm",
+          variant: "default",
+          className: "h-7 gap-1 px-2.5 text-xs font-medium shadow-xs",
+        })}
+      >
+        <Sparkles className="size-3" />
+        {row.original.closed_at ? "Review / Reopen" : "Troubleshoot"}
+      </Link>
+    ),
   },
 ];
 

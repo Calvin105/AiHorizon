@@ -1,6 +1,8 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
+import { ExternalLink } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -94,25 +96,76 @@ export function ArtifactPanel({ artifacts }: { artifacts: Artifacts }) {
 
   return (
     <div className="h-full min-h-0 flex-1 overflow-y-scroll thin-scrollbar p-4 space-y-4">
-        <ArtifactCard title="Case & Profile">
-          <p className="font-medium">#{caseData.case_id} &middot; {caseData.complaint ?? "unclassified"}</p>
-          <p className="text-muted-foreground">
-            {caseData.station.name} ({caseData.station.line}) &middot; {caseData.profile.name} &middot;{" "}
-            {caseData.profile.material.name}
-          </p>
-          {caseData.profile.geometry && (
-            <div className="mt-3 border-t pt-2.5">
-              <div className="mb-1 text-xs font-medium text-muted-foreground">
-                Dispense Pattern Geometry
-              </div>
-              <ProfileGeometryPattern
-                geometry={caseData.profile.geometry}
-                specMetric={caseData.profile.spec_metric}
-                specLimit={caseData.profile.spec_limit}
-                canvasClassName="h-64"
-              />
+        <ArtifactCard
+          title="Case & Profile Setup"
+          extra={
+            <Link
+              href={`/cases/${caseData.case_id}`}
+              target="_blank"
+              className="inline-flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground"
+            >
+              Full Details <ExternalLink className="size-3" />
+            </Link>
+          }
+        >
+          <div className="space-y-3">
+            <div>
+              <p className="font-semibold text-foreground">
+                Case #{caseData.case_id} &middot; {caseData.complaint ?? "unclassified"}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Station: <span className="font-medium text-foreground">{caseData.station.name}</span> ({caseData.station.line}) &middot; Profile:{" "}
+                <span className="font-medium text-foreground">{caseData.profile.name}</span>
+              </p>
             </div>
-          )}
+
+            {/* Quick Reference Specs Grid */}
+            <div className="rounded-md border bg-muted/25 p-2.5 text-xs space-y-1.5">
+              <div className="flex items-center justify-between">
+                <span className="font-semibold text-foreground">
+                  Material: {caseData.profile.material.name}
+                </span>
+                {caseData.profile.material.part_number && (
+                  <span className="font-mono text-[10px] text-muted-foreground">
+                    #{caseData.profile.material.part_number}
+                  </span>
+                )}
+              </div>
+              <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
+                <div>Family: <span className="font-medium text-foreground">{caseData.profile.material.family}</span></div>
+                <div>Dispenser: <span className="font-medium text-foreground">{caseData.station.dispenser_class}</span></div>
+                <div>Needle: <span className="font-medium text-foreground">{caseData.profile.needle_gauge ?? "—"}</span></div>
+                <div>Pressure: <span className="font-medium text-foreground">{caseData.profile.set_pressure_kpa ? `${caseData.profile.set_pressure_kpa} kPa` : "—"}</span></div>
+                {caseData.profile.material.pot_life_hours && (
+                  <div>Pot Life: <span className="font-medium text-foreground">{caseData.profile.material.pot_life_hours}h</span></div>
+                )}
+                {caseData.profile.material.out_time_hours && (
+                  <div>Out-Time: <span className="font-medium text-foreground">{caseData.profile.material.out_time_hours}h</span></div>
+                )}
+              </div>
+            </div>
+
+            {caseData.profile.geometry && (
+              <div className="border-t pt-2.5">
+                <div className="mb-1 flex items-center justify-between text-xs font-medium text-muted-foreground">
+                  <span>Dispense Pattern Geometry</span>
+                  <Link
+                    href={`/profiles/${caseData.profile.profile_id}`}
+                    target="_blank"
+                    className="inline-flex items-center gap-1 text-[11px] text-sky-500 hover:underline"
+                  >
+                    View Blueprint <ExternalLink className="size-3" />
+                  </Link>
+                </div>
+                <ProfileGeometryPattern
+                  geometry={caseData.profile.geometry}
+                  specMetric={caseData.profile.spec_metric}
+                  specLimit={caseData.profile.spec_limit}
+                  canvasClassName="h-64"
+                />
+              </div>
+            )}
+          </div>
         </ArtifactCard>
 
         {artifacts.photoUrl && (

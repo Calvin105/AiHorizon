@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { ArrowRight, Compass } from "lucide-react";
+import { ArrowRight, Compass, Sparkles } from "lucide-react";
 
 import { ArtifactPanel, type Artifacts } from "@/components/wizard/artifact-panel";
 import { Badge } from "@/components/ui/badge";
@@ -113,15 +113,46 @@ export default function CaseDetailPage() {
             {caseData.resolved ? "resolved" : "open"}
           </Badge>
           <TierInfo />
-          {!caseData.closed_at && (
-            <Link
-              href={`/troubleshoot/${caseData.case_id}`}
-              className={buttonVariants({ size: "sm", variant: "default", className: "ml-2 gap-1.5" })}
-            >
-              Continue troubleshooting <ArrowRight className="size-3.5" />
-            </Link>
-          )}
+          <Link
+            href={`/troubleshoot/${caseData.case_id}`}
+            className={buttonVariants({
+              size: "sm",
+              variant: "default",
+              className: "ml-2 gap-1.5 font-medium shadow-xs",
+            })}
+          >
+            <Sparkles className="size-3.5" />
+            {caseData.closed_at ? "Re-diagnose Case" : "Start Troubleshooting"}
+            <ArrowRight className="size-3.5" />
+          </Link>
         </div>
+      </div>
+
+      {/* Quick Launch Troubleshooting Banner */}
+      <div className="flex flex-wrap items-center justify-between gap-4 rounded-lg border border-primary/25 bg-primary/5 p-4 shadow-xs">
+        <div className="space-y-0.5">
+          <div className="flex items-center gap-2">
+            <Badge variant="outline" className="border-primary/40 bg-primary/10 text-xs font-medium text-primary">
+              Interactive Diagnosis
+            </Badge>
+            <span className="text-xs text-muted-foreground">
+              {caseData.closed_at ? "Case resolved & closed" : "Step-by-step diagnostic assistant"}
+            </span>
+          </div>
+          <p className="text-sm font-semibold text-foreground">
+            {caseData.closed_at
+              ? "Need to re-evaluate this defect or test another check?"
+              : "Ready to diagnose? Start the interview, ranking, and troubleshooting loop."}
+          </p>
+        </div>
+        <Link
+          href={`/troubleshoot/${caseData.case_id}`}
+          className={buttonVariants({ size: "default", className: "gap-2 font-medium shadow" })}
+        >
+          <Sparkles className="size-4" />
+          {caseData.closed_at ? "Launch Troubleshooting Wizard Again" : "Start Troubleshooting Now"}
+          <ArrowRight className="size-4" />
+        </Link>
       </div>
 
       <Tabs defaultValue="context" className="w-full">
