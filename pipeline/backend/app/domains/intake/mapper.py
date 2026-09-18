@@ -18,7 +18,10 @@ def map_free_text(question_id: str, text: str) -> tuple[str | None, bool]:
     if not llm_client.is_configured():
         return None, False
 
-    option_list = "\n".join(f"- {o.value}: {o.help_text}" for o in question.options)
+    option_list = "\n".join(
+        f"- {o.value}: {o.label}" + (f" ({o.help_text})" if o.help_text else "")
+        for o in question.options
+    )
     reply = llm_client.chat(
         [
             {

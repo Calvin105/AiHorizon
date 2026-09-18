@@ -50,6 +50,9 @@ async def analyse_photo(
         "quality_ok": result.quality_ok,
         "quality_reason": result.quality_reason,
         "magnitude": result.magnitude,
+        # Kept so a reload mid-interview can still open axis 1 pre-filled
+        # rather than losing what the photo already answered.
+        "suggested_signature": result.suggested_signature,
         "cv_output": result.cv_output,
     }
     db.commit()

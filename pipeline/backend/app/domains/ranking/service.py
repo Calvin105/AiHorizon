@@ -67,10 +67,7 @@ def run_ranking(db: Session, case: Case) -> dict:
             pass2_result = fresh
             case.llm_critic_used = True
 
-    pass2_top_id = None
-    if pass2_result:
-        pass2_top_id = max(pass2_result, key=lambda r: r["likelihood_pct"])["cause_id"]
-
+    pass2_top_id, critic_note = pass2.critic_verdict(pass2_result)
     agree = passes_agree(ranked[0].cause_id, pass2_top_id)
     gate_a_result = gate_a(ranked[0], fingerprint)
 
@@ -89,6 +86,8 @@ def run_ranking(db: Session, case: Case) -> dict:
         ],
         "pass2": pass2_result,
         "agree": agree,
+        "critic_top_cause_id": pass2_top_id,
+        "critic_note": critic_note,
         "gate_a": asdict(gate_a_result),
         "gate_b": asdict(gate_b_result),
         "tier": tier,

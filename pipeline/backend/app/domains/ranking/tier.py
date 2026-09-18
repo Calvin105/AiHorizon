@@ -15,6 +15,10 @@ from app.domains.ranking.gates import GateAResult, GateBResult
 
 
 def passes_agree(pass1_top_id: str, pass2_top_id: str | None) -> bool:
+    """`None` covers both "never ran" and "ran but abstained" (see
+    pass2.critic_verdict) — read this as *not contradicted* rather than
+    *actively agreed*, which is why agreement alone still can't reach T1.
+    Only a critic with a real pick is allowed to veto."""
     return pass2_top_id is None or pass1_top_id == pass2_top_id
 
 

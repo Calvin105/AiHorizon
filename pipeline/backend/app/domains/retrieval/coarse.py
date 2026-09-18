@@ -11,7 +11,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.domains.cases.model import Case
-from app.domains.intake.spec import AXIS_WEIGHTS
+from app.domains.intake.spec import AXIS_WEIGHTS, UNSCORED_AXIS_VALUES
 from app.domains.materials.model import FluidMaterial
 from app.domains.profiles.model import DispenseProfile
 from app.domains.stations.model import DispenseStation
@@ -38,7 +38,14 @@ def _jaccard(a: list[str], b: list[str]) -> float:
 
 
 def _axis_value(fingerprint: dict | None, axis: str):
-    return (fingerprint or {}).get("axes", {}).get(axis)
+    """"Don't know" and unmapped free text are dropped here rather than
+    scored, so an axis nobody could answer neither matches nor mismatches
+    — DESIGN.md W5: "a missing axis is missing evidence, not evidence of
+    difference." A list-valued axis keeps whichever picks are real."""
+    value = (fingerprint or {}).get("axes", {}).get(axis)
+    if isinstance(value, list):
+        return [v for v in value if v not in UNSCORED_AXIS_VALUES]
+    return None if value in UNSCORED_AXIS_VALUES else value
 
 
 def _answer_frequencies(cases: list[Case]) -> dict[str, dict[str, float]]:

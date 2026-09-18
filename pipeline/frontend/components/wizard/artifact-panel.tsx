@@ -8,13 +8,19 @@ import { ProfileGeometryPattern } from "@/components/profile-geometry-pattern";
 import { TierInfo } from "@/components/tier-info";
 import type {
   Case, CauseComparison, CheckResult, CloseCaseResponse, CoarseMatch, FingerprintAxes,
-  Ranking, Report, VisionResult,
+  Question, Ranking, Report, VisionResult,
 } from "@/lib/api/types";
 
 export interface Artifacts {
   caseData: Case;
   photoUrl: string | null;
+  /** The question spine, carried so this panel can show the answers in
+   * the same words the operator was asked in — it used to print the
+   * stored ids ("near_syringe_end"). */
+  questions: Question[];
   axes: Partial<FingerprintAxes>;
+  /** Raw "Other (describe)" words, keyed by axis id. */
+  axisNotes: Record<string, string>;
   vision: VisionResult | null;
   coarse: CoarseMatch[] | null;
   ranking: Ranking | null;
@@ -54,6 +60,38 @@ export function ArtifactPanel({ artifacts }: { artifacts: Artifacts }) {
   const { caseData } = artifacts;
   const hasAxes = Object.values(artifacts.axes).some((v) => (Array.isArray(v) ? v.length : v));
 
+  /** An answer in the words it was offered in. */
+  function answerLabel(axisId: string, value: string): string {
+    if (value === "dont_know") return "Don't know";
+    if (value === "unmapped") return artifacts.axisNotes[axisId] ?? "described in own words";
+    const q = artifacts.questions.find((x) => x.id === axisId);
+    return q?.options.find((o) => o.value === value)?.label ?? value.replaceAll("_", " ");
+  }
+
+  /** The five axes, rendered from the spec so this list can't drift out of
+   * order or out of vocabulary with the interview itself. */
+  const answerRows = (
+    [
+      ["signature", artifacts.axes.signature],
+      ["trajectory", artifacts.axes.trajectory],
+      ["footprint", artifacts.axes.footprint],
+      ["inputs", artifacts.axes.inputs],
+      ["response", artifacts.axes.response],
+    ] as const
+  )
+    .map(([axisId, raw]) => {
+      const values = Array.isArray(raw) ? raw : raw ? [raw] : [];
+      if (values.length === 0) return null;
+      const question = artifacts.questions.find((q) => q.id === axisId);
+      return {
+        axisId,
+        prompt: question?.prompt ?? axisId,
+        answer: values.map((v) => answerLabel(axisId, v)).join(", "),
+        note: artifacts.axisNotes[axisId],
+      };
+    })
+    .filter((row): row is NonNullable<typeof row> => row !== null);
+
   return (
     <div className="h-full min-h-0 flex-1 overflow-y-scroll thin-scrollbar p-4 space-y-4">
         <ArtifactCard title="Case & Profile">
@@ -86,22 +124,16 @@ export function ArtifactPanel({ artifacts }: { artifacts: Artifacts }) {
 
         {hasAxes && (
           <ArtifactCard title="Answers so far">
-            <dl className="space-y-1">
-              {artifacts.axes.signature && artifacts.axes.signature.length > 0 && (
-                <div><dt className="text-xs text-muted-foreground">signature</dt><dd>{artifacts.axes.signature.join(", ")}</dd></div>
-              )}
-              {artifacts.axes.trajectory && (
-                <div><dt className="text-xs text-muted-foreground">trajectory</dt><dd>{artifacts.axes.trajectory}</dd></div>
-              )}
-              {artifacts.axes.footprint && (
-                <div><dt className="text-xs text-muted-foreground">footprint</dt><dd>{artifacts.axes.footprint}</dd></div>
-              )}
-              {artifacts.axes.inputs && artifacts.axes.inputs.length > 0 && (
-                <div><dt className="text-xs text-muted-foreground">inputs</dt><dd>{artifacts.axes.inputs.join(", ")}</dd></div>
-              )}
-              {artifacts.axes.response && (
-                <div><dt className="text-xs text-muted-foreground">response</dt><dd>{artifacts.axes.response}</dd></div>
-              )}
+            <dl className="space-y-2">
+              {answerRows.map((row) => (
+                <div key={row.axisId}>
+                  <dt className="text-xs text-muted-foreground">{row.prompt}</dt>
+                  <dd>{row.answer}</dd>
+                  {row.note && row.note !== row.answer && (
+                    <dd className="text-xs text-muted-foreground">your words: &ldquo;{row.note}&rdquo;</dd>
+                  )}
+                </div>
+              ))}
             </dl>
           </ArtifactCard>
         )}
@@ -148,9 +180,9 @@ export function ArtifactPanel({ artifacts }: { artifacts: Artifacts }) {
               <div className="text-muted-foreground">Recognized defect — what&apos;s wrong</div>
               <div className="font-medium">
                 {artifacts.axes.signature && artifacts.axes.signature.length > 0
-                  ? artifacts.axes.signature.map((s) => s.replaceAll("_", " ")).join(", ")
+                  ? artifacts.axes.signature.map((s) => answerLabel("signature", s)).join(", ")
                   : "not classified"}
-                {artifacts.vision?.quality_ok && ` · ${artifacts.vision.magnitude} magnitude`}
+                {artifacts.vision?.quality_ok && ` · ${artifacts.vision.magnitude} deviation`}
               </div>
               <div className="mt-1 text-muted-foreground">
                 The candidates below are <span className="font-medium text-foreground">causes</span> — why that
@@ -159,10 +191,19 @@ export function ArtifactPanel({ artifacts }: { artifacts: Artifacts }) {
             </div>
             <div className="mb-3 flex flex-wrap gap-2">
               <Badge variant={TIER_VARIANT[artifacts.ranking.tier]}>{artifacts.ranking.tier}</Badge>
-              <Badge variant="outline">{artifacts.ranking.agree ? "passes agree" : "passes disagree"}</Badge>
+              <Badge variant="outline">
+                {artifacts.ranking.critic_top_cause_id
+                  ? artifacts.ranking.agree
+                    ? "critic agrees"
+                    : "critic disagrees"
+                  : "critic abstained"}
+              </Badge>
             </div>
 
-            {!artifacts.ranking.agree && (
+            {/* Shown whenever the critic ran, not only on disagreement:
+                "it abstained" is a fact about the evidence, and hiding it
+                made an abstention look like agreement. */}
+            {artifacts.ranking.pass2 !== null || artifacts.ranking.critic_note ? (
               <div className="mb-3 grid grid-cols-2 gap-2 rounded-md border bg-muted/40 p-2 text-xs">
                 <div>
                   <div className="text-muted-foreground">Pass 1 &middot; rule engine</div>
@@ -171,16 +212,18 @@ export function ArtifactPanel({ artifacts }: { artifacts: Artifacts }) {
                 <div>
                   <div className="text-muted-foreground">Pass 2 &middot; LLM critic</div>
                   <div className="font-medium">
-                    {artifacts.ranking.pass2 && artifacts.ranking.pass2.length > 0
-                      ? causeLabel(
-                          artifacts.ranking,
-                          artifacts.ranking.pass2.reduce((a, b) => (b.likelihood_pct > a.likelihood_pct ? b : a)).cause_id,
-                        )
-                      : "not run — no LLM key configured"}
+                    {artifacts.ranking.critic_top_cause_id
+                      ? causeLabel(artifacts.ranking, artifacts.ranking.critic_top_cause_id)
+                      : artifacts.ranking.pass2 && artifacts.ranking.pass2.length > 0
+                        ? "no clear pick"
+                        : "not run — no LLM key configured"}
                   </div>
                 </div>
+                {artifacts.ranking.critic_note && (
+                  <p className="col-span-2 text-muted-foreground">{artifacts.ranking.critic_note}</p>
+                )}
               </div>
-            )}
+            ) : null}
 
             <div className="mb-3 space-y-2 text-xs">
               <div className="flex items-start gap-2">
@@ -215,12 +258,28 @@ export function ArtifactPanel({ artifacts }: { artifacts: Artifacts }) {
         )}
 
         {artifacts.checks.length > 0 && (
-          <ArtifactCard title="Troubleshooting loop (step 6)">
+          <ArtifactCard
+            title="Troubleshooting loop (step 6)"
+            extra={
+              <span className="text-xs text-muted-foreground">
+                {artifacts.checks.filter((c) => c.is_change).length} change
+                {artifacts.checks.filter((c) => c.is_change).length === 1 ? "" : "s"} &middot;{" "}
+                {artifacts.checks.filter((c) => !c.is_change).length} looked
+              </span>
+            }
+          >
             <ul className="space-y-1">
               {artifacts.checks.map((c) => (
-                <li key={c.check_result_id} className="flex items-center justify-between">
-                  <span>#{c.sequence} {c.check_name}</span>
-                  <Badge variant="outline">{c.outcome ?? "logged"}</Badge>
+                <li key={c.check_result_id} className="flex items-start justify-between gap-2">
+                  <span>
+                    #{c.sequence} {c.check_name}
+                    {/* Only changes count at close, so which is which has
+                        to be visible in the log itself. */}
+                    <span className="text-xs text-muted-foreground">
+                      {c.is_change ? " · changed something" : " · looked only"}
+                    </span>
+                  </span>
+                  <Badge variant="outline" className="shrink-0">{c.outcome ?? "logged"}</Badge>
                 </li>
               ))}
             </ul>

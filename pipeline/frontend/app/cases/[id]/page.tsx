@@ -16,6 +16,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TierInfo } from "@/components/tier-info";
 import { ApiError } from "@/lib/api/client";
 import { getCase } from "@/lib/api/cases";
+import { getIntakeSpec } from "@/lib/api/intake";
 import { getReport } from "@/lib/api/report";
 import type { Case, CheckOutcome, VisionResult } from "@/lib/api/types";
 
@@ -47,11 +48,16 @@ export default function CaseDetailPage() {
         // it too so a past case reads the same as a freshly-finished one.
         // No LLM explanation here: browsing a case shouldn't spend a call.
         const report = c.ranking ? await getReport(caseId, false).catch(() => null) : null;
+        // The question spine, so the answers read in the words they were
+        // asked in rather than as stored ids.
+        const questions = await getIntakeSpec().catch(() => []);
         if (cancelled) return;
         setArtifacts({
           caseData: c,
           photoUrl: null,
+          questions,
           axes: c.fingerprint?.axes ?? {},
+          axisNotes: c.fingerprint?.axis_notes ?? {},
           vision: (c.vision_result as VisionResult | null) ?? null,
           coarse: null,
           ranking: c.ranking,
@@ -257,6 +263,12 @@ export default function CaseDetailPage() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-3">
               <CardTitle className="text-base">Troubleshooting loop</CardTitle>
+              {/* Changes and observations are counted separately: only
+                  changes bear on whether this case could close CONFIRMED. */}
+              <span className="text-xs text-muted-foreground">
+                {caseData.action_count} change{caseData.action_count === 1 ? "" : "s"} &middot;{" "}
+                {caseData.observation_count} looked
+              </span>
             </CardHeader>
             <CardContent>
               {!caseData.check_results || caseData.check_results.length === 0 ? (
@@ -267,6 +279,7 @@ export default function CaseDetailPage() {
                     <TableRow>
                       <TableHead className="w-12">#</TableHead>
                       <TableHead>Check</TableHead>
+                      <TableHead>Kind</TableHead>
                       <TableHead>Cause</TableHead>
                       <TableHead>Outcome</TableHead>
                       <TableHead>Detail</TableHead>
@@ -277,6 +290,9 @@ export default function CaseDetailPage() {
                       <TableRow key={check.check_result_id}>
                         <TableCell>{check.sequence}</TableCell>
                         <TableCell className="font-medium">{check.check_name}</TableCell>
+                        <TableCell className="text-muted-foreground">
+                          {check.is_change ? "changed" : "looked"}
+                        </TableCell>
                         <TableCell>{check.cause_id ?? "—"}</TableCell>
                         <TableCell>
                           {check.outcome ? (

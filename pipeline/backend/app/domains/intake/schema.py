@@ -3,6 +3,7 @@ from pydantic import BaseModel
 
 class QuestionOptionOut(BaseModel):
     value: str
+    label: str
     help_text: str
     exclusive: bool
 

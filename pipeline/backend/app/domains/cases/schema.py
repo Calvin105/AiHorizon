@@ -22,6 +22,12 @@ class FingerprintAxes(BaseModel):
 class Fingerprint(BaseModel):
     axes: FingerprintAxes = FingerprintAxes()
     signals: dict[str, float | int | str | None] = {}
+    axis_notes: dict[str, str] = {}
+    """Raw words from "Other (describe)" on an axis, keyed by axis id, kept
+    whether or not the W7 mapper could place them on a real option. An
+    axis stored as `unmapped` has its text here — DESIGN.md wants the
+    words kept and the axis excluded from the match, never a silently
+    forked enum. Read by humans, never scored."""
 
 
 class ConfirmedBy(BaseModel):
@@ -104,6 +110,9 @@ class CaseRead(ORMModel):
     escalate: bool
     engineer_notes: str | None = None
     action_count: int
+    """Changes only — observations are counted separately and cost nothing
+    at close. See CheckResult.is_change."""
+    observation_count: int
     station: DispenseStationRead
     profile: DispenseProfileReadWithMaterial
 

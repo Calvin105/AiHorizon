@@ -97,9 +97,12 @@ export function TierInfo() {
         <div>
           <p className="mb-1 font-medium text-foreground">Checks</p>
           <p className="text-muted-foreground">
-            Troubleshooting-loop actions logged against the case. More than one disqualifies it
-            from ever reaching CONFIRMED — with two changes at once, there&apos;s no way to say
-            which one worked.
+            Troubleshooting-loop iterations logged against the case, of two kinds.{" "}
+            <span className="text-foreground">Looked</span> — you observed something and changed
+            nothing; run as many as you like, they cost the case nothing.{" "}
+            <span className="text-foreground">Changed</span> — you altered the machine, tooling
+            or material. More than one change disqualifies the case from CONFIRMED, because with
+            two changes at once there&apos;s no way to say which one worked.
           </p>
         </div>
       </HoverCardContent>

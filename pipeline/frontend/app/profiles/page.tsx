@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { ArrowRight, Compass, Layers } from "lucide-react";
+import { ArrowLeft, ArrowRight, Compass, Layers } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
@@ -24,6 +24,30 @@ export default function ProfilesIndexPage() {
 
   return (
     <div className="mx-auto max-w-5xl space-y-6 px-6 py-10">
+      <div className="flex items-center justify-between">
+        <Link
+          href="/"
+          className={buttonVariants({
+            variant: "ghost",
+            size: "sm",
+            className: "gap-1.5 text-muted-foreground hover:text-foreground",
+          })}
+        >
+          <ArrowLeft className="size-4" />
+          Back to Home
+        </Link>
+        <Link
+          href="/cases"
+          className={buttonVariants({
+            variant: "outline",
+            size: "sm",
+            className: "gap-1.5 text-xs",
+          })}
+        >
+          View Past Cases
+        </Link>
+      </div>
+
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Dispense Profiles</h1>
         <p className="mt-1 text-sm text-muted-foreground">

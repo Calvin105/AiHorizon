@@ -1,10 +1,12 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { ArrowLeft, History } from "lucide-react";
 import { toast } from "sonner";
 
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import {
   Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle,
 } from "@/components/ui/card";
@@ -69,6 +71,31 @@ export default function OpenCasePage() {
 
   return (
     <div className="mx-auto max-w-2xl flex-1 px-6 py-10">
+      <div className="mb-6 flex items-center justify-between">
+        <Link
+          href="/"
+          className={buttonVariants({
+            variant: "ghost",
+            size: "sm",
+            className: "gap-1.5 text-muted-foreground hover:text-foreground",
+          })}
+        >
+          <ArrowLeft className="size-4" />
+          Back to Home
+        </Link>
+        <Link
+          href="/cases"
+          className={buttonVariants({
+            variant: "outline",
+            size: "sm",
+            className: "gap-1.5 text-xs",
+          })}
+        >
+          <History className="size-3.5" />
+          View Past Cases
+        </Link>
+      </div>
+
       <form onSubmit={handleSubmit}>
         <Card>
           <CardHeader>

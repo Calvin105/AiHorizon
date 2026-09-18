@@ -99,5 +99,14 @@ class Case(Base):
         """Derived, never stored — counting is what keeps post-hoc
         reasoning out (DESIGN.md step 8): only checks logged *after*
         intake count, which is why pre_intake_actions is a separate field
-        entirely rather than pre-seeded CheckResult rows."""
-        return len(self.check_results)
+        entirely rather than pre-seeded CheckResult rows.
+
+        Counts *changes*, not iterations: looking at something twice is
+        not "two changes at once" (see CheckResult.is_change)."""
+        return sum(1 for check in self.check_results if check.is_change)
+
+    @property
+    def observation_count(self) -> int:
+        """The other half of the loop log — free to run as often as the
+        operator likes, and deliberately not penalised at close."""
+        return sum(1 for check in self.check_results if not check.is_change)

@@ -29,7 +29,9 @@ def get_spec() -> list[QuestionOut]:
         QuestionOut(
             id=q.id, axis=q.axis, prompt=q.prompt, kind=q.kind,
             options=[
-                QuestionOptionOut(value=o.value, help_text=o.help_text, exclusive=o.exclusive)
+                QuestionOptionOut(
+                    value=o.value, label=o.label, help_text=o.help_text, exclusive=o.exclusive
+                )
                 for o in q.options
             ],
             max_picks=q.max_picks, has_dont_know=q.has_dont_know, has_other=q.has_other,

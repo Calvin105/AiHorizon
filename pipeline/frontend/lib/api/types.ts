@@ -77,7 +77,11 @@ export interface DispenseProfile {
 
 export interface QuestionOption {
   value: string;
+  /** What the operator reads. `value` is the stored id and is never shown. */
+  label: string;
+  /** The plain-language example shown under the label. */
   help_text: string;
+  /** Picking this clears every other pick on the same question. */
   exclusive: boolean;
 }
 
@@ -110,6 +114,9 @@ export interface FingerprintAxes {
 export interface Fingerprint {
   axes: FingerprintAxes;
   signals: Record<string, number | string | null>;
+  /** Raw words from "Other (describe)", keyed by axis id. Kept for a human
+   * to read; never scored. */
+  axis_notes?: Record<string, string>;
 }
 
 // ---- Vision (step 3) --------------------------------------------------------
@@ -120,6 +127,10 @@ export interface VisionResult {
   signals: Record<string, number>;
   magnitude: string;
   small_then_big_above_chance: boolean;
+  /** Axis-1 picks the measurement supports, for the interview to open
+   * pre-filled on. A suggestion the operator can change — the backend
+   * never writes it into the fingerprint itself. */
+  suggested_signature?: string[];
   cv_output: Record<string, unknown>;
 }
 
@@ -164,7 +175,15 @@ export type Tier = "T1" | "T2" | "T3" | "T4";
 export interface Ranking {
   pass1: Pass1Cause[];
   pass2: Pass2Cause[] | null;
+  /** "Not contradicted", not "actively agreed" — see `critic_note`. */
   agree: boolean;
+  /** The critic's pick, or null when it abstained. Null alongside a
+   * non-empty `pass2` means it ranked the causes but had no clear view,
+   * which is not counted as disagreement. Optional: rankings stored
+   * before this field existed don't carry it. */
+  critic_top_cause_id?: string | null;
+  /** Why the critic did or didn't get a vote, in words. */
+  critic_note?: string;
   gate_a: GateA;
   gate_b: GateB;
   tier: Tier;
@@ -209,6 +228,9 @@ export interface CheckResult {
   cost_minutes: number | null;
   invasive: boolean;
   safety_note: string | null;
+  /** Did this iteration alter the machine/tooling/material, or only
+   * observe it? Only changes count toward `action_count`. */
+  is_change: boolean;
   outcome: CheckOutcome | null;
   result_detail: string | null;
   performed_at: string | null;
@@ -220,6 +242,7 @@ export interface CheckResultInput {
   cost_minutes: number | null;
   invasive: boolean;
   safety_note: string | null;
+  is_change: boolean;
   outcome: CheckOutcome | null;
   result_detail: string | null;
 }
@@ -277,7 +300,10 @@ export interface Case {
   tier: CaseTier | null;
   escalate: boolean;
   engineer_notes: string | null;
+  /** Changes only. Observations are counted separately and cost nothing
+   * at close. */
   action_count: number;
+  observation_count: number;
   station: DispenseStation;
   profile: DispenseProfile;
   check_results: CheckResult[];

@@ -27,6 +27,17 @@ class CheckResult(Base):
     invasive: Mapped[bool] = mapped_column(Boolean, default=False)
     safety_note: Mapped[str | None] = mapped_column(Text, default=None)
 
+    is_change: Mapped[bool] = mapped_column(Boolean, default=False)
+    """Did this iteration *alter* the machine, tooling or material, or only
+    observe it? Only changes count toward Case.action_count, because that
+    is what DESIGN.md step 8's "exactly one thing was changed" is about.
+
+    Counting every logged iteration instead — which is what
+    ``len(check_results)`` did — punished the operator who investigated
+    properly: the second observation permanently disqualified the case from
+    CONFIRMED, so no case could ever reach Gate B and the case database
+    could never learn from itself."""
+
     outcome: Mapped[CheckOutcome | None] = mapped_column(
         Enum(CheckOutcome, name="check_outcome", native_enum=False), default=None
     )

@@ -16,6 +16,55 @@ import re
 from app.domains.causes.vocabulary import load_causes
 from app.domains.llm import client as llm_client
 
+MIN_TOP_PCT = 25.0
+"""Below this, the critic's own top pick isn't an opinion worth vetoing on."""
+
+MIN_LEAD_PCT = 10.0
+"""And it has to actually prefer that pick over the next one.
+
+Both are placeholders in exactly the sense DESIGN.md's "Known risks"
+means: unmeasured until W10 reports the critic's error rate. They are set
+where they are because a veto is the strongest action in the gate — it
+collapses the tier to T3/T4 and refuses to name a cause — so the critic
+has to have said something before it gets one.
+"""
+
+
+def critic_verdict(pass2_result: list[dict] | None) -> tuple[str | None, str]:
+    """Reduce the critic's ranking to (top_cause_id_or_None, note).
+
+    None means *abstained*, not *agreed*: "an error detector, not a voter"
+    only makes sense if a detector that found nothing stays silent. A model
+    that rates all seven causes at 5% has no view on which is right, and
+    reading its argmax as a dissenting vote was throwing away pass 1's
+    result on a coin flip — every ranked case in the shipped database
+    landed at T4 that way, including one sitting at 97% after a confirmed
+    check.
+    """
+    if not pass2_result:
+        return None, "Critic did not run (no LLM key configured) — not counted either way."
+
+    ordered = sorted(pass2_result, key=lambda r: -r["likelihood_pct"])
+    top = ordered[0]
+    runner_up_pct = ordered[1]["likelihood_pct"] if len(ordered) > 1 else 0.0
+    lead = top["likelihood_pct"] - runner_up_pct
+
+    if top["likelihood_pct"] < MIN_TOP_PCT:
+        return None, (
+            f"Critic's highest cause was only {top['likelihood_pct']:.0f}%, under the "
+            f"{MIN_TOP_PCT:.0f}% floor — it has no candidate, so it abstains rather than dissents."
+        )
+    if lead < MIN_LEAD_PCT:
+        return None, (
+            f"Critic spread its confidence almost evenly (top {top['likelihood_pct']:.0f}%, "
+            f"next {runner_up_pct:.0f}%) — no clear pick, so it abstains rather than dissents."
+        )
+
+    return top["cause_id"], (
+        f"Critic's own pick: {top['cause_id']} at {top['likelihood_pct']:.0f}% "
+        f"(next {runner_up_pct:.0f}%)."
+    )
+
 
 def critic_pass(
     complaint_text: str | None, dispenser_class: str, material_family: str

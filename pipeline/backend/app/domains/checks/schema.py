@@ -16,6 +16,10 @@ class CheckResultCreate(BaseModel):
     cost_minutes: float | None = None
     invasive: bool = False
     safety_note: str | None = None
+    is_change: bool = False
+    """True only if the machine, tooling or material was actually altered.
+    Defaults to False — an observation — so a caller that doesn't know
+    can't silently inflate the change count that step 8 rests on."""
     outcome: CheckOutcome | None = None
     result_detail: str | None = None
 
@@ -29,6 +33,7 @@ class CheckResultRead(ORMModel):
     cost_minutes: float | None = None
     invasive: bool
     safety_note: str | None = None
+    is_change: bool
     outcome: CheckOutcome | None = None
     result_detail: str | None = None
     performed_at: datetime | None = None

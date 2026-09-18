@@ -7,8 +7,11 @@ export interface Phase {
 }
 
 const PHASES: Omit<Phase, "hint">[] = [
-  { n: 1, label: "Interview" },
-  { n: 2, label: "Evidence" },
+  // The photo comes before the interview: it measures what the interview
+  // would otherwise ask the operator to estimate, and it's the only
+  // evidence that can clear Gate A's chance test.
+  { n: 1, label: "Photo" },
+  { n: 2, label: "Interview" },
   { n: 3, label: "Ranking" },
   { n: 4, label: "Troubleshooting" },
   { n: 5, label: "Report" },

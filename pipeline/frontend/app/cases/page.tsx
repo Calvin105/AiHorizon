@@ -1,7 +1,10 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
+import { ArrowLeft, FilePlus2 } from "lucide-react";
 
+import { buttonVariants } from "@/components/ui/button";
 import { CasesTable } from "@/components/cases-table";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ApiError } from "@/lib/api/client";
@@ -27,6 +30,27 @@ export default function CasesPage() {
 
   return (
     <div className="mx-auto max-w-6xl px-6 py-10">
+      <div className="mb-6 flex items-center justify-between">
+        <Link
+          href="/"
+          className={buttonVariants({
+            variant: "ghost",
+            size: "sm",
+            className: "gap-1.5 text-muted-foreground hover:text-foreground",
+          })}
+        >
+          <ArrowLeft className="size-4" />
+          Back to Home
+        </Link>
+        <Link
+          href="/troubleshoot"
+          className={buttonVariants({ size: "sm", className: "gap-1.5" })}
+        >
+          <FilePlus2 className="size-4" />
+          Open New Case
+        </Link>
+      </div>
+
       <h1 className="mb-1 text-2xl font-semibold tracking-tight">Past cases</h1>
       <p className="mb-6 text-sm text-muted-foreground">
         {cases ? `${cases.length} case${cases.length === 1 ? "" : "s"} on file.` : "Loading..."}

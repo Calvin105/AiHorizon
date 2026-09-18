@@ -10,6 +10,11 @@ All five -> CONFIRMED. Zero -> UNVERIFIED. Anything in between -> PLAUSIBLE,
 shown as context but adjusting nothing. `action_count > 1` disqualifying
 CONFIRMED outright falls straight out of condition 2 here — it isn't a
 separate rule, it's what "exactly one thing was changed" already means.
+
+`action_count` counts changes only, never observations — see
+CheckResult.is_change. Running five checks to narrow the cause down and
+then changing one thing is the behaviour this tier is meant to reward,
+not to disqualify.
 """
 
 from dataclasses import dataclass
@@ -35,8 +40,12 @@ def close_case(case: Case) -> CloseResult:
     if not diagnosis.get("confirmed_by"):
         gaps.append("no check confirmed the cause")
 
-    if case.action_count != 1:
-        gaps.append(f"{case.action_count} changes at once, not exactly one — cause never cleanly tested")
+    if case.action_count == 0:
+        gaps.append("nothing was changed, so no fix was applied or tested")
+    elif case.action_count > 1:
+        gaps.append(
+            f"{case.action_count} things changed at once — no way to say which one worked"
+        )
 
     if verification.get("signal") is None or verification.get("after") is None:
         gaps.append("the deciding signal was never re-measured")
