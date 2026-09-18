@@ -128,13 +128,6 @@ export default function OpenCasePage() {
         setStations(s.items);
         setProfiles(p.items);
         setMaterials(m.items);
-
-        if (s.items.length === 1) setStationId(String(s.items[0].station_id));
-        if (m.items.length === 1) setMaterialId(String(m.items[0].material_id));
-        if (p.items.length === 1) {
-          setProfileId(String(p.items[0].profile_id));
-          setMaterialId(String(p.items[0].material_id));
-        }
       })
       .catch(() => toast.error("Could not reach the API. Is the backend running?"))
       .finally(() => setLoadingOptions(false));
@@ -629,7 +622,7 @@ export default function OpenCasePage() {
                   </span>
                   <div className="flex items-center gap-1.5">
                     <Badge variant="secondary" className="text-[10px]">
-                      {selectedStation ? selectedStation.name : "Not selected"}
+                      {selectedStation ? selectedStation.name : "—"}
                     </Badge>
                     {selectedStation && (
                       <Button
@@ -644,17 +637,13 @@ export default function OpenCasePage() {
                     )}
                   </div>
                 </div>
-                {selectedStation ? (
-                  <div className="space-y-1 text-muted-foreground">
-                    <Field label="Line" value={selectedStation.line} />
-                    <Field label="Dispenser class" value={selectedStation.dispenser_class} />
-                    <Field label="Valve model" value={selectedStation.valve_model ?? "—"} />
-                    <Field label="Heated reservoir" value={yesNo(selectedStation.heated_reservoir)} />
-                    <Field label="Camera available" value={yesNo(selectedStation.camera_available)} />
-                  </div>
-                ) : (
-                  <p className="text-[11px] text-muted-foreground italic">Pick a station to confirm hardware details.</p>
-                )}
+                <div className="space-y-1 text-muted-foreground">
+                  <Field label="Line" value={selectedStation?.line ?? "—"} />
+                  <Field label="Dispenser class" value={selectedStation?.dispenser_class ?? "—"} />
+                  <Field label="Valve model" value={selectedStation?.valve_model ?? "—"} />
+                  <Field label="Heated reservoir" value={selectedStation ? yesNo(selectedStation.heated_reservoir) : "—"} />
+                  <Field label="Camera available" value={selectedStation ? yesNo(selectedStation.camera_available) : "—"} />
+                </div>
               </div>
 
               {/* Material Block */}
@@ -665,7 +654,7 @@ export default function OpenCasePage() {
                   </span>
                   <div className="flex items-center gap-1.5">
                     <Badge variant="secondary" className="text-[10px]">
-                      {selectedMaterial ? selectedMaterial.name : "Not selected"}
+                      {selectedMaterial ? selectedMaterial.name : "—"}
                     </Badge>
                     {selectedMaterial && (
                       <Button
@@ -680,20 +669,46 @@ export default function OpenCasePage() {
                     )}
                   </div>
                 </div>
-                {selectedMaterial ? (
-                  <div className="space-y-1 text-muted-foreground">
-                    <Field label="Part #" value={selectedMaterial.part_number ?? "—"} />
-                    <Field label="Family" value={selectedMaterial.family} />
-                    <Field label="Chemistry" value={selectedMaterial.two_part ? "Two-part formulation" : "Single component"} />
-                    <Field label="Thixotropic" value={yesNo(selectedMaterial.thixotropic)} />
-                    <Field label="Pot life limit" value={selectedMaterial.pot_life_hours ? `${selectedMaterial.pot_life_hours}h` : "—"} />
-                    <Field label="Out-time limit" value={selectedMaterial.out_time_hours ? `${selectedMaterial.out_time_hours}h` : "—"} />
-                    <Field label="Storage temp" value={selectedMaterial.storage_temp_c != null ? `${selectedMaterial.storage_temp_c} °C` : "—"} />
-                    <Field label="Filler particle" value={selectedMaterial.filler_particle_um ? `${selectedMaterial.filler_particle_um} µm` : "None"} />
-                  </div>
-                ) : (
-                  <p className="text-[11px] text-muted-foreground italic">Pick a material to confirm rheology limits.</p>
-                )}
+                <div className="space-y-1 text-muted-foreground">
+                  <Field label="Part #" value={selectedMaterial?.part_number ?? "—"} />
+                  <Field label="Family" value={selectedMaterial?.family ?? "—"} />
+                  <Field
+                    label="Chemistry"
+                    value={
+                      selectedMaterial
+                        ? selectedMaterial.two_part
+                          ? "Two-part formulation"
+                          : "Single component"
+                        : "—"
+                    }
+                  />
+                  <Field
+                    label="Thixotropic"
+                    value={selectedMaterial ? yesNo(selectedMaterial.thixotropic) : "—"}
+                  />
+                  <Field
+                    label="Pot life limit"
+                    value={selectedMaterial?.pot_life_hours ? `${selectedMaterial.pot_life_hours}h` : "—"}
+                  />
+                  <Field
+                    label="Out-time limit"
+                    value={selectedMaterial?.out_time_hours ? `${selectedMaterial.out_time_hours}h` : "—"}
+                  />
+                  <Field
+                    label="Storage temp"
+                    value={selectedMaterial?.storage_temp_c != null ? `${selectedMaterial.storage_temp_c} °C` : "—"}
+                  />
+                  <Field
+                    label="Filler particle"
+                    value={
+                      selectedMaterial?.filler_particle_um
+                        ? `${selectedMaterial.filler_particle_um} µm`
+                        : selectedMaterial
+                          ? "None"
+                          : "—"
+                    }
+                  />
+                </div>
               </div>
 
               {/* Profile Block */}
@@ -704,7 +719,7 @@ export default function OpenCasePage() {
                   </span>
                   <div className="flex items-center gap-1.5">
                     <Badge variant="secondary" className="text-[10px]">
-                      {selectedProfile ? selectedProfile.name : "Not selected"}
+                      {selectedProfile ? selectedProfile.name : "—"}
                     </Badge>
                     {selectedProfile && (
                       <Button
@@ -719,44 +734,43 @@ export default function OpenCasePage() {
                     )}
                   </div>
                 </div>
-                {selectedProfile ? (
-                  <div className="space-y-1 text-muted-foreground">
-                    <Field label="Needle gauge" value={selectedProfile.needle_gauge ?? "—"} />
-                    <Field label="Needle ID" value={selectedProfile.needle_id_um ? `${selectedProfile.needle_id_um} µm` : "—"} />
-                    <Field label="Set pressure" value={selectedProfile.set_pressure_kpa ? `${selectedProfile.set_pressure_kpa} kPa` : "—"} />
-                    <Field label="Set time" value={selectedProfile.set_time_ms ? `${selectedProfile.set_time_ms} ms` : "—"} />
-                    <Field label="Standoff" value={selectedProfile.standoff_um ? `${selectedProfile.standoff_um} µm` : "—"} />
-                    <Field label="Speed" value={selectedProfile.speed_mm_s ? `${selectedProfile.speed_mm_s} mm/s` : "—"} />
-                    <Field label="Set temperature" value={selectedProfile.set_temp_c ? `${selectedProfile.set_temp_c} °C` : "—"} />
-                    <Field label="Spec limit" value={selectedProfile.spec_metric ? `${selectedProfile.spec_metric} ${selectedProfile.spec_limit}` : "—"} />
+                <div className="space-y-1 text-muted-foreground">
+                  <Field label="Needle gauge" value={selectedProfile?.needle_gauge ?? "—"} />
+                  <Field label="Needle ID" value={selectedProfile?.needle_id_um ? `${selectedProfile.needle_id_um} µm` : "—"} />
+                  <Field label="Set pressure" value={selectedProfile?.set_pressure_kpa ? `${selectedProfile.set_pressure_kpa} kPa` : "—"} />
+                  <Field label="Set time" value={selectedProfile?.set_time_ms ? `${selectedProfile.set_time_ms} ms` : "—"} />
+                  <Field label="Standoff" value={selectedProfile?.standoff_um ? `${selectedProfile.standoff_um} µm` : "—"} />
+                  <Field label="Speed" value={selectedProfile?.speed_mm_s ? `${selectedProfile.speed_mm_s} mm/s` : "—"} />
+                  <Field label="Set temperature" value={selectedProfile?.set_temp_c ? `${selectedProfile.set_temp_c} °C` : "—"} />
+                  <Field label="Spec limit" value={selectedProfile?.spec_metric ? `${selectedProfile.spec_metric} ${selectedProfile.spec_limit}` : "—"} />
 
-                    {selectedProfile.geometry && (
-                      <div className="pt-2 border-t mt-2 flex items-center justify-between">
+                  <div className="pt-2 border-t mt-2 flex items-center justify-between">
+                    <span className="text-muted-foreground">Pattern</span>
+                    {selectedProfile?.geometry ? (
+                      <div className="flex items-center gap-2">
                         <span className="font-medium text-foreground">
-                          Pattern: {selectedProfile.geometry.pattern.toUpperCase()}
+                          {selectedProfile.geometry.pattern.toUpperCase()}
                         </span>
-                        <div className="flex items-center gap-2">
-                          <button
-                            type="button"
-                            onClick={() => setInspectItem({ type: "profile", profile: selectedProfile })}
-                            className="inline-flex items-center gap-1 text-[11px] font-medium text-primary hover:underline"
-                          >
-                            <Eye className="size-3" /> Inspect Pattern
-                          </button>
-                          <Link
-                            href={`/profiles/${selectedProfile.profile_id}`}
-                            target="_blank"
-                            className="inline-flex items-center gap-1 text-[11px] text-sky-500 hover:underline"
-                          >
-                            Blueprint <ExternalLink className="size-3" />
-                          </Link>
-                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setInspectItem({ type: "profile", profile: selectedProfile })}
+                          className="inline-flex items-center gap-1 text-[11px] font-medium text-primary hover:underline"
+                        >
+                          <Eye className="size-3" /> Inspect Pattern
+                        </button>
+                        <Link
+                          href={`/profiles/${selectedProfile.profile_id}`}
+                          target="_blank"
+                          className="inline-flex items-center gap-1 text-[11px] text-sky-500 hover:underline"
+                        >
+                          Blueprint <ExternalLink className="size-3" />
+                        </Link>
                       </div>
+                    ) : (
+                      <span className="font-mono font-medium text-foreground">—</span>
                     )}
                   </div>
-                ) : (
-                  <p className="text-[11px] text-muted-foreground italic">Pick a profile to confirm machine parameters.</p>
-                )}
+                </div>
               </div>
             </CardContent>
           </Card>

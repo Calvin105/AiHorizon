@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { ExternalLink } from "lucide-react";
+import { ArrowDown, ArrowUp, ExternalLink, Sparkles } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -37,20 +37,38 @@ const TIER_VARIANT: Record<string, "default" | "secondary" | "destructive"> = {
 };
 
 function ArtifactCard({
-  title, extra, children,
+  title, extra, children, cardId, isHighlighted,
 }: {
   title: string;
   extra?: React.ReactNode;
   children: React.ReactNode;
+  cardId?: string;
+  isHighlighted?: boolean;
 }) {
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between gap-2 pb-2">
-        <CardTitle className="text-sm">{title}</CardTitle>
-        {extra}
-      </CardHeader>
-      <CardContent className="text-sm">{children}</CardContent>
-    </Card>
+    <div
+      data-card-id={cardId}
+      className={`rounded-xl transition-all duration-500 ${
+        isHighlighted
+          ? "ring-2 ring-primary ring-offset-2 ring-offset-background shadow-lg scale-[1.008]"
+          : ""
+      }`}
+    >
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between gap-2 pb-2">
+          <CardTitle className="text-sm flex items-center gap-2">
+            {title}
+            {isHighlighted && (
+              <span className="inline-flex items-center gap-1 text-[10px] font-normal text-primary animate-pulse">
+                <Sparkles className="size-3" /> Updated
+              </span>
+            )}
+          </CardTitle>
+          {extra}
+        </CardHeader>
+        <CardContent className="text-sm">{children}</CardContent>
+      </Card>
+    </div>
   );
 }
 
@@ -60,6 +78,13 @@ function causeLabel(ranking: Ranking, causeId: string): string {
 
 export function ArtifactPanel({ artifacts }: { artifacts: Artifacts }) {
   const { caseData } = artifacts;
+  const containerRef = React.useRef<HTMLDivElement>(null);
+  const [highlightedCardId, setHighlightedCardId] = React.useState<string | null>(null);
+
+  // Tracking previous likelihoods for candidate causes to compute difference bars
+  const [prevLikelihoods, setPrevLikelihoods] = React.useState<Record<string, number>>({});
+  const lastPass1Ref = React.useRef<Record<string, number> | null>(null);
+
   const hasAxes = Object.values(artifacts.axes).some((v) => (Array.isArray(v) ? v.length : v));
 
   /** An answer in the words it was offered in. */
@@ -94,9 +119,166 @@ export function ArtifactPanel({ artifacts }: { artifacts: Artifacts }) {
     })
     .filter((row): row is NonNullable<typeof row> => row !== null);
 
+  // Track and update candidate cause likelihood changes
+  React.useEffect(() => {
+    if (!artifacts.ranking?.pass1) return;
+    const currentMap: Record<string, number> = {};
+    for (const c of artifacts.ranking.pass1) {
+      currentMap[c.cause_id] = Math.round(c.likelihood * 100);
+    }
+
+    if (lastPass1Ref.current) {
+      const hasDifference = Object.keys(currentMap).some(
+        (id) => lastPass1Ref.current![id] !== undefined && lastPass1Ref.current![id] !== currentMap[id]
+      );
+      if (hasDifference) {
+        setPrevLikelihoods({ ...lastPass1Ref.current });
+      }
+    } else {
+      // Check session storage for a saved baseline if available
+      try {
+        const stored = sessionStorage.getItem(`aihorizon_prev_ranking_${caseData.case_id}`);
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          setPrevLikelihoods(parsed);
+        }
+      } catch {
+        // ignore
+      }
+    }
+
+    lastPass1Ref.current = currentMap;
+    try {
+      sessionStorage.setItem(`aihorizon_prev_ranking_${caseData.case_id}`, JSON.stringify(currentMap));
+    } catch {
+      // ignore
+    }
+  }, [artifacts.ranking, caseData.case_id]);
+
+  // Smoothly scroll the panel to the target card
+  const scrollToCard = React.useCallback((cardId: string) => {
+    const container = containerRef.current;
+    if (!container) return;
+    const target = container.querySelector(`[data-card-id="${cardId}"]`) as HTMLElement | null;
+    if (!target) return;
+
+    const containerTop = container.getBoundingClientRect().top;
+    const targetTop = target.getBoundingClientRect().top;
+    const scrollOffset = targetTop - containerTop + container.scrollTop - 12;
+
+    container.scrollTo({ top: Math.max(0, scrollOffset), behavior: "smooth" });
+
+    setHighlightedCardId(cardId);
+    setTimeout(() => {
+      setHighlightedCardId((curr) => (curr === cardId ? null : curr));
+    }, 2500);
+  }, []);
+
+  // Detect whenever a new artifact is created or an existing one is updated
+  const prevSnapshotRef = React.useRef<{
+    hasPhoto: boolean;
+    answersCount: number;
+    hasVision: boolean;
+    hasCoarse: boolean;
+    rankingSig: string;
+    checksCount: number;
+    hasReport: boolean;
+    hasClose: boolean;
+    isInitial: boolean;
+  }>({
+    hasPhoto: Boolean(artifacts.photoUrl),
+    answersCount: answerRows.length,
+    hasVision: Boolean(artifacts.vision),
+    hasCoarse: Boolean(artifacts.coarse),
+    rankingSig: artifacts.ranking ? JSON.stringify(artifacts.ranking.pass1.map((p) => p.likelihood)) : "",
+    checksCount: artifacts.checks.length,
+    hasReport: Boolean(artifacts.report),
+    hasClose: Boolean(artifacts.close),
+    isInitial: true,
+  });
+
+  React.useEffect(() => {
+    const prev = prevSnapshotRef.current;
+    const currentRankingSig = artifacts.ranking
+      ? JSON.stringify(artifacts.ranking.pass1.map((p) => p.likelihood))
+      : "";
+
+    if (prev.isInitial) {
+      prev.isInitial = false;
+      // On initial mount, scroll to the most advanced artifact present
+      let initialCard: string | null = null;
+      if (artifacts.close) initialCard = "card-close";
+      else if (artifacts.report) initialCard = "card-report";
+      else if (artifacts.checks.length > 0) initialCard = "card-checks";
+      else if (artifacts.ranking) initialCard = "card-ranking";
+      else if (artifacts.coarse) initialCard = "card-coarse";
+      else if (artifacts.vision) initialCard = "card-vision";
+      else if (answerRows.length > 0) initialCard = "card-answers";
+      else if (artifacts.photoUrl) initialCard = "card-photo";
+
+      if (initialCard) {
+        setTimeout(() => scrollToCard(initialCard!), 150);
+      }
+      return;
+    }
+
+    let targetCard: string | null = null;
+
+    if (!prev.hasClose && artifacts.close) {
+      targetCard = "card-close";
+    } else if (!prev.hasReport && artifacts.report) {
+      targetCard = "card-report";
+    } else if (currentRankingSig !== prev.rankingSig && artifacts.ranking) {
+      // Candidate causes ranking updated or recomputed
+      targetCard = "card-ranking";
+    } else if (artifacts.checks.length > prev.checksCount) {
+      targetCard = "card-checks";
+    } else if (!prev.hasCoarse && artifacts.coarse) {
+      targetCard = "card-coarse";
+    } else if (!prev.hasVision && artifacts.vision) {
+      targetCard = "card-vision";
+    } else if (answerRows.length > prev.answersCount) {
+      targetCard = "card-answers";
+    } else if (!prev.hasPhoto && artifacts.photoUrl) {
+      targetCard = "card-photo";
+    }
+
+    // Update snapshot for next comparison
+    prevSnapshotRef.current = {
+      hasPhoto: Boolean(artifacts.photoUrl),
+      answersCount: answerRows.length,
+      hasVision: Boolean(artifacts.vision),
+      hasCoarse: Boolean(artifacts.coarse),
+      rankingSig: currentRankingSig,
+      checksCount: artifacts.checks.length,
+      hasReport: Boolean(artifacts.report),
+      hasClose: Boolean(artifacts.close),
+      isInitial: false,
+    };
+
+    if (targetCard) {
+      scrollToCard(targetCard);
+    }
+  }, [
+    artifacts.close,
+    artifacts.report,
+    artifacts.checks.length,
+    artifacts.ranking,
+    artifacts.coarse,
+    artifacts.vision,
+    artifacts.photoUrl,
+    answerRows.length,
+    scrollToCard,
+  ]);
+
   return (
-    <div className="h-full min-h-0 flex-1 overflow-y-scroll thin-scrollbar p-4 space-y-4">
+    <div
+      ref={containerRef}
+      className="h-full min-h-0 flex-1 overflow-y-scroll thin-scrollbar p-4 space-y-4 scroll-smooth"
+    >
         <ArtifactCard
+          cardId="card-setup"
+          isHighlighted={highlightedCardId === "card-setup"}
           title="Case & Profile Setup"
           extra={
             <Link
@@ -169,14 +351,22 @@ export function ArtifactPanel({ artifacts }: { artifacts: Artifacts }) {
         </ArtifactCard>
 
         {artifacts.photoUrl && (
-          <ArtifactCard title="Photo">
+          <ArtifactCard
+            cardId="card-photo"
+            isHighlighted={highlightedCardId === "card-photo"}
+            title="Photo"
+          >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={artifacts.photoUrl} alt="Uploaded dispense photo" className="w-full rounded-md border" />
           </ArtifactCard>
         )}
 
         {hasAxes && (
-          <ArtifactCard title="Answers so far">
+          <ArtifactCard
+            cardId="card-answers"
+            isHighlighted={highlightedCardId === "card-answers"}
+            title="Answers so far"
+          >
             <dl className="space-y-2">
               {answerRows.map((row) => (
                 <div key={row.axisId}>
@@ -192,7 +382,11 @@ export function ArtifactPanel({ artifacts }: { artifacts: Artifacts }) {
         )}
 
         {artifacts.vision && (
-          <ArtifactCard title="Vision (step 3)">
+          <ArtifactCard
+            cardId="card-vision"
+            isHighlighted={highlightedCardId === "card-vision"}
+            title="Vision (step 3)"
+          >
             <Badge variant={artifacts.vision.quality_ok ? "outline" : "destructive"} className="mb-2">
               {artifacts.vision.quality_ok ? "quality ok" : artifacts.vision.quality_reason}
             </Badge>
@@ -211,7 +405,11 @@ export function ArtifactPanel({ artifacts }: { artifacts: Artifacts }) {
         )}
 
         {artifacts.coarse && (
-          <ArtifactCard title="Coarse retrieval (step 2b)">
+          <ArtifactCard
+            cardId="card-coarse"
+            isHighlighted={highlightedCardId === "card-coarse"}
+            title="Coarse retrieval (step 2b)"
+          >
             {artifacts.coarse.length === 0 ? (
               <p className="text-muted-foreground">No similar past cases yet — nothing to pre-load.</p>
             ) : (
@@ -228,7 +426,12 @@ export function ArtifactPanel({ artifacts }: { artifacts: Artifacts }) {
         )}
 
         {artifacts.ranking && (
-          <ArtifactCard title="Ranking (step 5)" extra={<TierInfo />}>
+          <ArtifactCard
+            cardId="card-ranking"
+            isHighlighted={highlightedCardId === "card-ranking"}
+            title="Ranking (step 5)"
+            extra={<TierInfo />}
+          >
             <div className="mb-3 rounded-md border bg-muted/40 p-2 text-xs">
               <div className="text-muted-foreground">Recognized defect — what&apos;s wrong</div>
               <div className="font-medium">
@@ -293,25 +496,134 @@ export function ArtifactPanel({ artifacts }: { artifacts: Artifacts }) {
               </div>
             </div>
 
-            <div className="mb-1 text-xs font-medium text-muted-foreground">Candidate causes (pass 1)</div>
-            <div className="space-y-2">
-              {artifacts.ranking.pass1.slice(0, 4).map((c) => (
-                <div key={c.cause_id}>
-                  <div className="flex items-center justify-between text-xs">
-                    <span>{c.label}</span>
-                    <span className="text-muted-foreground">{Math.round(c.likelihood * 100)}%</span>
-                  </div>
-                  <div className="h-1 w-full overflow-hidden rounded-full bg-muted">
-                    <div className="h-full bg-primary" style={{ width: `${c.likelihood * 100}%` }} />
-                  </div>
+            {/* Candidate causes with green/red difference bars */}
+            <div className="mb-2 flex items-center justify-between">
+              <div className="text-xs font-semibold text-foreground">Candidate causes (pass 1)</div>
+              {Object.keys(prevLikelihoods).length > 0 && (
+                <div className="flex items-center gap-2 text-[10px]">
+                  <span className="inline-flex items-center gap-1 font-semibold text-emerald-600 dark:text-emerald-400">
+                    <span className="size-1.5 rounded-full bg-emerald-500 inline-block" /> + Increase
+                  </span>
+                  <span className="inline-flex items-center gap-1 font-semibold text-rose-600 dark:text-rose-400">
+                    <span className="size-1.5 rounded-full bg-rose-500 inline-block" /> - Decrease
+                  </span>
                 </div>
-              ))}
+              )}
+            </div>
+
+            <div className="space-y-2.5">
+              {artifacts.ranking.pass1.slice(0, 4).map((c) => {
+                const currentPct = Math.round(c.likelihood * 100);
+                const prevPct = prevLikelihoods[c.cause_id];
+                const hasDiff = prevPct !== undefined && prevPct !== null;
+                const diff = hasDiff ? currentPct - prevPct : 0;
+                const increased = hasDiff && diff > 0;
+                const decreased = hasDiff && diff < 0;
+
+                return (
+                  <div
+                    key={c.cause_id}
+                    className="rounded-lg border border-border/60 bg-background/60 p-2.5 text-xs space-y-1.5 transition-all shadow-2xs"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <span className="font-medium text-foreground leading-snug">{c.label}</span>
+                      <div className="flex items-center gap-1.5 shrink-0 pt-0.5">
+                        {increased && (
+                          <span className="inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-[10px] font-bold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
+                            <ArrowUp className="size-2.5 stroke-[2.5]" /> +{diff}%
+                          </span>
+                        )}
+                        {decreased && (
+                          <span className="inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-[10px] font-bold bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/30">
+                            <ArrowDown className="size-2.5 stroke-[2.5]" /> {diff}%
+                          </span>
+                        )}
+                        {hasDiff && diff === 0 && (
+                          <span className="text-[10px] font-medium text-muted-foreground px-1">±0%</span>
+                        )}
+                        <span className="font-mono text-xs font-bold text-foreground min-w-[2.5rem] text-right">
+                          {currentPct}%
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Difference Bar */}
+                    <div className="h-2 w-full overflow-hidden rounded-full bg-muted flex">
+                      {increased ? (
+                        <>
+                          {/* Base previous percentage */}
+                          <div
+                            className="h-full bg-primary transition-all duration-500"
+                            style={{ width: `${prevPct}%` }}
+                          />
+                          {/* Green positive difference bar */}
+                          <div
+                            className="h-full bg-emerald-500 shadow-xs transition-all duration-500 animate-pulse-subtle"
+                            style={{ width: `${diff}%` }}
+                            title={`Increased by +${diff}% (from ${prevPct}% to ${currentPct}%)`}
+                          />
+                        </>
+                      ) : decreased ? (
+                        <>
+                          {/* Remaining percentage */}
+                          <div
+                            className="h-full bg-primary transition-all duration-500"
+                            style={{ width: `${currentPct}%` }}
+                          />
+                          {/* Red negative difference bar */}
+                          <div
+                            className="h-full bg-rose-500/85 transition-all duration-500"
+                            style={{ width: `${Math.abs(diff)}%` }}
+                            title={`Decreased by ${diff}% (from ${prevPct}% to ${currentPct}%)`}
+                          />
+                        </>
+                      ) : (
+                        <div
+                          className="h-full bg-primary transition-all duration-500"
+                          style={{ width: `${currentPct}%` }}
+                        />
+                      )}
+                    </div>
+
+                    {/* Difference Summary Line & Mini Delta Bar */}
+                    {hasDiff && diff !== 0 && (
+                      <div className="flex items-center justify-between text-[10px] text-muted-foreground pt-0.5">
+                        <span>
+                          Previous: <strong className="text-foreground">{prevPct}%</strong> &rarr; Now:{" "}
+                          <strong className="text-foreground">{currentPct}%</strong>
+                        </span>
+                        <div className="flex items-center gap-1.5">
+                          <span
+                            className={
+                              increased
+                                ? "font-semibold text-emerald-600 dark:text-emerald-400"
+                                : "font-semibold text-rose-600 dark:text-rose-400"
+                            }
+                          >
+                            {increased ? `+${diff}% difference` : `${diff}% difference`}
+                          </span>
+                          <div className="h-1.5 w-14 rounded-full bg-muted overflow-hidden">
+                            <div
+                              className={`h-full rounded-full transition-all duration-500 ${
+                                increased ? "bg-emerald-500" : "bg-rose-500"
+                              }`}
+                              style={{ width: `${Math.min(100, Math.abs(diff))}%` }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </ArtifactCard>
         )}
 
         {artifacts.checks.length > 0 && (
           <ArtifactCard
+            cardId="card-checks"
+            isHighlighted={highlightedCardId === "card-checks"}
             title="Troubleshooting loop (step 6)"
             extra={
               <span className="text-xs text-muted-foreground">
@@ -340,7 +652,11 @@ export function ArtifactPanel({ artifacts }: { artifacts: Artifacts }) {
         )}
 
         {artifacts.report && (
-          <ArtifactCard title="Report (step 7)">
+          <ArtifactCard
+            cardId="card-report"
+            isHighlighted={highlightedCardId === "card-report"}
+            title="Report (step 7)"
+          >
             <div className="mb-2 flex flex-wrap gap-1.5">
               <Badge>{artifacts.report.defect.magnitude}</Badge>
               <Badge variant="outline">{"★".repeat(artifacts.report.defect.stars)}{"☆".repeat(5 - artifacts.report.defect.stars)}</Badge>
@@ -351,7 +667,11 @@ export function ArtifactPanel({ artifacts }: { artifacts: Artifacts }) {
         )}
 
         {artifacts.close && (
-          <ArtifactCard title="Closed (step 8)">
+          <ArtifactCard
+            cardId="card-close"
+            isHighlighted={highlightedCardId === "card-close"}
+            title="Closed (step 8)"
+          >
             <Badge>{artifacts.close.tier}</Badge>
             {artifacts.close.gaps.length > 0 && (
               <ul className="ml-4 mt-2 list-disc text-xs text-muted-foreground">
