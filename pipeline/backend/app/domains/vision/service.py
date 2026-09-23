@@ -3,9 +3,10 @@ signal derivation -> magnitude bucketing into the one result the rest of
 the pipeline reads (stored on Case.vision_result, folded into
 Case.fingerprint.signals)."""
 
+import base64
 from dataclasses import dataclass
 
-from detect import detect
+from detect import annotate_image, detect
 
 from app.domains.vision.magnitude import bucket_magnitude
 from app.domains.vision.quality import quality_gate
@@ -32,6 +33,9 @@ class VisionResult:
     pre-filled on (see vision/signature.py). A suggestion only: it is
     never written into the fingerprint here, because the operator
     disagreeing with the measurement is itself evidence."""
+    annotated_image: str | None = None
+    """Base64 Data URL (data:image/png;base64,...) of the image with detection
+    annotations and tags overlaid."""
 
 
 def run_vision(raw_image: bytes, profile_data: dict | None, spec_limit: str | None) -> VisionResult:
@@ -74,8 +78,18 @@ def run_vision(raw_image: bytes, profile_data: dict | None, spec_limit: str | No
         and chance_p < CHANCE_P_THRESHOLD
     )
 
+    annotated_image: str | None = None
+    try:
+        ann_bytes = annotate_image(raw_image, cv_output, profile_data)
+        if ann_bytes:
+            annotated_image = f"data:image/png;base64,{base64.b64encode(ann_bytes).decode('ascii')}"
+    except (ValueError, TypeError, KeyError, OSError):
+        annotated_image = None
+
     return VisionResult(
         quality_ok=True, quality_reason=None, cv_output=cv_output,
         signals=signals, magnitude=magnitude, small_then_big_above_chance=bool(above_chance),
         suggested_signature=derive_signature(signals, spec_limit),
+        annotated_image=annotated_image,
     )
+

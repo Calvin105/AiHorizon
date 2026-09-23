@@ -12,3 +12,5 @@ class VisionResultOut(BaseModel):
     Empty when the quality gate failed, or when nothing measured out of
     spec."""
     cv_output: dict
+    annotated_image: str | None = None
+    """Base64 Data URL (data:image/png;base64,...) of the annotated image."""

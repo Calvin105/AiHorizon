@@ -46,6 +46,86 @@ def _abbr(tags: list[str]) -> str:
     return "+".join(TAG_ABBR.get(t, t) for t in tags) if tags else "ok"
 
 
+def annotate_image(
+    raw: bytes,
+    result: dict,
+    profile_data: dict | None = None,
+) -> bytes:
+    """Draws detection annotations onto the image bytes and returns PNG bytes.
+
+    If ground-truth dots are present in profile_data (e.g. from synthetic samples),
+    circles are colored by plausibility (green=plausible, red=divergent, teal=unjudged).
+    When running without ground truth (e.g. real operational photos), nominal positions
+    and detected defects are clearly annotated with green rings (or yellow for stray material).
+    """
+    import numpy as np
+
+    arr = np.frombuffer(raw, np.uint8)
+    img = cv2.imdecode(arr, cv2.IMREAD_COLOR)
+    if img is None:
+        return b""
+
+    prof_points = {}
+    if profile_data and "profile" in profile_data:
+        prof_points = {p["index"]: p for p in profile_data["profile"]}
+
+    gt_by_index = {}
+    if profile_data and "dots" in profile_data:
+        gt_by_index = {d["index"]: d for d in profile_data["dots"]}
+
+    predicted_by_index = {d["index"]: d for d in result.get("dots", [])}
+
+    indices = sorted(prof_points.keys()) if prof_points else [
+        d["index"] for d in result.get("dots", []) if "index" in d
+    ]
+
+    for idx in indices:
+        p = prof_points.get(idx, {})
+        pred = predicted_by_index.get(idx, {})
+        pred_tags = pred.get("tags", [])
+
+        nominal_r = p.get("r", 26.0)
+        radius = int(nominal_r) + 6
+
+        # Use predicted coordinates if available; fall back to profile nominal
+        cx = int(round(pred.get("cx", p.get("cx", 0))))
+        cy = int(round(pred.get("cy", p.get("cy", 0))))
+
+        if idx in gt_by_index:
+            gt_tags = gt_by_index[idx].get("tags", [])
+            verdict = is_plausible(gt_tags, pred_tags)
+            if verdict is None:
+                colour = UNJUDGED
+            elif verdict:
+                colour = CORRECT
+            else:
+                colour = WRONG
+        else:
+            colour = CORRECT
+
+        cv2.circle(img, (cx, cy), radius, colour, 2)
+
+        label = _abbr(pred_tags)
+        if idx in gt_by_index and is_plausible(gt_by_index[idx].get("tags", []), pred_tags) is False:
+            label += f"  (gt:{_abbr(gt_by_index[idx].get('tags', []))})"
+
+        cv2.putText(
+            img, label, (cx - radius, cy - radius - 6),
+            cv2.FONT_HERSHEY_SIMPLEX, 0.38, colour, 1, cv2.LINE_AA,
+        )
+
+    for e in result.get("extra", []):
+        cx, cy = int(round(e.get("cx", 0))), int(round(e.get("cy", 0)))
+        cv2.circle(img, (cx, cy), 10, EXTRA, 2, cv2.LINE_AA)
+        cv2.putText(
+            img, "extra", (cx - 10, cy - 16),
+            cv2.FONT_HERSHEY_SIMPLEX, 0.35, EXTRA, 1, cv2.LINE_AA,
+        )
+
+    ok, buf = cv2.imencode(".png", img)
+    return buf.tobytes() if ok else b""
+
+
 def annotate(name: str) -> pathlib.Path | None:
     json_path = SAMPLES / f"{name}.json"
     if not json_path.exists():
@@ -56,56 +136,39 @@ def annotate(name: str) -> pathlib.Path | None:
         return None
 
     sidecar = json.loads(json_path.read_text())
-    result = detect(img_path.read_bytes(), sidecar)
+    raw = img_path.read_bytes()
+    result = detect(raw, sidecar)
     if "error" in result:
         print(f"skip {name}: {result['error']}")
         return None
 
-    img = cv2.imread(str(img_path))
-    if img is None:
-        print(f"skip {name}: failed to load image {img_path}")
+    png_bytes = annotate_image(raw, result, sidecar)
+    if not png_bytes:
+        print(f"skip {name}: failed to annotate image {img_path}")
         return None
-
-    predicted_by_index = {d["index"]: d for d in result["dots"]}
-    n_profile = len(sidecar["profile"])
-    counts = {"correct": 0, "wrong": 0, "unjudged": 0}
-
-    for gt_dot in sidecar["dots"][:n_profile]:
-        idx = gt_dot["index"]
-        gt_tags = gt_dot["tags"]
-        pred = predicted_by_index.get(idx, {"cx": gt_dot["cx"], "cy": gt_dot["cy"], "tags": []})
-        pred_tags = pred["tags"]
-        verdict = is_plausible(gt_tags, pred_tags)
-
-        if verdict is None:
-            colour = UNJUDGED
-            counts["unjudged"] += 1
-        elif verdict:
-            colour = CORRECT
-            counts["correct"] += 1
-        else:
-            colour = WRONG
-            counts["wrong"] += 1
-
-        cx, cy = int(pred["cx"]), int(pred["cy"])
-        radius = int(sidecar["profile"][idx]["r"]) + 6
-        cv2.circle(img, (cx, cy), radius, colour, 2)
-
-        label = _abbr(pred_tags)
-        if verdict is False:
-            label += f"  (gt:{_abbr(gt_tags)})"
-        cv2.putText(img, label, (cx - radius, cy - radius - 6),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.38, colour, 1, cv2.LINE_AA)
-
-    for e in result.get("extra", []):
-        cx, cy = int(e["cx"]), int(e["cy"])
-        cv2.circle(img, (cx, cy), 10, EXTRA, 2, cv2.LINE_AA)
-        cv2.putText(img, "extra", (cx - 10, cy - 16), cv2.FONT_HERSHEY_SIMPLEX, 0.35, EXTRA, 1, cv2.LINE_AA)
 
     OUT.mkdir(parents=True, exist_ok=True)
     out_path = OUT / f"{name}_annotated.png"
-    cv2.imwrite(str(out_path), img)
+    out_path.write_bytes(png_bytes)
     rel = out_path.relative_to(SAMPLES.parent)
+
+    predicted_by_index = {d["index"]: d for d in result.get("dots", [])}
+    n_profile = len(sidecar.get("profile", []))
+    counts = {"correct": 0, "wrong": 0, "unjudged": 0}
+
+    for gt_dot in sidecar.get("dots", [])[:n_profile]:
+        idx = gt_dot["index"]
+        gt_tags = gt_dot["tags"]
+        pred = predicted_by_index.get(idx, {"tags": []})
+        verdict = is_plausible(gt_tags, pred.get("tags", []))
+
+        if verdict is None:
+            counts["unjudged"] += 1
+        elif verdict:
+            counts["correct"] += 1
+        else:
+            counts["wrong"] += 1
+
     print(f"{name:22} correct={counts['correct']:2} wrong={counts['wrong']:2} "
           f"unjudged={counts['unjudged']:2} extra={len(result.get('extra', [])):2}  -> {rel}")
     return out_path

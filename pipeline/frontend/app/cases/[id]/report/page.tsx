@@ -170,6 +170,25 @@ export default function CaseReportPage() {
                   : (report.quality.reason ?? "could not measure reliably")}
             </dd>
           </dl>
+          {(() => {
+            const img = typeof caseData.vision_result?.annotated_image === "string"
+              ? caseData.vision_result.annotated_image
+              : null;
+            if (!img) return null;
+            return (
+              <div className="mt-3 overflow-hidden rounded-md border bg-muted/20 p-1.5 print:border-black">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={img.startsWith("data:") ? img : `data:image/png;base64,${img}`}
+                  alt="Annotated dispense measurement"
+                  className="max-h-72 w-auto max-w-full rounded object-contain"
+                />
+                <p className="mt-1 text-[11px] text-muted-foreground">
+                  Annotated optical metrology measurement with defect ring tags
+                </p>
+              </div>
+            );
+          })()}
         </Section>
 
         <Section n={3} title="AI Analysis">

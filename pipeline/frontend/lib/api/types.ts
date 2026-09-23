@@ -208,6 +208,7 @@ export interface VisionResult {
    * never writes it into the fingerprint itself. */
   suggested_signature?: string[];
   cv_output: Record<string, unknown>;
+  annotated_image?: string | null;
 }
 
 // ---- Ranking (step 5) --------------------------------------------------------

@@ -1,6 +1,15 @@
+import base64
 from dataclasses import asdict
 
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
+from fastapi import (
+    APIRouter,
+    Depends,
+    File,
+    HTTPException,
+    Response,
+    UploadFile,
+    status,
+)
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
@@ -54,7 +63,33 @@ async def analyse_photo(
         # rather than losing what the photo already answered.
         "suggested_signature": result.suggested_signature,
         "cv_output": result.cv_output,
+        "annotated_image": result.annotated_image,
     }
     db.commit()
 
     return VisionResultOut(**{k: v for k, v in asdict(result).items() if k in VisionResultOut.model_fields})
+
+
+@router.get(
+    "/annotated-image",
+    summary="Retrieve the annotated measurement image",
+    description="Returns the annotated PNG image bytes for this case's vision measurement.",
+    responses={200: {"content": {"image/png": {}}}},
+)
+def get_annotated_image(case_id: int, db: Session = Depends(get_db)) -> Response:
+    case = cases_crud.get_case(db, case_id)
+    if case is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, f"Case {case_id} not found")
+
+    annotated = (case.vision_result or {}).get("annotated_image")
+    if not annotated:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, f"No annotated image found for case {case_id}")
+
+    if annotated.startswith("data:"):
+        _, b64 = annotated.split(",", 1)
+        raw_png = base64.b64decode(b64)
+    else:
+        raw_png = base64.b64decode(annotated)
+
+    return Response(content=raw_png, media_type="image/png")
+

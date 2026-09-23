@@ -108,6 +108,7 @@ export function ArtifactPanel({ artifacts }: { artifacts: Artifacts }) {
   const { caseData } = artifacts;
   const containerRef = React.useRef<HTMLDivElement>(null);
   const [highlightedCardId, setHighlightedCardId] = React.useState<string | null>(null);
+  const [expandedImage, setExpandedImage] = React.useState<string | null>(null);
 
   // Tracking previous likelihoods for candidate causes to compute difference bars
   const [prevLikelihoods, setPrevLikelihoods] = React.useState<Record<string, number>>({});
@@ -415,9 +416,50 @@ export function ArtifactPanel({ artifacts }: { artifacts: Artifacts }) {
             isHighlighted={highlightedCardId === "card-vision"}
             title="Vision (step 3)"
           >
-            <Badge variant={artifacts.vision.quality_ok ? "outline" : "destructive"} className="mb-2">
-              {artifacts.vision.quality_ok ? "quality ok" : artifacts.vision.quality_reason}
-            </Badge>
+            <div className="mb-2 flex items-center justify-between gap-2">
+              <Badge variant={artifacts.vision.quality_ok ? "outline" : "destructive"}>
+                {artifacts.vision.quality_ok ? "quality ok" : artifacts.vision.quality_reason}
+              </Badge>
+              <span className="text-xs text-muted-foreground">
+                magnitude: <span className="font-medium text-foreground">{artifacts.vision.magnitude}</span>
+              </span>
+            </div>
+
+            {artifacts.vision.annotated_image && (
+              <div className="mb-3 space-y-1.5">
+                <div className="group relative overflow-hidden rounded-md border bg-black/5 dark:bg-black/30">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={
+                      artifacts.vision.annotated_image.startsWith("data:")
+                        ? artifacts.vision.annotated_image
+                        : `data:image/png;base64,${artifacts.vision.annotated_image}`
+                    }
+                    alt="Annotated dispense measurement"
+                    className="w-full cursor-pointer object-contain transition-transform duration-200 hover:scale-[1.01]"
+                    onClick={() => setExpandedImage(artifacts.vision?.annotated_image ?? null)}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setExpandedImage(artifacts.vision?.annotated_image ?? null)}
+                    className="absolute bottom-2 right-2 rounded bg-black/60 px-2 py-0.5 text-[11px] font-medium text-white opacity-0 transition-opacity group-hover:opacity-100"
+                  >
+                    Click to enlarge
+                  </button>
+                </div>
+                <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+                  <span>Annotated measurement &middot; defect rings</span>
+                  <button
+                    type="button"
+                    onClick={() => setExpandedImage(artifacts.vision?.annotated_image ?? null)}
+                    className="text-primary hover:underline"
+                  >
+                    View full size
+                  </button>
+                </div>
+              </div>
+            )}
+
             {artifacts.vision.quality_ok && (
               <dl className="grid grid-cols-2 gap-x-2 gap-y-1 text-xs">
                 {Object.entries(artifacts.vision.signals ?? {}).map(([k, v]) => (
@@ -428,7 +470,9 @@ export function ArtifactPanel({ artifacts }: { artifacts: Artifacts }) {
                 ))}
               </dl>
             )}
-            <p className="mt-2 text-xs text-muted-foreground">magnitude: {artifacts.vision.magnitude}</p>
+            {!artifacts.vision.annotated_image && (
+              <p className="mt-2 text-xs text-muted-foreground">magnitude: {artifacts.vision.magnitude}</p>
+            )}
           </ArtifactCard>
         )}
 
@@ -753,6 +797,42 @@ export function ArtifactPanel({ artifacts }: { artifacts: Artifacts }) {
 
         {/* Extra bottom space allowing scrolling with content on top */}
         <div className="h-[50vh] shrink-0 pointer-events-none" aria-hidden="true" />
-    </div>
+
+        {expandedImage && (
+          <div
+            role="dialog"
+            aria-modal="true"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-xs"
+            onClick={() => setExpandedImage(null)}
+          >
+            <div
+              className="relative max-h-[90vh] max-w-[90vw] overflow-hidden rounded-lg bg-card p-3 shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="mb-2 flex items-center justify-between border-b pb-2">
+                <span className="text-sm font-semibold">Annotated Inspection Image</span>
+                <button
+                  type="button"
+                  onClick={() => setExpandedImage(null)}
+                  className="rounded px-2 py-0.5 text-xs text-muted-foreground hover:bg-muted hover:text-foreground"
+                  aria-label="Close"
+                >
+                  ✕ Close
+                </button>
+              </div>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={
+                  expandedImage.startsWith("data:")
+                    ? expandedImage
+                    : `data:image/png;base64,${expandedImage}`
+                }
+                alt="Annotated dispense measurement expanded"
+                className="max-h-[75vh] w-auto max-w-full rounded object-contain"
+              />
+            </div>
+          </div>
+        )}
+      </div>
   );
 }

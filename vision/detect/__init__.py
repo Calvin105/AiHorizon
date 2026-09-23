@@ -23,4 +23,11 @@ what's already used elsewhere in vision/.
 
 from .report import detect
 
-__all__ = ["detect"]
+
+def annotate_image(*args, **kwargs):
+    from .visualize import annotate_image as _annotate_image
+
+    return _annotate_image(*args, **kwargs)
+
+
+__all__ = ["detect", "annotate_image"]
