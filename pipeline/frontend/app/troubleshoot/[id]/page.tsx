@@ -183,7 +183,13 @@ type StepId =
   | "ask_axis_other" | "save_fingerprint" | "retrieve_coarse" | "rank" | "loop_prompt"
   | "loop_check_name" | "loop_check_cause" | "loop_check_kind" | "loop_check_outcome"
   | "loop_check_detail" | "loop_submit"
-  | "report" | "verify_prompt" | "verify_photo" | "close_prompt" | "close" | "done";
+  | "report" | "verify_prompt" | "ask_verify_shots" | "verify_photo"
+  | "close_prompt" | "close" | "done";
+
+/** Mirrors cases/close.py's MIN_SHOTS_HELD. Duplicated rather than fetched
+ * because it only ever appears in the wording of the question — the close
+ * decision itself is made server-side against the real constant. */
+const MIN_SHOTS_HELD = 20;
 
 const INTERVIEW_HINT = "Answer on the left. Five questions, and \"Don't know\" is a real answer.";
 
@@ -213,6 +219,7 @@ const STAGE_HINTS: Record<StepId, Phase> = {
   loop_submit: { n: 4, label: "Troubleshooting", hint: "Logging the check and re-ranking…" },
   report: { n: 5, label: "Report", hint: "Compiling the findings…" },
   verify_prompt: { n: 5, label: "Report", hint: "Optionally attach a fresh photo to confirm the fix held, or skip straight to closing." },
+  ask_verify_shots: { n: 5, label: "Report", hint: "How long did the fix hold? Only you know this — the photo can't tell us." },
   verify_photo: { n: 5, label: "Report", hint: "Re-measuring from the new photo…" },
   close_prompt: { n: 6, label: "Close", hint: "Confirm to close the case and record the outcome." },
   close: { n: 6, label: "Close", hint: "Closing the case…" },
@@ -242,6 +249,9 @@ export default function CaseWizardPage() {
   }>({});
   const artifactsRef = React.useRef<Artifacts | null>(null);
   const currentStepRef = React.useRef<StepId>("intro");
+  /** The verification photo, held between attaching it and answering how
+   * many shots it held for. */
+  const verifyFileRef = React.useRef<File | null>(null);
 
   function setStage(step: StepId) {
     currentStepRef.current = step;
@@ -598,11 +608,37 @@ export default function CaseWizardPage() {
         return;
       }
 
+      // The photo measures whether it came back in spec; it cannot say how
+      // long it held. That was hardcoded to 30 — above the 20-shot bar —
+      // so step 8's fifth condition passed itself the moment any photo was
+      // attached, and "held for the next N shots" was never asked of
+      // anyone. It is asked now, and a short run is allowed to fail it.
+      case "ask_verify_shots": {
+        verifyFileRef.current = arg as File;
+        say(
+          "How many shots did you run after the change, with the defect staying away? " +
+            `A case needs at least ${MIN_SHOTS_HELD} clean shots to close CONFIRMED — ` +
+            "fewer is fine, it just closes lower.",
+        );
+        setPending({
+          kind: "chips-single",
+          options: [
+            { value: "5", label: "About 5", helpText: `short of the ${MIN_SHOTS_HELD}-shot bar` },
+            { value: "10", label: "About 10", helpText: `short of the ${MIN_SHOTS_HELD}-shot bar` },
+            { value: "20", label: "About 20", helpText: "meets the bar" },
+            { value: "50", label: "50 or more", helpText: "a full run" },
+          ],
+        });
+        return;
+      }
+
       case "verify_photo": {
-        const file = arg as File;
+        const shots = Number(arg);
+        const file = verifyFileRef.current;
+        if (!file) return runStep("close_prompt", caseData);
         setBusy(true);
         try {
-          const verification = await verifyCase(caseData.case_id, file, 30);
+          const verification = await verifyCase(caseData.case_id, file, shots);
           const currentReport = artifactsRef.current?.report ?? null;
           patchArtifacts({ report: currentReport ? { ...currentReport, verification } : currentReport });
           say(
@@ -868,6 +904,11 @@ export default function CaseWizardPage() {
       void runStep("loop_check_detail", caseData);
       return;
     }
+    if (step === "ask_verify_shots") {
+      echo(value === "50" ? "50 or more shots" : `about ${value} shots`);
+      void runStep("verify_photo", caseData, value);
+      return;
+    }
     if (step === "close_prompt") {
       echo("Close the case");
       void runStep("close", caseData);
@@ -978,7 +1019,12 @@ export default function CaseWizardPage() {
     if (!caseData) return;
     const step = currentStepRef.current;
     if (step === "ask_photo") void runStep("analyse_photo", caseData, file);
-    if (step === "verify_prompt") void runStep("verify_photo", caseData, file);
+    // The photo alone can't say how long the fix held, so that is asked
+    // before the re-measurement is sent.
+    if (step === "verify_prompt") {
+      echo(`[attached ${file.name}]`);
+      void runStep("ask_verify_shots", caseData, file);
+    }
   }
 
   function handleSkip() {

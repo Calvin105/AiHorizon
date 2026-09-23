@@ -32,6 +32,9 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+# ...but the templates must ship, or a fresh clone has no way to know
+# where the API lives. These hold no secrets.
+!.env*.example
 
 # vercel
 .vercel

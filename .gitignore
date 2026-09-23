@@ -4,6 +4,10 @@ node_modules/
 __pycache__/
 /**/.env
 /**/.env.*
-/**/!.env*.example
+# A negation has to start the line — "/**/!.env*.example" was matching a
+# literal "!" in the filename and never un-ignoring anything, so the env
+# templates were silently absent from every clone.
+!/**/.env.example
+!/**/.env*.example
 vision/vlm_bench/results/
 *.pyc

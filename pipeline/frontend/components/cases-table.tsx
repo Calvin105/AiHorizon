@@ -139,7 +139,7 @@ export function CasesTable({ data }: { data: Case[] }) {
     virtualRows.length > 0 ? totalSize - virtualRows[virtualRows.length - 1].end : 0;
 
   return (
-    <div ref={parentRef} className="max-h-[70vh] overflow-auto rounded-md border">
+    <div ref={parentRef} className="max-h-[70vh] overflow-auto rounded-md border thin-scrollbar">
       <Table>
         <TableHeader className="sticky top-0 z-10 bg-background">
           {table.getHeaderGroups().map((headerGroup) => (

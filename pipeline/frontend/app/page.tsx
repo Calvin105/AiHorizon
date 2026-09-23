@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { FilePlus2, History } from "lucide-react";
+import { FilePlus2, History, Layers } from "lucide-react";
 
 import { buttonVariants } from "@/components/ui/button";
 
@@ -22,6 +22,13 @@ export default function HomePage() {
         >
           <History />
           View past cases
+        </Link>
+        <Link
+          href="/catalog"
+          className={buttonVariants({ size: "lg", variant: "outline", className: "gap-2" })}
+        >
+          <Layers />
+          Browse catalog
         </Link>
       </div>
     </div>
