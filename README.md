@@ -135,7 +135,17 @@ uv run python golden/check_golden.py                  # 2 of 2 passed
 # Full pipeline over the real API, with the backend running.
 # Exits non-zero unless the case closes CONFIRMED.
 cd pipeline/backend && uv run python -m app.seed_demo_case
+
+# Evaluation at scale: ~3,000 synthetic cases through the real vision and
+# ranking code — measurement, diagnosis + calibration, and a photo stress test
+uv run python evaluation/run_eval.py                  # → evaluation/results/summary.md
+uv run --with matplotlib python evaluation/plot.py    # → evaluation/results/*.png
 ```
+
+The evaluation ([evaluation/README.md](evaluation/README.md)) is where the
+confidence claims are measured rather than asserted: at ★★★ the top cause
+was right 92% of the time, at ★ 54%. It also drove the 2026-09-29 vision
+fixes — before/after in `evaluation/results/before_after.md`.
 
 `seed_demo_case.py` is the integration test: it opens a case, measures a real
 defect photo, saves an interview, ranks, logs one observation and exactly one
@@ -211,7 +221,14 @@ Stated up front rather than left to be discovered.
 - **No real-photo validation set.** NSW provided no production photos and none are
   obtainable open-source, so the vision thresholds are tuned against synthetic
   ground truth only. This is the single biggest gap between this prototype and a
-  production tool.
+  production tool. The evaluation's stress test measures how far past clean
+  synthetic images the measurement holds (blur, noise, lighting, glare, JPEG,
+  rotation, resolution) instead of claiming real-photo accuracy.
+- **Busy board backgrounds.** Pads and traces the size of a deposit are
+  refused by the quality gate, but a trace *touching* a deposit merges into it
+  and can read as an irregular shape: 8–9% false alarms under light clutter in
+  the stress test. The intended fix is subtracting a bare-board reference
+  photo, standard in automated optical inspection.
 - **The LLM steps are not reproducible.** The critic and the written explanation can
   differ between runs. Both are labelled in the UI, and neither can change a
   likelihood — the critic only affects the confidence tier.

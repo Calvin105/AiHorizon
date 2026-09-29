@@ -15,9 +15,46 @@ import numpy as np
 
 MIN_AREA_FRACTION = 5e-4
 
+FLATTEN_MIN_RANGE = 25.0
+"""Grey levels of background variation (5th-95th percentile of the
+estimated background) before flattening kicks in. Below it the photo is
+evenly lit and segment() behaves exactly as it did before flattening
+existed -- so the fix for uneven light cannot cost anything on the photos
+that were already measuring correctly."""
+
+_BG_DOWNSCALE = 4
+
+
+def estimate_background(gray: np.ndarray) -> np.ndarray:
+    """The frame with the deposits removed: a median over a window several
+    deposits wide. Deposits are a minority of any such window, so the
+    median lands on background whichever polarity they are. Computed at
+    1/4 scale -- lighting varies slowly, and a full-size median this wide
+    is needlessly slow."""
+    h, w = gray.shape
+    small = cv2.resize(gray, (max(1, w // _BG_DOWNSCALE), max(1, h // _BG_DOWNSCALE)), interpolation=cv2.INTER_AREA)
+    k = max(3, (min(small.shape) // 2) | 1)  # odd, about half the short side
+    bg_small = cv2.medianBlur(small, k)
+    return cv2.resize(bg_small, (w, h), interpolation=cv2.INTER_LINEAR).astype(np.float32)
+
+
+def flatten_illumination(gray: np.ndarray) -> tuple[np.ndarray, float]:
+    """Subtracts slow lighting variation (a light off to one side, a broad
+    glare patch) so one global threshold fits the whole frame again.
+    Returns the corrected image and the background range that was found."""
+    bg = estimate_background(gray)
+    lo, hi = np.percentile(bg, [5, 95])
+    bg_range = float(hi - lo)
+    if bg_range < FLATTEN_MIN_RANGE:
+        return gray, bg_range
+    level = float(np.median(bg))
+    flat = gray.astype(np.float32) - bg + level
+    return np.clip(flat, 0, 255).astype(np.uint8), bg_range
+
 
 def segment(gray: np.ndarray) -> np.ndarray:
     """Otsu threshold, oriented so deposits are foreground regardless of polarity."""
+    gray, _ = flatten_illumination(gray)
     blurred = cv2.GaussianBlur(gray, (5, 5), 0)
     _, binary = cv2.threshold(blurred, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
 

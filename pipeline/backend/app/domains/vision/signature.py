@@ -17,14 +17,13 @@ Every threshold here is the one an existing rule or spec already uses, so
 nothing new gets invented to argue about:
   - the profile's own `spec_limit` for size spread (the same limit
     magnitude.py buckets against),
-  - 0.80 mean circularity, the baseline ranking/rules.py's
-    `_low_circularity` ramps from,
+  - a deposit detect() tagged irregular (circularity below 0.80), the
+    same count ranking/rules.py's `_irregular_deposits` ramps on,
   - a missing deposit is missing at any count.
 """
 
 from app.domains.vision.magnitude import parse_spec_limit
 
-CIRCULARITY_BASELINE = 0.80
 MAX_PICKS = 2
 """DESIGN.md W3 caps axis 1 at two picks; the suggestion obeys the same
 cap the picker does, strongest first."""
@@ -51,9 +50,9 @@ def derive_signature(signals: dict[str, float | int], spec_limit: str | None) ->
     if isinstance(missing, int | float) and missing > 0:
         candidates.append((1.0 + float(missing), "missing"))
 
-    circularity = signals.get("mean_circularity")
-    if isinstance(circularity, int | float) and circularity < CIRCULARITY_BASELINE:
-        candidates.append(((CIRCULARITY_BASELINE - circularity) / CIRCULARITY_BASELINE, "wrong_shape"))
+    irregular = signals.get("irregular_count")
+    if isinstance(irregular, int | float) and irregular > 0:
+        candidates.append((1.0 + float(irregular), "wrong_shape"))
 
     candidates.sort(key=lambda c: -c[0])
     return [value for _, value in candidates[:MAX_PICKS]]

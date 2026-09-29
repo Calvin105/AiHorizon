@@ -14,6 +14,13 @@
     "note": "Mean of dots[].circularity. Above the 0.80 threshold for tailing or irregular shape."
   },
   {
+    "key": "irregular_count",
+    "label": "Irregular deposits",
+    "value": 0,
+    "unit": "count",
+    "note": "Count of dots[] tagged 'irregular' (circularity below 0.80) in cv_output.json. None here."
+  },
+  {
     "key": "missing_count",
     "label": "Missing deposits",
     "value": 0,

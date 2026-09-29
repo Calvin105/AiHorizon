@@ -28,6 +28,11 @@ def derive_signals(cv_output: dict) -> dict[str, float | int]:
     out: dict[str, float | int] = {
         "size_cv": statistics.pstdev(ratios) / mean if mean else 0.0,
         "mean_circularity": statistics.mean(d["circularity"] for d in measured),
+        # Counted per dot from detect's own "irregular" tag, not read off the
+        # mean above: three distorted deposits among fifteen round ones
+        # average back above the 0.80 line, and evaluation/ measured the
+        # mean missing 90% of irregular-shape images that way.
+        "irregular_count": sum("irregular" in t for t in tags),
         "missing_count": sum("missing" in t for t in tags),
         "oversized_count": sum("oversized" in t for t in tags),
         "undersized_count": sum("undersized" in t for t in tags),

@@ -49,6 +49,7 @@ def derive(cv: dict) -> dict:
     out = {
         "size_cv": statistics.pstdev(ratios) / mean if mean else 0.0,
         "mean_circularity": statistics.mean(d["circularity"] for d in measured),
+        "irregular_count": sum("irregular" in t for t in tags),
         "missing_count": sum("missing" in t for t in tags),
         "oversized_count": sum("oversized" in t for t in tags),
         "undersized_count": sum("undersized" in t for t in tags),

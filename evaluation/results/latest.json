@@ -1,0 +1,888 @@
+{
+  "generated_at": "2026-09-29 14:59",
+  "quick": false,
+  "seconds": 27.2,
+  "sizes": {
+    "measurement_per_condition": 40,
+    "stress_per_condition_per_level": 20,
+    "cases_per_cause": 60
+  },
+  "measurement": {
+    "good": {
+      "correct": 1.0,
+      "rejected": 0.0,
+      "missed": 0.0,
+      "false_alarm": 0.0,
+      "n": 40,
+      "means": "no alarm: spread in spec, nothing missing, no irregular deposits, no carryover"
+    },
+    "carryover": {
+      "correct": 0.525,
+      "rejected": 0.0,
+      "missed": 0.475,
+      "false_alarm": 0.0,
+      "n": 40,
+      "means": "small-then-big pattern found above chance (p < 0.05)"
+    },
+    "scatter": {
+      "correct": 1.0,
+      "rejected": 0.0,
+      "missed": 0.0,
+      "false_alarm": 0.0,
+      "n": 40,
+      "means": "size spread out of spec, and NO false carryover pattern"
+    },
+    "missing_dots": {
+      "correct": 1.0,
+      "rejected": 0.0,
+      "missed": 0.0,
+      "false_alarm": 0.0,
+      "n": 40,
+      "means": "missing deposits counted, and NO false carryover pattern"
+    },
+    "irregular_shape": {
+      "correct": 1.0,
+      "rejected": 0.0,
+      "missed": 0.0,
+      "false_alarm": 0.0,
+      "n": 40,
+      "means": "irregular deposits counted (the blockage rule's trigger)"
+    },
+    "all": {
+      "correct": 0.905,
+      "rejected": 0.0,
+      "missed": 0.095,
+      "false_alarm": 0.0,
+      "n": 200
+    }
+  },
+  "measurement_by_pattern": {
+    "good": {
+      "area": {
+        "correct": 1.0,
+        "rejected": 0.0,
+        "missed": 0.0,
+        "false_alarm": 0.0,
+        "n": 10
+      },
+      "grid_landmark": {
+        "correct": 1.0,
+        "rejected": 0.0,
+        "missed": 0.0,
+        "false_alarm": 0.0,
+        "n": 10
+      },
+      "perimeter": {
+        "correct": 1.0,
+        "rejected": 0.0,
+        "missed": 0.0,
+        "false_alarm": 0.0,
+        "n": 10
+      },
+      "pattern": {
+        "correct": 1.0,
+        "rejected": 0.0,
+        "missed": 0.0,
+        "false_alarm": 0.0,
+        "n": 10
+      }
+    },
+    "carryover": {
+      "area": {
+        "correct": 0.7,
+        "rejected": 0.0,
+        "missed": 0.3,
+        "false_alarm": 0.0,
+        "n": 10
+      },
+      "grid_landmark": {
+        "correct": 0.7,
+        "rejected": 0.0,
+        "missed": 0.3,
+        "false_alarm": 0.0,
+        "n": 10
+      },
+      "perimeter": {
+        "correct": 0.7,
+        "rejected": 0.0,
+        "missed": 0.3,
+        "false_alarm": 0.0,
+        "n": 10
+      },
+      "pattern": {
+        "correct": 0.0,
+        "rejected": 0.0,
+        "missed": 1.0,
+        "false_alarm": 0.0,
+        "n": 10
+      }
+    },
+    "scatter": {
+      "area": {
+        "correct": 1.0,
+        "rejected": 0.0,
+        "missed": 0.0,
+        "false_alarm": 0.0,
+        "n": 10
+      },
+      "grid_landmark": {
+        "correct": 1.0,
+        "rejected": 0.0,
+        "missed": 0.0,
+        "false_alarm": 0.0,
+        "n": 10
+      },
+      "perimeter": {
+        "correct": 1.0,
+        "rejected": 0.0,
+        "missed": 0.0,
+        "false_alarm": 0.0,
+        "n": 10
+      },
+      "pattern": {
+        "correct": 1.0,
+        "rejected": 0.0,
+        "missed": 0.0,
+        "false_alarm": 0.0,
+        "n": 10
+      }
+    },
+    "missing_dots": {
+      "area": {
+        "correct": 1.0,
+        "rejected": 0.0,
+        "missed": 0.0,
+        "false_alarm": 0.0,
+        "n": 10
+      },
+      "grid_landmark": {
+        "correct": 1.0,
+        "rejected": 0.0,
+        "missed": 0.0,
+        "false_alarm": 0.0,
+        "n": 10
+      },
+      "perimeter": {
+        "correct": 1.0,
+        "rejected": 0.0,
+        "missed": 0.0,
+        "false_alarm": 0.0,
+        "n": 10
+      },
+      "pattern": {
+        "correct": 1.0,
+        "rejected": 0.0,
+        "missed": 0.0,
+        "false_alarm": 0.0,
+        "n": 10
+      }
+    },
+    "irregular_shape": {
+      "area": {
+        "correct": 1.0,
+        "rejected": 0.0,
+        "missed": 0.0,
+        "false_alarm": 0.0,
+        "n": 10
+      },
+      "grid_landmark": {
+        "correct": 1.0,
+        "rejected": 0.0,
+        "missed": 0.0,
+        "false_alarm": 0.0,
+        "n": 10
+      },
+      "perimeter": {
+        "correct": 1.0,
+        "rejected": 0.0,
+        "missed": 0.0,
+        "false_alarm": 0.0,
+        "n": 10
+      },
+      "pattern": {
+        "correct": 1.0,
+        "rejected": 0.0,
+        "missed": 0.0,
+        "false_alarm": 0.0,
+        "n": 10
+      }
+    }
+  },
+  "diagnosis": {
+    "overall": {
+      "questions_only@1.0": {
+        "n": 420,
+        "top1": 0.6905,
+        "top3": 0.931,
+        "abstain": 0.0357,
+        "top1_when_answered": 0.716,
+        "tied_top": 0.0286,
+        "brier": 0.08,
+        "mean_stars": 1.75
+      },
+      "questions_only@0.75": {
+        "n": 420,
+        "top1": 0.5214,
+        "top3": 0.8024,
+        "abstain": 0.0333,
+        "top1_when_answered": 0.5394,
+        "tied_top": 0.0381,
+        "brier": 0.1015,
+        "mean_stars": 1.44
+      },
+      "questions_only@0.5": {
+        "n": 420,
+        "top1": 0.3786,
+        "top3": 0.7452,
+        "abstain": 0.0333,
+        "top1_when_answered": 0.3916,
+        "tied_top": 0.0571,
+        "brier": 0.1126,
+        "mean_stars": 1.33
+      },
+      "photo_only": {
+        "n": 420,
+        "top1": 0.3595,
+        "top3": 0.4738,
+        "abstain": 0.3833,
+        "top1_when_answered": 0.583,
+        "tied_top": 0.0,
+        "brier": 0.1093,
+        "mean_stars": 0.9
+      },
+      "photo_and_questions@1.0": {
+        "n": 420,
+        "top1": 0.8,
+        "top3": 0.9333,
+        "abstain": 0.0143,
+        "top1_when_answered": 0.8116,
+        "tied_top": 0.0048,
+        "brier": 0.0767,
+        "mean_stars": 2.08
+      },
+      "photo_and_questions@0.75": {
+        "n": 420,
+        "top1": 0.6524,
+        "top3": 0.8571,
+        "abstain": 0.0143,
+        "top1_when_answered": 0.6618,
+        "tied_top": 0.0214,
+        "brier": 0.0961,
+        "mean_stars": 1.7
+      },
+      "photo_and_questions@0.5": {
+        "n": 420,
+        "top1": 0.569,
+        "top3": 0.8286,
+        "abstain": 0.0143,
+        "top1_when_answered": 0.5773,
+        "tied_top": 0.0238,
+        "brier": 0.1052,
+        "mean_stars": 1.56
+      }
+    },
+    "per_cause": {
+      "volume_too_small_carryover": {
+        "n": 60,
+        "top1": 0.5,
+        "top3": 0.7333,
+        "abstain": 0.0167,
+        "top1_when_answered": 0.5085,
+        "tied_top": 0.0167,
+        "brier": 0.1478,
+        "mean_stars": 1.23
+      },
+      "pressure_time_instability": {
+        "n": 60,
+        "top1": 0.9333,
+        "top3": 0.9833,
+        "abstain": 0.0,
+        "top1_when_answered": 0.9333,
+        "tied_top": 0.0,
+        "brier": 0.056,
+        "mean_stars": 2.23
+      },
+      "air_in_fluid_path": {
+        "n": 60,
+        "top1": 0.85,
+        "top3": 0.9833,
+        "abstain": 0.0,
+        "top1_when_answered": 0.85,
+        "tied_top": 0.0,
+        "brier": 0.0784,
+        "mean_stars": 1.62
+      },
+      "material_rheology_change": {
+        "n": 60,
+        "top1": 0.8167,
+        "top3": 0.95,
+        "abstain": 0.0,
+        "top1_when_answered": 0.8167,
+        "tied_top": 0.0333,
+        "brier": 0.0685,
+        "mean_stars": 1.97
+      },
+      "nozzle_blockage": {
+        "n": 60,
+        "top1": 0.7667,
+        "top3": 0.9833,
+        "abstain": 0.0,
+        "top1_when_answered": 0.7667,
+        "tied_top": 0.05,
+        "brier": 0.0779,
+        "mean_stars": 2.2
+      },
+      "dispense_height_or_board_bending": {
+        "n": 60,
+        "top1": 0.3667,
+        "top3": 0.6667,
+        "abstain": 0.05,
+        "top1_when_answered": 0.386,
+        "tied_top": 0.0333,
+        "brier": 0.1255,
+        "mean_stars": 1.3
+      },
+      "equipment_condition": {
+        "n": 60,
+        "top1": 0.3333,
+        "top3": 0.7,
+        "abstain": 0.0333,
+        "top1_when_answered": 0.3448,
+        "tied_top": 0.0167,
+        "brier": 0.1188,
+        "mean_stars": 1.32
+      }
+    },
+    "calibration": {
+      "by_stars": [
+        {
+          "stars": 0,
+          "n": 17,
+          "accuracy": 0.1765
+        },
+        {
+          "stars": 1,
+          "n": 551,
+          "accuracy": 0.5354
+        },
+        {
+          "stars": 2,
+          "n": 397,
+          "accuracy": 0.7355
+        },
+        {
+          "stars": 3,
+          "n": 213,
+          "accuracy": 0.9249
+        },
+        {
+          "stars": 4,
+          "n": 64,
+          "accuracy": 0.9688
+        }
+      ],
+      "by_percent": [
+        {
+          "bin": "0-40%",
+          "n": 209,
+          "mean_shown": 0.3504,
+          "accuracy": 0.4545
+        },
+        {
+          "bin": "40-55%",
+          "n": 172,
+          "mean_shown": 0.4888,
+          "accuracy": 0.6047
+        },
+        {
+          "bin": "55-70%",
+          "n": 358,
+          "mean_shown": 0.6156,
+          "accuracy": 0.6313
+        },
+        {
+          "bin": "70-85%",
+          "n": 283,
+          "mean_shown": 0.7626,
+          "accuracy": 0.7385
+        },
+        {
+          "bin": "85-100%",
+          "n": 220,
+          "mean_shown": 0.9045,
+          "accuracy": 0.9773
+        }
+      ]
+    },
+    "confusion": {
+      "volume_too_small_carryover": {
+        "volume_too_small_carryover": 30,
+        "pressure_time_instability": 21,
+        "nozzle_blockage": 1,
+        "air_in_fluid_path": 4,
+        "(no cause ahead)": 1,
+        "dispense_height_or_board_bending": 3
+      },
+      "pressure_time_instability": {
+        "pressure_time_instability": 56,
+        "volume_too_small_carryover": 1,
+        "air_in_fluid_path": 2,
+        "material_rheology_change": 1
+      },
+      "air_in_fluid_path": {
+        "material_rheology_change": 4,
+        "air_in_fluid_path": 51,
+        "pressure_time_instability": 3,
+        "dispense_height_or_board_bending": 1,
+        "equipment_condition": 1
+      },
+      "material_rheology_change": {
+        "material_rheology_change": 49,
+        "air_in_fluid_path": 7,
+        "nozzle_blockage": 2,
+        "dispense_height_or_board_bending": 1,
+        "pressure_time_instability": 1
+      },
+      "nozzle_blockage": {
+        "nozzle_blockage": 46,
+        "pressure_time_instability": 1,
+        "air_in_fluid_path": 6,
+        "material_rheology_change": 6,
+        "dispense_height_or_board_bending": 1
+      },
+      "dispense_height_or_board_bending": {
+        "pressure_time_instability": 28,
+        "dispense_height_or_board_bending": 22,
+        "equipment_condition": 4,
+        "air_in_fluid_path": 2,
+        "(no cause ahead)": 3,
+        "nozzle_blockage": 1
+      },
+      "equipment_condition": {
+        "dispense_height_or_board_bending": 3,
+        "material_rheology_change": 10,
+        "pressure_time_instability": 18,
+        "equipment_condition": 20,
+        "air_in_fluid_path": 5,
+        "nozzle_blockage": 2,
+        "(no cause ahead)": 2
+      }
+    }
+  },
+  "stress": {
+    "clean": {
+      "correct": 0.89,
+      "rejected": 0.0,
+      "missed": 0.11,
+      "false_alarm": 0.0,
+      "n": 100
+    },
+    "blur": {
+      "unit": "sigma px",
+      "levels": [
+        {
+          "level": 1,
+          "correct": 0.89,
+          "rejected": 0.0,
+          "missed": 0.11,
+          "false_alarm": 0.0,
+          "n": 100
+        },
+        {
+          "level": 2,
+          "correct": 0.89,
+          "rejected": 0.0,
+          "missed": 0.11,
+          "false_alarm": 0.0,
+          "n": 100
+        },
+        {
+          "level": 4,
+          "correct": 0.79,
+          "rejected": 0.0,
+          "missed": 0.21,
+          "false_alarm": 0.0,
+          "n": 100
+        },
+        {
+          "level": 7,
+          "correct": 0.68,
+          "rejected": 0.0,
+          "missed": 0.32,
+          "false_alarm": 0.0,
+          "n": 100
+        }
+      ]
+    },
+    "noise": {
+      "unit": "sigma grey levels",
+      "levels": [
+        {
+          "level": 8,
+          "correct": 0.89,
+          "rejected": 0.0,
+          "missed": 0.11,
+          "false_alarm": 0.0,
+          "n": 100
+        },
+        {
+          "level": 16,
+          "correct": 0.89,
+          "rejected": 0.0,
+          "missed": 0.11,
+          "false_alarm": 0.0,
+          "n": 100
+        },
+        {
+          "level": 32,
+          "correct": 0.89,
+          "rejected": 0.0,
+          "missed": 0.11,
+          "false_alarm": 0.0,
+          "n": 100
+        },
+        {
+          "level": 56,
+          "correct": 0.89,
+          "rejected": 0.0,
+          "missed": 0.11,
+          "false_alarm": 0.0,
+          "n": 100
+        }
+      ]
+    },
+    "uneven_light": {
+      "unit": "grey levels edge to edge",
+      "levels": [
+        {
+          "level": 30,
+          "correct": 0.89,
+          "rejected": 0.0,
+          "missed": 0.11,
+          "false_alarm": 0.0,
+          "n": 100
+        },
+        {
+          "level": 60,
+          "correct": 0.89,
+          "rejected": 0.0,
+          "missed": 0.11,
+          "false_alarm": 0.0,
+          "n": 100
+        },
+        {
+          "level": 110,
+          "correct": 0.89,
+          "rejected": 0.0,
+          "missed": 0.11,
+          "false_alarm": 0.0,
+          "n": 100
+        },
+        {
+          "level": 170,
+          "correct": 0.89,
+          "rejected": 0.0,
+          "missed": 0.11,
+          "false_alarm": 0.0,
+          "n": 100
+        }
+      ]
+    },
+    "glare": {
+      "unit": "peak grey levels",
+      "levels": [
+        {
+          "level": 40,
+          "correct": 0.89,
+          "rejected": 0.0,
+          "missed": 0.11,
+          "false_alarm": 0.0,
+          "n": 100
+        },
+        {
+          "level": 80,
+          "correct": 0.89,
+          "rejected": 0.0,
+          "missed": 0.11,
+          "false_alarm": 0.0,
+          "n": 100
+        },
+        {
+          "level": 130,
+          "correct": 0.14,
+          "rejected": 0.82,
+          "missed": 0.04,
+          "false_alarm": 0.0,
+          "n": 100
+        },
+        {
+          "level": 180,
+          "correct": 0.01,
+          "rejected": 0.97,
+          "missed": 0.02,
+          "false_alarm": 0.0,
+          "n": 100
+        }
+      ]
+    },
+    "low_contrast": {
+      "unit": "contrast kept",
+      "levels": [
+        {
+          "level": 0.6,
+          "correct": 0.89,
+          "rejected": 0.0,
+          "missed": 0.11,
+          "false_alarm": 0.0,
+          "n": 100
+        },
+        {
+          "level": 0.4,
+          "correct": 0.89,
+          "rejected": 0.0,
+          "missed": 0.11,
+          "false_alarm": 0.0,
+          "n": 100
+        },
+        {
+          "level": 0.25,
+          "correct": 0.89,
+          "rejected": 0.0,
+          "missed": 0.11,
+          "false_alarm": 0.0,
+          "n": 100
+        },
+        {
+          "level": 0.12,
+          "correct": 0.89,
+          "rejected": 0.0,
+          "missed": 0.11,
+          "false_alarm": 0.0,
+          "n": 100
+        }
+      ]
+    },
+    "jpeg": {
+      "unit": "quality",
+      "levels": [
+        {
+          "level": 60,
+          "correct": 0.89,
+          "rejected": 0.0,
+          "missed": 0.11,
+          "false_alarm": 0.0,
+          "n": 100
+        },
+        {
+          "level": 35,
+          "correct": 0.89,
+          "rejected": 0.0,
+          "missed": 0.11,
+          "false_alarm": 0.0,
+          "n": 100
+        },
+        {
+          "level": 15,
+          "correct": 0.89,
+          "rejected": 0.0,
+          "missed": 0.11,
+          "false_alarm": 0.0,
+          "n": 100
+        },
+        {
+          "level": 5,
+          "correct": 0.89,
+          "rejected": 0.0,
+          "missed": 0.11,
+          "false_alarm": 0.0,
+          "n": 100
+        }
+      ]
+    },
+    "rotate": {
+      "unit": "degrees",
+      "levels": [
+        {
+          "level": 1,
+          "correct": 0.89,
+          "rejected": 0.0,
+          "missed": 0.11,
+          "false_alarm": 0.0,
+          "n": 100
+        },
+        {
+          "level": 2,
+          "correct": 0.89,
+          "rejected": 0.0,
+          "missed": 0.11,
+          "false_alarm": 0.0,
+          "n": 100
+        },
+        {
+          "level": 4,
+          "correct": 0.89,
+          "rejected": 0.0,
+          "missed": 0.11,
+          "false_alarm": 0.0,
+          "n": 100
+        },
+        {
+          "level": 8,
+          "correct": 0.89,
+          "rejected": 0.0,
+          "missed": 0.11,
+          "false_alarm": 0.0,
+          "n": 100
+        }
+      ]
+    },
+    "shift": {
+      "unit": "px",
+      "levels": [
+        {
+          "level": 5,
+          "correct": 0.89,
+          "rejected": 0.0,
+          "missed": 0.11,
+          "false_alarm": 0.0,
+          "n": 100
+        },
+        {
+          "level": 12,
+          "correct": 0.89,
+          "rejected": 0.0,
+          "missed": 0.11,
+          "false_alarm": 0.0,
+          "n": 100
+        },
+        {
+          "level": 25,
+          "correct": 0.89,
+          "rejected": 0.0,
+          "missed": 0.11,
+          "false_alarm": 0.0,
+          "n": 100
+        },
+        {
+          "level": 50,
+          "correct": 0.0,
+          "rejected": 1.0,
+          "missed": 0.0,
+          "false_alarm": 0.0,
+          "n": 100
+        }
+      ]
+    },
+    "low_resolution": {
+      "unit": "of full resolution",
+      "levels": [
+        {
+          "level": 0.5,
+          "correct": 0.89,
+          "rejected": 0.0,
+          "missed": 0.11,
+          "false_alarm": 0.0,
+          "n": 100
+        },
+        {
+          "level": 0.3,
+          "correct": 0.89,
+          "rejected": 0.0,
+          "missed": 0.11,
+          "false_alarm": 0.0,
+          "n": 100
+        },
+        {
+          "level": 0.2,
+          "correct": 0.89,
+          "rejected": 0.0,
+          "missed": 0.11,
+          "false_alarm": 0.0,
+          "n": 100
+        },
+        {
+          "level": 0.12,
+          "correct": 0.83,
+          "rejected": 0.0,
+          "missed": 0.17,
+          "false_alarm": 0.0,
+          "n": 100
+        }
+      ]
+    },
+    "board_clutter": {
+      "unit": "pads/traces",
+      "levels": [
+        {
+          "level": 5,
+          "correct": 0.65,
+          "rejected": 0.18,
+          "missed": 0.09,
+          "false_alarm": 0.08,
+          "n": 100
+        },
+        {
+          "level": 15,
+          "correct": 0.29,
+          "rejected": 0.57,
+          "missed": 0.05,
+          "false_alarm": 0.09,
+          "n": 100
+        },
+        {
+          "level": 30,
+          "correct": 0.06,
+          "rejected": 0.91,
+          "missed": 0.02,
+          "false_alarm": 0.01,
+          "n": 100
+        },
+        {
+          "level": 60,
+          "correct": 0.0,
+          "rejected": 1.0,
+          "missed": 0.0,
+          "false_alarm": 0.0,
+          "n": 100
+        }
+      ]
+    },
+    "phone_photo": {
+      "unit": "combined level",
+      "levels": [
+        {
+          "level": 1,
+          "correct": 0.89,
+          "rejected": 0.0,
+          "missed": 0.11,
+          "false_alarm": 0.0,
+          "n": 100
+        },
+        {
+          "level": 2,
+          "correct": 0.89,
+          "rejected": 0.0,
+          "missed": 0.11,
+          "false_alarm": 0.0,
+          "n": 100
+        },
+        {
+          "level": 3,
+          "correct": 0.89,
+          "rejected": 0.0,
+          "missed": 0.11,
+          "false_alarm": 0.0,
+          "n": 100
+        },
+        {
+          "level": 4,
+          "correct": 0.89,
+          "rejected": 0.0,
+          "missed": 0.11,
+          "false_alarm": 0.0,
+          "n": 100
+        }
+      ]
+    }
+  }
+}

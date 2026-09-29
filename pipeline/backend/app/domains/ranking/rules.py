@@ -78,12 +78,16 @@ def _carryover_pattern(weight: float):
     return rule
 
 
-def _low_circularity(weight: float):
+def _irregular_deposits(weight: float):
+    """Counts distorted deposits rather than averaging circularity over the
+    array — the mean hides a few bad dots among many good ones (see
+    vision/signals.py). Same ramp as missing deposits: one is weak
+    evidence, three is full weight."""
     def rule(fp: Fingerprint) -> float | None:
-        circ = _signal(fp, "mean_circularity")
-        if circ is None:
+        count = _signal(fp, "irregular_count")
+        if not count:
             return None
-        strength = ramp(0.80 - circ, baseline=0.0, spread=0.30)
+        strength = ramp(float(count), baseline=0.0, spread=3.0)
         return weight * strength if strength > 0 else None
     return rule
 
@@ -223,10 +227,10 @@ CAUSE_RULES: dict[str, list[CauseRule]] = {
     ],
     "nozzle_blockage": [
         _r(
-            "Irregular deposit shape (low circularity)",
+            "Irregular deposit shapes (circularity below 0.80)",
             "A partially blocked needle distorts the flow, and so the deposit's silhouette.",
             "matc82 sec 3.1 p.15-16",
-            _low_circularity(1.2), kind="signal",
+            _irregular_deposits(1.2), kind="signal",
         ),
         _r(
             "Missing deposits without the carryover pattern",
