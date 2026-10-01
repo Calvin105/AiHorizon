@@ -1,7 +1,19 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, model_validator
 
 from app.core.schema import ORMModel
 from app.domains.materials.schema import FluidMaterialRead
+from app.domains.vision.magnitude import is_size_cv_spec
+
+
+def _check_size_cv_spec(spec_metric: str | None, spec_limit: str | None) -> None:
+    """A profile that says its spec is a size_cv has to state one. "500±50"
+    under size_cv used to be stored as-is and read back as a limit of 500,
+    so every photo on the profile measured in spec."""
+    if spec_metric == "size_cv" and spec_limit and not is_size_cv_spec(spec_limit):
+        raise ValueError(
+            "a size_cv spec_limit is a coefficient of variation between 0 and 1, written like "
+            f"'< 0.15' — got {spec_limit!r}. Use another spec_metric for a size or diameter tolerance."
+        )
 
 
 class GeometryPoint(BaseModel):
@@ -42,7 +54,10 @@ class DispenseProfileBase(BaseModel):
 
 
 class DispenseProfileCreate(DispenseProfileBase):
-    pass
+    @model_validator(mode="after")
+    def _spec_is_consistent(self):
+        _check_size_cv_spec(self.spec_metric, self.spec_limit)
+        return self
 
 
 class DispenseProfileUpdate(BaseModel):
@@ -58,6 +73,11 @@ class DispenseProfileUpdate(BaseModel):
     spec_metric: str | None = None
     spec_limit: str | None = None
     geometry: Geometry | None = None
+
+    @model_validator(mode="after")
+    def _spec_is_consistent(self):
+        _check_size_cv_spec(self.spec_metric, self.spec_limit)
+        return self
 
 
 class DispenseProfileRead(DispenseProfileBase, ORMModel):

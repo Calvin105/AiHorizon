@@ -25,7 +25,7 @@ import { getPrecedents } from "@/lib/api/retrieval";
 import { closeCase, getReport, verifyCase } from "@/lib/api/report";
 import { analysePhoto } from "@/lib/api/vision";
 import type {
-  Case, CoarseMatch, Fingerprint, FingerprintAxes, Question, Ranking, VisionResult,
+  Case, CoarseMatch, Fingerprint, FingerprintAxes, Question, Ranking, Verification, VisionResult,
 } from "@/lib/api/types";
 
 function describeRanking(ranking: Ranking): string {
@@ -72,6 +72,36 @@ function describeRanking(ranking: Ranking): string {
         "questions would."
       );
   }
+}
+
+/** The measured signals in the words an operator uses. */
+const SIGNAL_WORDS: Record<string, string> = {
+  size_cv: "size spread",
+  missing_count: "missing deposits",
+  irregular_count: "irregular deposits",
+  small_then_big_chance_p: "small-then-big pattern",
+};
+
+function signalValue(signal: string, value: number | null | undefined): string {
+  if (value === null || value === undefined) return "—";
+  if (signal === "size_cv") return value.toFixed(2);
+  if (signal === "small_then_big_chance_p") return `p=${value.toFixed(2)}`;
+  return String(value);
+}
+
+/** The re-measurement in one sentence: the signal that was out before,
+ * where it is now, and anything else the photo still finds out of spec —
+ * "in spec" covers everything a photo can check, not one number. */
+function describeVerification(v: Verification): string {
+  if (v.after === null) {
+    return "Couldn't measure the verification photo — retake it if you want this case to close CONFIRMED.";
+  }
+  const words = SIGNAL_WORDS[v.signal ?? "size_cv"] ?? v.signal ?? "size spread";
+  const change = `${words} ${signalValue(v.signal ?? "", v.before)} → ${signalValue(v.signal ?? "", v.after)}`;
+  const counted = v.deposits_measured ? `Re-measured ${v.deposits_measured} deposits: ` : "Re-measured: ";
+  if (v.in_spec) return `${counted}${change}. Everything the photo can check is back in spec.`;
+  const failed = (v.checks ?? []).filter((c) => !c.ok).map((c) => SIGNAL_WORDS[c.signal] ?? c.signal);
+  return `${counted}${change}. Still out of spec: ${failed.join(", ") || words}.`;
 }
 
 /** Which axis question is still unanswered, in interview order — `null`
@@ -680,11 +710,7 @@ export default function CaseWizardPage() {
           const verification = await verifyCase(caseData.case_id, file, shots);
           const currentReport = artifactsRef.current?.report ?? null;
           patchArtifacts({ report: currentReport ? { ...currentReport, verification } : currentReport });
-          say(
-            verification.in_spec
-              ? `Re-measured: ${verification.before ?? "—"} → ${verification.after ?? "—"}, back in spec.`
-              : `Re-measured: ${verification.before ?? "—"} → ${verification.after ?? "—"}, still not in spec.`,
-          );
+          say(describeVerification(verification));
         } catch (err) {
           toast.error(err instanceof ApiError ? err.message : "Could not verify.");
         } finally {

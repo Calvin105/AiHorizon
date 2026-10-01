@@ -42,7 +42,7 @@ def critic_verdict(pass2_result: list[dict] | None) -> tuple[str | None, str]:
     check.
     """
     if not pass2_result:
-        return None, "Critic did not run (no LLM key configured) — not counted either way."
+        return None, "Critic did not run (LLM off or unreachable) — not counted either way."
 
     ordered = sorted(pass2_result, key=lambda r: -r["likelihood_pct"])
     top = ordered[0]

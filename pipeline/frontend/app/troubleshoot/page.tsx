@@ -174,8 +174,8 @@ export default function OpenCasePage() {
     standoff_um: 150,
     speed_mm_s: 25,
     set_temp_c: null,
-    spec_metric: "dot_diameter_um",
-    spec_limit: "500±50",
+    spec_metric: "size_cv",
+    spec_limit: "< 0.15",
   });
 
   // Helper to refresh all catalog items
@@ -377,8 +377,8 @@ export default function OpenCasePage() {
         standoff_um: 150,
         speed_mm_s: 25,
         set_temp_c: null,
-        spec_metric: "dot_diameter_um",
-        spec_limit: "500±50",
+        spec_metric: "size_cv",
+        spec_limit: "< 0.15",
       });
     } catch {
       toast.error("Failed to create profile.");
@@ -1974,17 +1974,17 @@ export default function OpenCasePage() {
                         id="prof-metric"
                         value={newProfile.spec_metric ?? ""}
                         onChange={(e) => setNewProfile((p) => ({ ...p, spec_metric: e.target.value }))}
-                        placeholder="e.g. dot_diameter_um"
+                        placeholder="size_cv"
                         className="text-xs"
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <Label htmlFor="prof-limit" className="text-xs font-semibold">Spec Limit / Tolerance</Label>
+                      <Label htmlFor="prof-limit" className="text-xs font-semibold">Size-spread limit (size_cv)</Label>
                       <Input
                         id="prof-limit"
                         value={newProfile.spec_limit ?? ""}
                         onChange={(e) => setNewProfile((p) => ({ ...p, spec_limit: e.target.value }))}
-                        placeholder="e.g. 500±50"
+                        placeholder="e.g. < 0.15"
                         className="text-xs"
                       />
                     </div>

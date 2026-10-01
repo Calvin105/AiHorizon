@@ -9,7 +9,12 @@ BACKEND_ROOT = Path(__file__).resolve().parent.parent.parent
 class Settings(BaseSettings):
     """Backend configuration, loaded from environment variables / .env."""
 
-    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
+    # Anchored to the backend folder, not the working directory: started
+    # from the repo root, a relative ".env" was silently missed and the LLM
+    # steps reported "unavailable" with a key sitting right there.
+    model_config = SettingsConfigDict(
+        env_file=BACKEND_ROOT / ".env", env_file_encoding="utf-8", extra="ignore"
+    )
 
     app_name: str = "AI Horizon NSW Automation — Troubleshooting Pipeline"
     api_prefix: str = "/api"
@@ -32,7 +37,10 @@ class Settings(BaseSettings):
     # "unavailable" — nothing else in the pipeline depends on it.
     groq_api_key: str = ""
     groq_model: str = "openai/gpt-oss-20b"
-    llm_calls_per_session: int = 2
+    # The demo switch: LLM_ENABLED=false runs everything on the
+    # code-written paths without removing the key — for a venue with no
+    # reliable network, or to show the system standing on its own.
+    llm_enabled: bool = True
 
     @property
     def database_url(self) -> str:

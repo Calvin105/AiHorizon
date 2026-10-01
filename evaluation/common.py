@@ -21,7 +21,7 @@ from synth import dataset
 
 from app.domains.vision.service import VisionResult, run_vision
 
-SPEC_LIMIT = "< 0.15"  # the demo profile's spec, and DESIGN.md's worked example
+SPEC_LIMIT = 0.15  # size_cv; the demo profile's spec, and DESIGN.md's worked example
 CHANCE_P = 0.05
 
 

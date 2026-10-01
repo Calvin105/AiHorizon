@@ -593,7 +593,7 @@ export function ArtifactPanel({ artifacts }: { artifacts: Artifacts }) {
                       ? causeLabel(artifacts.ranking, artifacts.ranking.critic_top_cause_id)
                       : artifacts.ranking.pass2 && artifacts.ranking.pass2.length > 0
                         ? "no clear pick"
-                        : "not run — no LLM key configured"}
+                        : "not run — LLM off or unreachable"}
                   </div>
                 </div>
                 {artifacts.ranking.critic_note && (

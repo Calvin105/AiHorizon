@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from app.core.schema import ORMModel
 from app.domains.checks.schema import CheckResultRead
@@ -41,12 +41,31 @@ class Diagnosis(BaseModel):
     confirmed_by: ConfirmedBy | None = None
 
 
+class VerificationCheck(BaseModel):
+    """One thing the re-measurement photo was checked for — see report/verify.py."""
+
+    signal: str
+    before: float | None = None
+    after: float | None = None
+    limit: str
+    was_out: bool = False
+    ok: bool
+
+
 class Verification(BaseModel):
     signal: str | None = None
+    """The deciding signal: the one that was out of spec before the fix."""
     before: float | None = None
     after: float | None = None
     in_spec: bool | None = None
+    """Every check passed, not just the deciding signal."""
+    checks: list[VerificationCheck] = []
+    size_cv_limit: float | None = None
+    deposits_measured: int | None = None
+    """Deposits the verification photo actually measured."""
     shots_measured: int | None = None
+    """How long the fix held, as the operator reported it — see `shots_source`."""
+    shots_source: str | None = None
     recurred_after_days: int | None = None
 
 
@@ -63,26 +82,26 @@ class CaseOpen(BaseModel):
 
 
 class CaseUpdate(BaseModel):
-    """Generic patch, used by later steps to write into fingerprint/
-    ranking/diagnosis/verification/engineer_notes as the case progresses."""
+    """What a person types into a case: context, interview answers, an
+    escalation, and the engineer's notes.
+
+    Nothing step 8 rests on is here. Tier, diagnosis, verification, ranking
+    and the vision result are written only by the step endpoints (vision,
+    rank, check-results, verify, close). A PATCH that could set them could
+    file a CONFIRMED case without a single check, and Gate B would then
+    learn from it. Unknown fields are refused rather than dropped, so a
+    client that tries is told."""
+
+    model_config = ConfigDict(extra="forbid")
 
     material_lot: str | None = None
     complaint: str | None = None
     complaint_text: str | None = None
     fingerprint: Fingerprint | None = None
     pre_intake_actions: list[str] | None = None
-    vision_result: dict | None = None
-    ranking: dict | None = None
-    rank_tier: RankTier | None = None
-    diagnosis: Diagnosis | None = None
-    verification: Verification | None = None
-    resolved: bool | None = None
-    diagnosed: DiagnosedState | None = None
-    tier: CaseTier | None = None
     escalate: bool | None = None
     escalation_note: str | None = None
     engineer_notes: str | None = None
-    closed_at: datetime | None = None
 
 
 class CaseRead(ORMModel):

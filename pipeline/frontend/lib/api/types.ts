@@ -209,6 +209,8 @@ export interface VisionResult {
   suggested_signature?: string[];
   cv_output: Record<string, unknown>;
   annotated_image?: string | null;
+  /** The size-spread limit the photo was judged against. */
+  size_cv_limit?: number | null;
 }
 
 // ---- Ranking (step 5) --------------------------------------------------------
@@ -335,12 +337,32 @@ export interface Diagnosis {
   confirmed_by: { check: string; result: string } | null;
 }
 
+/** One thing the re-measurement photo was checked for. */
+export interface VerificationCheck {
+  signal: string;
+  before: number | null;
+  after: number | null;
+  /** The pass condition, in words — "≤ 0.15", "0", "no pattern (p ≥ 0.05)". */
+  limit: string;
+  /** Out of spec on the photo taken before the fix. */
+  was_out: boolean;
+  ok: boolean;
+}
+
 export interface Verification {
+  /** The deciding signal: the one that was out of spec before the fix. */
   signal: string | null;
   before: number | null;
   after: number | null;
+  /** Every check passed — not just the deciding signal. */
   in_spec: boolean | null;
+  checks?: VerificationCheck[];
+  size_cv_limit?: number | null;
+  /** Deposits the verification photo actually measured. */
+  deposits_measured?: number | null;
+  /** How long the fix held, as the operator reported it. */
   shots_measured: number | null;
+  shots_source?: string | null;
   recurred_after_days: number | null;
 }
 

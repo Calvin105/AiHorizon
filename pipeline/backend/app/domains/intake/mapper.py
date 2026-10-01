@@ -37,7 +37,7 @@ def map_free_text(question_id: str, text: str) -> tuple[str | None, bool]:
                 "content": f"Question: {question.prompt}\n\nOptions:\n{option_list}\n\nText: {text!r}",
             },
         ],
-        max_tokens=80,
+        max_tokens=300,  # room for gpt-oss's hidden reasoning before the answer
     )
     if reply is None:
         return None, False

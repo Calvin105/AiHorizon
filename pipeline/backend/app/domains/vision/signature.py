@@ -15,21 +15,21 @@ overwriting axis 1 with the measurement would destroy it.
 
 Every threshold here is the one an existing rule or spec already uses, so
 nothing new gets invented to argue about:
-  - the profile's own `spec_limit` for size spread (the same limit
-    magnitude.py buckets against),
+  - the profile's size_cv limit (the same one magnitude.py buckets
+    against, parsed once by magnitude.parse_spec_limit),
   - a deposit detect() tagged irregular (circularity below 0.80), the
     same count ranking/rules.py's `_irregular_deposits` ramps on,
   - a missing deposit is missing at any count.
 """
 
-from app.domains.vision.magnitude import parse_spec_limit
+from app.domains.vision.magnitude import DEFAULT_SPEC_LIMIT
 
 MAX_PICKS = 2
 """DESIGN.md W3 caps axis 1 at two picks; the suggestion obeys the same
 cap the picker does, strongest first."""
 
 
-def derive_signature(signals: dict[str, float | int], spec_limit: str | None) -> list[str]:
+def derive_signature(signals: dict[str, float | int], limit: float = DEFAULT_SPEC_LIMIT) -> list[str]:
     """Signature values the measurements support, strongest first.
 
     Returns at most MAX_PICKS values, all drawn from the picker's own
@@ -37,7 +37,6 @@ def derive_signature(signals: dict[str, float | int], spec_limit: str | None) ->
     vision/service.py only once its chance test passes, and that test
     belongs with the p-value, not here.
     """
-    limit = parse_spec_limit(spec_limit)
     candidates: list[tuple[float, str]] = []
 
     size_cv = signals.get("size_cv")

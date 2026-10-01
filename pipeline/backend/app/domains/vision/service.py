@@ -8,7 +8,7 @@ from dataclasses import dataclass
 
 from detect import annotate_image, detect
 
-from app.domains.vision.magnitude import bucket_magnitude
+from app.domains.vision.magnitude import DEFAULT_SPEC_LIMIT, bucket_magnitude
 from app.domains.vision.quality import quality_gate
 from app.domains.vision.signals import derive_signals
 from app.domains.vision.signature import derive_signature
@@ -36,9 +36,16 @@ class VisionResult:
     annotated_image: str | None = None
     """Base64 Data URL (data:image/png;base64,...) of the image with detection
     annotations and tags overlaid."""
+    size_cv_limit: float = DEFAULT_SPEC_LIMIT
+    """The size-spread limit this photo was judged against, so a reader can
+    see which spec "marginal" or "gross" was measured from."""
 
 
-def run_vision(raw_image: bytes, profile_data: dict | None, spec_limit: str | None) -> VisionResult:
+def run_vision(
+    raw_image: bytes, profile_data: dict | None, size_cv_limit: float = DEFAULT_SPEC_LIMIT
+) -> VisionResult:
+    """`size_cv_limit` comes from magnitude.parse_spec_limit(profile.spec_limit,
+    profile.spec_metric) — parsed once at the edge, never re-read from text."""
     cv_output = detect(raw_image, profile_data)
     ok, reason = quality_gate(cv_output)
 
@@ -46,7 +53,7 @@ def run_vision(raw_image: bytes, profile_data: dict | None, spec_limit: str | No
         return VisionResult(
             quality_ok=False, quality_reason=reason, cv_output=cv_output,
             signals={}, magnitude="unknown", small_then_big_above_chance=False,
-            suggested_signature=[],
+            suggested_signature=[], size_cv_limit=size_cv_limit,
         )
 
     signals = derive_signals(cv_output)
@@ -67,9 +74,10 @@ def run_vision(raw_image: bytes, profile_data: dict | None, spec_limit: str | No
             ),
             cv_output=cv_output, signals={}, magnitude="unknown",
             small_then_big_above_chance=False, suggested_signature=[],
+            size_cv_limit=size_cv_limit,
         )
 
-    magnitude = bucket_magnitude(signals.get("size_cv"), spec_limit)  # type: ignore[arg-type]
+    magnitude = bucket_magnitude(signals.get("size_cv"), size_cv_limit)
 
     chance_p = signals.get("small_then_big_chance_p")
     above_chance = (
@@ -89,7 +97,7 @@ def run_vision(raw_image: bytes, profile_data: dict | None, spec_limit: str | No
     return VisionResult(
         quality_ok=True, quality_reason=None, cv_output=cv_output,
         signals=signals, magnitude=magnitude, small_then_big_above_chance=bool(above_chance),
-        suggested_signature=derive_signature(signals, spec_limit),
-        annotated_image=annotated_image,
+        suggested_signature=derive_signature(signals, size_cv_limit),
+        annotated_image=annotated_image, size_cv_limit=size_cv_limit,
     )
 
