@@ -1321,10 +1321,12 @@ export default function CaseWizardPage() {
             <ArrowLeft className="size-3.5" />
             <span>Past Cases</span>
           </Link>
-          <span className="text-muted-foreground/30">/</span>
+          {/* The middle crumb wraps onto three lines on a phone; the case
+              number is on the panel's first card anyway. */}
+          <span className="hidden text-muted-foreground/30 sm:inline">/</span>
           <Link
             href={`/cases/${caseId}`}
-            className="text-xs text-muted-foreground hover:text-foreground hover:underline"
+            className="hidden text-xs text-muted-foreground hover:text-foreground hover:underline sm:inline"
           >
             Case #{caseId} Details
           </Link>

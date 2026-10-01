@@ -1,4 +1,16 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8001/api";
+const CONFIGURED_API = process.env.NEXT_PUBLIC_API_BASE_URL;
+
+/** Same-origin "/api" by default: next.config.ts forwards it to the backend,
+ * so the page works from any device that can reach this server. A
+ * configured URL pointing at localhost is honoured only on the laptop
+ * itself — from a phone, "localhost" is the phone. */
+function apiBase(): string {
+  if (typeof window === "undefined") return CONFIGURED_API ?? "http://127.0.0.1:8001/api";
+  if (!CONFIGURED_API) return "/api";
+  const pointsAtLocalhost = /\/\/(localhost|127\.0\.0\.1)[:/]/.test(CONFIGURED_API);
+  const pageIsLocal = ["localhost", "127.0.0.1"].includes(window.location.hostname);
+  return pointsAtLocalhost && !pageIsLocal ? "/api" : CONFIGURED_API;
+}
 
 export class ApiError extends Error {
   constructor(
@@ -19,7 +31,8 @@ interface RequestOptions {
 }
 
 function buildUrl(path: string, searchParams?: RequestOptions["searchParams"]): string {
-  const url = new URL(`${API_BASE_URL}${path}`);
+  const origin = typeof window === "undefined" ? "http://127.0.0.1:3001" : window.location.origin;
+  const url = new URL(`${apiBase()}${path}`, origin);
   if (searchParams) {
     for (const [key, value] of Object.entries(searchParams)) {
       if (value !== undefined) url.searchParams.set(key, String(value));
