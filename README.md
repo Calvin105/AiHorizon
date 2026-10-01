@@ -92,7 +92,7 @@ The brief's five steps, its dynamic-questions bonus, and all four bonus challeng
 | Step 5 — action plan | Ordered checks, observations before changes |
 | **Bonus 1** — image recognition | OpenCV metrology: size dispersion, shape, position, missing deposits. The photo is lined up with the recipe first, so a phone photo of the part — zoomed, off-centre, tilted, on a desk — measures |
 | **Bonus 2** — quality score | ★ rating from evidence strength and the #1–#2 gap |
-| **Bonus 3** — learning database | *"Similar problems occurred 13 times previously. In 9 cases, the main cause was air trapped in the syringe or material supply."* |
+| **Bonus 3** — learning database | *"Similar problems occurred 12 times previously. In 8 cases, the main cause was air trapped in the syringe or material supply."* — what case 1 shows |
 | **Bonus 4** — PDF report | 8-section printable report at `/cases/[id]/report`, including the fix verification |
 
 ### Two things that are unusual
