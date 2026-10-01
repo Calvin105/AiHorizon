@@ -1,3 +1,4 @@
+import type * as React from "react";
 import { Check } from "lucide-react";
 
 export interface Phase {
@@ -24,7 +25,7 @@ const PHASES: Omit<Phase, "hint">[] = [
  * tell a first-time user that — DESIGN.md's 8 steps, collapsed to 6 that
  * mean something to someone who hasn't read the design doc.
  */
-export function StageBar({ phase }: { phase: Phase }) {
+export function StageBar({ phase, action }: { phase: Phase; action?: React.ReactNode }) {
   return (
     <div className="border-b bg-muted/30 px-4 py-3">
       <ol className="flex items-center">
@@ -60,12 +61,17 @@ export function StageBar({ phase }: { phase: Phase }) {
           );
         })}
       </ol>
-      <p className="mt-2 text-sm text-muted-foreground">
-        <span className="font-medium text-foreground">
-          Step {phase.n} of {PHASES.length} &middot; {phase.label}.
-        </span>{" "}
-        {phase.hint}
-      </p>
+      {/* The action sits on the instruction line: that's where someone
+          who doesn't know what to do next is already looking. */}
+      <div className="mt-2 flex items-center justify-between gap-3">
+        <p className="text-sm text-muted-foreground">
+          <span className="font-medium text-foreground">
+            Step {phase.n} of {PHASES.length} &middot; {phase.label}.
+          </span>{" "}
+          {phase.hint}
+        </p>
+        {action && <div className="shrink-0">{action}</div>}
+      </div>
     </div>
   );
 }

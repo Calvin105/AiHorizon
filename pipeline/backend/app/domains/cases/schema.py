@@ -80,6 +80,7 @@ class CaseUpdate(BaseModel):
     diagnosed: DiagnosedState | None = None
     tier: CaseTier | None = None
     escalate: bool | None = None
+    escalation_note: str | None = None
     engineer_notes: str | None = None
     closed_at: datetime | None = None
 
@@ -108,6 +109,7 @@ class CaseRead(ORMModel):
     diagnosed: DiagnosedState
     tier: CaseTier | None = None
     escalate: bool
+    escalation_note: str | None = None
     engineer_notes: str | None = None
     action_count: int
     """Changes only — observations are counted separately and cost nothing

@@ -375,7 +375,10 @@ export interface Case {
   resolved: boolean;
   diagnosed: DiagnosedState;
   tier: CaseTier | null;
+  /** Set by the operator's "Ask an engineer"; cleared by "Mark reviewed". */
   escalate: boolean;
+  /** What the operator said they were stuck on. Kept after review. */
+  escalation_note: string | null;
   engineer_notes: string | null;
   /** Changes only. Observations are counted separately and cost nothing
    * at close. */

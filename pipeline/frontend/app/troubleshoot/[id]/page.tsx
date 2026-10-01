@@ -3,10 +3,10 @@
 import * as React from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { ArrowLeft, Home } from "lucide-react";
+import { ArrowLeft, Home, Hourglass, LifeBuoy } from "lucide-react";
 import { toast } from "sonner";
 
-import { buttonVariants } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 
 import { ArtifactPanel, type Artifacts } from "@/components/wizard/artifact-panel";
 import { ChatPanel } from "@/components/wizard/chat-panel";
@@ -142,6 +142,20 @@ const CHECK_SUGGESTIONS: Record<string, SuggestedCheck[]> = {
  * watching the bars not move. */
 const OWN_CHECK_VALUE = "__own_check__";
 
+/** The loop prompt's "I'm stuck" chip. Leads to the same question as the
+ * step bar's "Ask an engineer" button. */
+const ESCALATE_VALUE = "__escalate__";
+
+const LOOP_PROMPT = "Want to log a troubleshooting check, or move on to the report?";
+
+/** One-tap answers to "What are you stuck on?" — the three ways the loop
+ * actually runs out on a shop floor. Typing your own still works. */
+const STUCK_REASONS: ChipOption[] = [
+  { value: "I don't know which check to run next", label: "I don't know which check to run next" },
+  { value: "The checks don't match what I'm seeing", label: "The checks don't match what I'm seeing" },
+  { value: "Nothing I've tried has fixed it", label: "Nothing I've tried has fixed it" },
+];
+
 /** "Don't know" and "Other (describe)" are appended to every axis from
  * `has_dont_know` / `has_other`, which the API has always reported and
  * the UI used to ignore — leaving no way to answer a question the
@@ -252,6 +266,14 @@ export default function CaseWizardPage() {
   /** The verification photo, held between attaching it and answering how
    * many shots it held for. */
   const verifyFileRef = React.useRef<File | null>(null);
+  /** Set while the operator is saying what they're stuck on. Escalating is
+   * a detour, not a pipeline step: it can start from any step, and this
+   * holds where to put them back afterwards. */
+  const escalationRef = React.useRef<{
+    step: StepId; pending: PendingPrompt; phase: Phase; prompt: string | null;
+  } | null>(null);
+  /** Mirrors escalationRef for rendering: the step bar's button reads it. */
+  const [escalating, setEscalating] = React.useState(false);
 
   function setStage(step: StepId) {
     currentStepRef.current = step;
@@ -459,10 +481,27 @@ export default function CaseWizardPage() {
       }
 
       case "loop_prompt": {
-        say("Want to log a troubleshooting check, or move on to the report?");
+        // T4 names no cause, and a T2 where no rule fired has nothing to
+        // go on — the two rankings that leave an operator without a next
+        // move, so the escalation is spelled out there.
+        const ranking = artifactsRef.current?.ranking;
+        const noLead =
+          ranking?.tier === "T4" ||
+          (ranking?.tier === "T2" && ranking.pass1.every((c) => c.evidence.length === 0));
+        const escalated = artifactsRef.current?.caseData.escalate ?? false;
+        say(
+          noLead && !escalated
+            ? "Log a check to test one of the candidates, or if you're not sure which check to " +
+                "run, ask a senior engineer. You can also move on to the report."
+            : LOOP_PROMPT,
+        );
         setPending({
           kind: "confirm",
-          options: [{ value: "log", label: "Log a check" }, { value: "report", label: "Continue to report" }],
+          options: [
+            { value: "log", label: "Log a check" },
+            { value: "report", label: "Continue to report" },
+            ...(escalated ? [] : [{ value: ESCALATE_VALUE, label: "I'm stuck — ask an engineer" }]),
+          ],
         });
         return;
       }
@@ -756,6 +795,7 @@ export default function CaseWizardPage() {
             || axes.inputs.length > 0 || axes.response));
 
         if (!hasProgress) {
+          sayEscalationStatus(caseData);
           void runStep("intro", caseData);
           return;
         }
@@ -784,6 +824,10 @@ export default function CaseWizardPage() {
           say(q.prompt);
           echo(Array.isArray(a.value) ? a.value.map((v) => labelFor(a.id, v)).join(", ") : labelFor(a.id, a.value));
         }
+        // After the replay, not before it: an engineer's reply is the thing
+        // the operator came back for, so it lands next to the prompt instead
+        // of scrolled up above the old answers.
+        sayEscalationStatus(caseData);
 
         // A closed case is reopened into the loop rather than dead-ended.
         // It used to stop here with "already closed" and no prompt, so
@@ -838,6 +882,81 @@ export default function CaseWizardPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [caseId]);
 
+  /** On opening a case: is someone's question still waiting, or has an
+   * engineer answered it? The answer is the engineer notes — the review
+   * panel on the case page is where they're written. */
+  function sayEscalationStatus(caseData: Case) {
+    if (caseData.escalate) {
+      say(
+        `You asked a senior engineer: "${caseData.escalation_note ?? "no question given"}". ` +
+          "Not reviewed yet — carry on if you can.",
+      );
+    } else if (caseData.escalation_note) {
+      say(
+        caseData.engineer_notes
+          ? `A senior engineer reviewed your question ("${caseData.escalation_note}") and wrote:\n\n${caseData.engineer_notes}`
+          : `A senior engineer reviewed your question ("${caseData.escalation_note}") but left no notes.`,
+      );
+    }
+  }
+
+  function startEscalation() {
+    if (escalationRef.current || busy) return;
+    const lastBot = [...messages].reverse().find((m) => m.role === "bot");
+    escalationRef.current = {
+      step: currentStepRef.current, pending, phase, prompt: lastBot?.text ?? null,
+    };
+    setEscalating(true);
+    echo("I'm stuck — ask an engineer");
+    say(
+      "What are you stuck on? One line is enough. A senior engineer sees it under Needs " +
+        "review on the home page, and you can keep going while you wait.",
+    );
+    setPhase({ ...phase, hint: "Say what you're stuck on, or cancel to go back." });
+    setPending({
+      kind: "text-with-suggestions", suggestions: STUCK_REASONS,
+      placeholder: "Or describe it in your own words", confirmLabel: "Send", skipLabel: "Cancel",
+    });
+  }
+
+  /** Back to wherever the operator was, with the question they were on
+   * asked again — it has scrolled up out of sight by now. Once sent, the
+   * loop prompt loses its "I'm stuck" chip and the line suggesting it. */
+  function endEscalation(sent: boolean) {
+    const from = escalationRef.current;
+    escalationRef.current = null;
+    setEscalating(false);
+    if (!from) return;
+    let { pending: restored, prompt } = from;
+    if (sent && from.step === "loop_prompt" && restored.kind === "confirm") {
+      restored = { ...restored, options: restored.options.filter((o) => o.value !== ESCALATE_VALUE) };
+      prompt = LOOP_PROMPT;
+    }
+    currentStepRef.current = from.step;
+    setPhase(from.phase);
+    if (restored.kind !== "none" && prompt) say(prompt);
+    setPending(restored);
+  }
+
+  async function submitEscalation(caseData: Case, note: string) {
+    setBusy(true);
+    let sent = false;
+    try {
+      const updated = await updateCase(caseData.case_id, { escalate: true, escalation_note: note });
+      patchArtifacts({ caseData: updated });
+      sent = true;
+      say(
+        `Sent. Case #${caseData.case_id} is now under Needs review. When an engineer answers, ` +
+          "their reply shows here the next time you open this case.",
+      );
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.message : "Could not send it to an engineer.");
+    } finally {
+      setBusy(false);
+    }
+    endEscalation(sent);
+  }
+
   function requireCase(): Case | null {
     return artifactsRef.current?.caseData ?? null;
   }
@@ -878,6 +997,10 @@ export default function CaseWizardPage() {
       return;
     }
     if (step === "loop_prompt") {
+      if (value === ESCALATE_VALUE) {
+        startEscalation();
+        return;
+      }
       echo(value === "log" ? "Log a check" : "Continue to report");
       void runStep(value === "log" ? "loop_check_cause" : "report", caseData);
       return;
@@ -984,6 +1107,12 @@ export default function CaseWizardPage() {
     if (!caseData) return;
     const step = currentStepRef.current;
 
+    if (escalationRef.current) {
+      echo(value);
+      void submitEscalation(caseData, value);
+      return;
+    }
+
     if (step === "ask_axis_other") {
       const axisId = otherAxisRef.current;
       if (!axisId) return;
@@ -1031,6 +1160,11 @@ export default function CaseWizardPage() {
     const caseData = requireCase();
     if (!caseData) return;
     const step = currentStepRef.current;
+    if (escalationRef.current) {
+      echo("Cancel");
+      endEscalation(false);
+      return;
+    }
     if (step === "verify_prompt") {
       echo("Skip verification");
       void runStep("close_prompt", caseData);
@@ -1123,7 +1257,26 @@ export default function CaseWizardPage() {
         </div>
       </header>
 
-      <StageBar phase={phase} />
+      <StageBar
+        phase={phase}
+        action={
+          artifacts.caseData.escalate ? (
+            <span className="inline-flex items-center gap-1.5 rounded-md border border-destructive/30 bg-destructive/5 px-2.5 py-1 text-xs font-medium text-destructive">
+              <Hourglass className="size-3.5" />
+              Waiting for an engineer
+            </span>
+          ) : (
+            <Button
+              variant="outline" size="sm" className="gap-1.5"
+              disabled={busy || escalating}
+              onClick={startEscalation}
+            >
+              <LifeBuoy className="size-3.5" />
+              Ask an engineer
+            </Button>
+          )
+        }
+      />
       <div className="grid min-h-0 flex-1 grid-cols-1 divide-x overflow-hidden md:grid-cols-2">
         <div className="flex h-full min-h-0 flex-col overflow-hidden">
           <ChatPanel

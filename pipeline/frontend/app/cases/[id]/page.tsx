@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { ArrowLeft, ArrowRight, Compass, FileText, Sparkles } from "lucide-react";
+import { ArrowLeft, ArrowRight, Compass, FileText, LifeBuoy, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 
 import { ArtifactPanel, type Artifacts } from "@/components/wizard/artifact-panel";
@@ -131,6 +131,7 @@ export default function CaseDetailPage() {
             {caseData.closed_at ? "closed" : "open"}
           </Badge>
           {caseData.resolved && <Badge>resolved</Badge>}
+          {caseData.escalate && <Badge variant="destructive">needs review</Badge>}
           <TierInfo />
           <Link
             href={`/cases/${caseData.case_id}/report`}
@@ -153,6 +154,13 @@ export default function CaseDetailPage() {
           </Link>
         </div>
       </div>
+
+      {caseData.escalate && (
+        <ReviewPanel
+          caseData={caseData}
+          onChange={(updated) => setCaseData(updated)}
+        />
+      )}
 
       {/* Quick Launch Troubleshooting Banner */}
       <div className="flex flex-wrap items-center justify-between gap-4 rounded-lg border border-primary/25 bg-primary/5 p-4 shadow-xs">
@@ -381,14 +389,25 @@ export default function CaseDetailPage() {
           {/* Engineer notes — the one field on the case a human writes in
               their own words. It was render-only until now, so the report
               had a section nothing could ever fill. */}
-          <Separator />
-          <EngineerNotes
-            caseId={caseId}
-            initial={caseData.engineer_notes}
-            onSaved={(notes) =>
-              setCaseData((prev) => (prev ? { ...prev, engineer_notes: notes } : prev))
-            }
-          />
+          {/* Under review, the notes box moves up into the review panel,
+              next to the question it answers. */}
+          {!caseData.escalate && (
+            <>
+              <Separator />
+              {caseData.escalation_note && (
+                <p className="text-sm text-muted-foreground">
+                  The operator asked: &ldquo;{caseData.escalation_note}&rdquo; &middot; reviewed
+                </p>
+              )}
+              <EngineerNotes
+                caseId={caseId}
+                initial={caseData.engineer_notes}
+                onSaved={(notes) =>
+                  setCaseData((prev) => (prev ? { ...prev, engineer_notes: notes } : prev))
+                }
+              />
+            </>
+          )}
         </TabsContent>
 
         <TabsContent value="artifacts">
@@ -406,11 +425,15 @@ export default function CaseDetailPage() {
  * that saves itself halfway through a sentence is worse than one that
  * waits to be told. */
 function EngineerNotes({
-  caseId, initial, onSaved,
+  caseId, initial, onSaved, onMarkReviewed, placeholder,
 }: {
   caseId: number;
   initial: string | null;
   onSaved: (notes: string | null) => void;
+  /** Review mode: a second button that saves the draft and clears the
+   * escalation in one go, so an unsaved reply can't be lost to it. */
+  onMarkReviewed?: (notes: string | null) => Promise<void>;
+  placeholder?: string;
 }) {
   const [value, setValue] = React.useState(initial ?? "");
   const [saving, setSaving] = React.useState(false);
@@ -430,21 +453,106 @@ function EngineerNotes({
     }
   }
 
+  async function markReviewed() {
+    if (!onMarkReviewed) return;
+    setSaving(true);
+    try {
+      await onMarkReviewed(value.trim() || null);
+    } finally {
+      setSaving(false);
+    }
+  }
+
   return (
     <div>
       <div className="mb-1 flex items-center justify-between gap-2">
         <h2 className="text-sm font-medium">Engineer notes</h2>
-        <Button size="sm" variant={dirty ? "default" : "outline"} disabled={!dirty || saving} onClick={save}>
-          {saving ? "Saving…" : "Save notes"}
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            size="sm"
+            variant={dirty && !onMarkReviewed ? "default" : "outline"}
+            disabled={!dirty || saving}
+            onClick={save}
+          >
+            {saving ? "Saving…" : "Save notes"}
+          </Button>
+          {onMarkReviewed && (
+            <Button size="sm" disabled={saving} onClick={markReviewed}>
+              Mark reviewed
+            </Button>
+          )}
+        </div>
       </div>
       <Textarea
         value={value}
         onChange={(e) => setValue(e.target.value)}
-        placeholder="Anything the next person on this machine should know — what you saw, what you ruled out, what you'd try next."
+        placeholder={
+          placeholder ??
+          "Anything the next person on this machine should know — what you saw, what you ruled out, what you'd try next."
+        }
         className="min-h-24 text-sm"
       />
     </div>
+  );
+}
+
+/** Shown while the case is escalated: the operator's question, where the
+ * case stands, and the reviewer's two moves — answer in the notes, or take
+ * over in the wizard and log a check. There is no way to set the cause
+ * from here on purpose: only a check can prove one (DESIGN.md step 8). */
+function ReviewPanel({ caseData, onChange }: { caseData: Case; onChange: (updated: Case) => void }) {
+  const top = caseData.ranking?.pass1[0];
+
+  async function markReviewed(notes: string | null) {
+    try {
+      const updated = await updateCase(caseData.case_id, { engineer_notes: notes, escalate: false });
+      onChange(updated);
+      toast.success(
+        notes
+          ? "Marked reviewed. The operator sees your notes next time they open this case."
+          : "Marked reviewed.",
+      );
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.message : "Could not mark the case reviewed.");
+    }
+  }
+
+  return (
+    <section className="space-y-4 rounded-lg border border-destructive/30 bg-destructive/5 p-4">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0 space-y-1">
+          <p className="flex items-center gap-1.5 text-sm font-medium text-destructive">
+            <LifeBuoy className="size-4" />
+            An operator asked for help
+          </p>
+          <p className="text-base font-semibold text-foreground">
+            {caseData.escalation_note ? `“${caseData.escalation_note}”` : "No question given."}
+          </p>
+          <p className="text-sm text-muted-foreground">
+            {caseData.ranking
+              ? `Ranking ${caseData.ranking.tier}` +
+                (top ? ` · ${top.label} ${Math.round(top.likelihood * 100)}%` : "")
+              : "Not ranked yet"}
+            {" · "}
+            {caseData.action_count} changed, {caseData.observation_count} looked
+          </p>
+        </div>
+        <Link
+          href={`/troubleshoot/${caseData.case_id}`}
+          className={buttonVariants({ variant: "outline", size: "sm", className: "gap-1.5 bg-background" })}
+        >
+          {caseData.closed_at ? "Reopen and log a check" : "Continue troubleshooting"}
+          <ArrowRight className="size-3.5" />
+        </Link>
+      </div>
+      <EngineerNotes
+        caseId={caseData.case_id}
+        initial={caseData.engineer_notes}
+        onSaved={(notes) => onChange({ ...caseData, engineer_notes: notes })}
+        onMarkReviewed={markReviewed}
+        placeholder="Answer the operator — what to check next, what you ruled out. They see this the next time they open the case."
+      />
+    </section>
   );
 }
 

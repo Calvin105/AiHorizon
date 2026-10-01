@@ -92,6 +92,10 @@ class Case(Base):
         Enum(CaseTier, name="case_tier", native_enum=False), default=None
     )
     escalate: Mapped[bool] = mapped_column(Boolean, default=False)
+    # The operator's own words when they escalate: what they're stuck on.
+    # Kept after review (escalate goes back to False) so the case still
+    # shows what was asked next to the engineer's answer in engineer_notes.
+    escalation_note: Mapped[str | None] = mapped_column(Text, default=None)
     # action_count is derived, not stored — see the property below.
 
     engineer_notes: Mapped[str | None] = mapped_column(Text, default=None)

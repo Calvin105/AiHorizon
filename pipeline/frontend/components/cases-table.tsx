@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Sparkles } from "lucide-react";
+import { LifeBuoy, Sparkles } from "lucide-react";
 import {
   type ColumnDef,
   flexRender,
@@ -35,7 +35,12 @@ const columns: ColumnDef<Case>[] = [
   {
     accessorKey: "complaint",
     header: "Complaint",
-    cell: ({ getValue }) => getValue<string | null>() ?? "unclassified",
+    cell: ({ row, getValue }) => (
+      <span className="inline-flex items-center gap-2">
+        {getValue<string | null>() ?? "unclassified"}
+        {row.original.escalate && <Badge variant="destructive">Needs review</Badge>}
+      </span>
+    ),
   },
   {
     id: "station",
@@ -92,20 +97,36 @@ const columns: ColumnDef<Case>[] = [
   {
     id: "actions",
     header: "Troubleshooting",
-    cell: ({ row }) => (
-      <Link
-        href={`/troubleshoot/${row.original.case_id}`}
-        onClick={(e) => e.stopPropagation()}
-        className={buttonVariants({
-          size: "sm",
-          variant: "default",
-          className: "h-7 gap-1 px-2.5 text-xs font-medium shadow-xs",
-        })}
-      >
-        <Sparkles className="size-3" />
-        {row.original.closed_at ? "Review / Reopen" : "Troubleshoot"}
-      </Link>
-    ),
+    cell: ({ row }) =>
+      // An escalated case goes to its review panel first: the reviewer
+      // needs the operator's question before the wizard.
+      row.original.escalate ? (
+        <Link
+          href={`/cases/${row.original.case_id}`}
+          onClick={(e) => e.stopPropagation()}
+          className={buttonVariants({
+            size: "sm",
+            variant: "destructive",
+            className: "h-7 gap-1 px-2.5 text-xs font-medium",
+          })}
+        >
+          <LifeBuoy className="size-3" />
+          Review
+        </Link>
+      ) : (
+        <Link
+          href={`/troubleshoot/${row.original.case_id}`}
+          onClick={(e) => e.stopPropagation()}
+          className={buttonVariants({
+            size: "sm",
+            variant: "default",
+            className: "h-7 gap-1 px-2.5 text-xs font-medium shadow-xs",
+          })}
+        >
+          <Sparkles className="size-3" />
+          {row.original.closed_at ? "Review / Reopen" : "Troubleshoot"}
+        </Link>
+      ),
   },
 ];
 
