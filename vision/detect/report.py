@@ -13,6 +13,7 @@ import numpy as np
 from . import classify as _classify
 from .align import align
 from .profile import load_profile
+from .register import register
 from .segment import segment_image
 
 SATURATED_LEVEL = 250
@@ -93,7 +94,10 @@ def detect(raw: bytes, profile_data: dict | None = None) -> dict:
             ],
         }
 
-    profile = load_profile(profile_data)
+    # The recipe in photo coordinates: a photo zoomed, rotated or framed
+    # off-centre is lined up first, so every position is judged where it
+    # actually landed. A photo already framed like the recipe is untouched.
+    profile, registration = register(blobs, load_profile(profile_data))
     matches, extra = align(blobs, profile)
     image_quality["washed_out_deposits"] = _washed_out_deposits(gray, profile)
 
@@ -129,4 +133,11 @@ def detect(raw: bytes, profile_data: dict | None = None) -> dict:
         "dots": dots,
         "extra": extras,
         "counts": counts,
+        "registration": registration.as_dict(),
+        # Where each recipe position was looked for in this photo — what an
+        # annotation has to draw against once the photo was registered.
+        "positions": [
+            {"index": pt.index, "cx": round(pt.cx, 2), "cy": round(pt.cy, 2), "r": round(pt.r, 2)}
+            for pt in profile.points
+        ],
     }

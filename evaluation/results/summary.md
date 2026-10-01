@@ -1,6 +1,6 @@
-# Evaluation — 2026-09-29 14:59
+# Evaluation — 2026-10-02 01:29
 
-Ran in 27.2s. All images synthetic (vision/synth), all operator answers simulated (evaluation/scenarios.py, team judgement). No API, no database, no LLM.
+Ran in 51.9s. All images synthetic (vision/synth), all operator answers simulated (evaluation/scenarios.py, team judgement). No API, no database, no LLM.
 
 ## A. Measurement — does the photo raise the right signal?
 
@@ -120,7 +120,7 @@ Chance level for top-1 is 14% (1 in 7).
 | shift | 5 px | 89% | 0% | 11% | 0% |
 | shift | 12 px | 89% | 0% | 11% | 0% |
 | shift | 25 px | 89% | 0% | 11% | 0% |
-| shift | 50 px | 0% | 100% | 0% | 0% |
+| shift | 50 px | 89% | 0% | 11% | 0% |
 | low_resolution | 0.5 of full resolution | 89% | 0% | 11% | 0% |
 | low_resolution | 0.3 of full resolution | 89% | 0% | 11% | 0% |
 | low_resolution | 0.2 of full resolution | 89% | 0% | 11% | 0% |
@@ -128,8 +128,20 @@ Chance level for top-1 is 14% (1 in 7).
 | board_clutter | 5 pads/traces | 65% | 18% | 9% | 8% |
 | board_clutter | 15 pads/traces | 29% | 57% | 5% | 9% |
 | board_clutter | 30 pads/traces | 6% | 91% | 2% | 1% |
-| board_clutter | 60 pads/traces | 0% | 100% | 0% | 0% |
+| board_clutter | 60 pads/traces | 3% | 97% | 0% | 0% |
 | phone_photo | 1 combined level | 89% | 0% | 11% | 0% |
 | phone_photo | 2 combined level | 89% | 0% | 11% | 0% |
 | phone_photo | 3 combined level | 89% | 0% | 11% | 0% |
 | phone_photo | 4 combined level | 89% | 0% | 11% | 0% |
+| zoom | 0.6 x scale | 89% | 0% | 11% | 0% |
+| zoom | 0.8 x scale | 89% | 0% | 11% | 0% |
+| zoom | 1.25 x scale | 89% | 0% | 11% | 0% |
+| zoom | 1.6 x scale | 89% | 0% | 11% | 0% |
+| reframe | 50 px off-centre | 89% | 0% | 11% | 0% |
+| reframe | 100 px off-centre | 89% | 0% | 11% | 0% |
+| reframe | 200 px off-centre | 89% | 0% | 11% | 0% |
+| reframe | 300 px off-centre | 89% | 0% | 11% | 0% |
+| handheld | 1 combined level | 89% | 0% | 11% | 0% |
+| handheld | 2 combined level | 89% | 0% | 11% | 0% |
+| handheld | 3 combined level | 89% | 0% | 11% | 0% |
+| handheld | 4 combined level | 89% | 0% | 11% | 0% |

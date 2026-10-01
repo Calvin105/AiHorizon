@@ -109,10 +109,12 @@ def stress(res: dict) -> None:
     which heavier clutter turns into a safe refusal."""
     names = {"blur": "Blur", "noise": "Sensor noise", "uneven_light": "Uneven light", "glare": "Glare",
              "low_contrast": "Low contrast", "jpeg": "JPEG compression", "rotate": "Rotation", "shift": "Offset",
-             "low_resolution": "Low resolution", "board_clutter": "Board clutter", "phone_photo": "Phone-photo mix"}
+             "low_resolution": "Low resolution", "board_clutter": "Board clutter", "phone_photo": "Phone-photo mix",
+             "zoom": "Zoomed in/out", "reframe": "Off-centre framing", "handheld": "Handheld framing"}
     levels = {"blur": "σ {} px", "noise": "σ {}", "uneven_light": "{} grey levels", "glare": "+{} grey levels",
               "low_contrast": "{} contrast", "jpeg": "quality {}", "rotate": "{}°", "shift": "{} px",
-              "low_resolution": "{}× resolution", "board_clutter": "{} pads/traces", "phone_photo": "level {}"}
+              "low_resolution": "{}× resolution", "board_clutter": "{} pads/traces", "phone_photo": "level {}",
+              "zoom": "{}× scale", "reframe": "{} px", "handheld": "level {}"}
     rows = [("Undamaged", res["stress"]["clean"])]
     picked = []
     for key, v in res["stress"].items():

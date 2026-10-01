@@ -116,6 +116,43 @@ def phone_photo(img, level, rng):
     return jpeg(out, max(95 - 18 * level, 10), rng)
 
 
+# ---- framing: the photo is not laid out like the recipe ---------------------
+# Everything above keeps the recipe's pixel grid. A real camera does not:
+# it is closer or further away, and the pattern sits wherever it was
+# pointed. These keep the whole pattern in frame — cropping deposits out of
+# the picture would make "missing" the right answer, which is a different
+# test — and change only where, and how big, it appears.
+
+
+def zoom(img, factor, _rng):
+    """The camera closer (>1) or further away (<1): every distance in the
+    photo scales, so the recipe's coordinates no longer line up anywhere."""
+    h, w = img.shape[:2]
+    interp = cv2.INTER_AREA if factor < 1 else cv2.INTER_LINEAR
+    return cv2.resize(img, (max(1, int(w * factor)), max(1, int(h * factor))), interpolation=interp)
+
+
+def reframe(img, pixels, _rng):
+    """The pattern photographed off-centre, on a wider frame: margin added
+    on the left and top (`pixels`) and a third of that on the right and
+    bottom, so the pattern moves without leaving the picture."""
+    p = int(pixels)
+    return cv2.copyMakeBorder(img, p, p // 3, p, p // 3, cv2.BORDER_REPLICATE)
+
+
+def handheld(img, level, rng):
+    """Framing faults together, as a phone held over the part has them:
+    a little rotation, a different distance, and an off-centre frame."""
+    # Margin first, so the rotation turns the pattern inside the frame
+    # rather than cutting its corners off.
+    out = cv2.copyMakeBorder(img, 60, 60, 60, 60, cv2.BORDER_REPLICATE)
+    h, w = out.shape[:2]
+    m = cv2.getRotationMatrix2D((w / 2, h / 2), 2.5 * level, 1.0)
+    out = cv2.warpAffine(out, m, (w, h), borderMode=cv2.BORDER_REPLICATE)
+    out = reframe(out, 40 * level, rng)
+    return zoom(out, 1 + 0.15 * level, rng)
+
+
 # name -> (function, severity levels mild -> severe, unit shown in reports)
 DEGRADATIONS: dict[str, tuple[Degrade, list[float], str]] = {
     "blur": (blur, [1, 2, 4, 7], "sigma px"),
@@ -129,4 +166,7 @@ DEGRADATIONS: dict[str, tuple[Degrade, list[float], str]] = {
     "low_resolution": (low_resolution, [0.5, 0.3, 0.2, 0.12], "of full resolution"),
     "board_clutter": (board_clutter, [5, 15, 30, 60], "pads/traces"),
     "phone_photo": (phone_photo, [1, 2, 3, 4], "combined level"),
+    "zoom": (zoom, [0.6, 0.8, 1.25, 1.6], "x scale"),
+    "reframe": (reframe, [50, 100, 200, 300], "px off-centre"),
+    "handheld": (handheld, [1, 2, 3, 4], "combined level"),
 }

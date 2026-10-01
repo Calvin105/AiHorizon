@@ -65,8 +65,13 @@ def annotate_image(
     if img is None:
         return b""
 
+    # The recipe as detect() lined it up with this photo, when it reports
+    # one — a registered photo's positions and radii are in its own pixels,
+    # not the recipe's.
     prof_points = {}
-    if profile_data and "profile" in profile_data:
+    if result.get("positions"):
+        prof_points = {p["index"]: p for p in result["positions"]}
+    elif profile_data and "profile" in profile_data:
         prof_points = {p["index"]: p for p in profile_data["profile"]}
 
     gt_by_index = {}
