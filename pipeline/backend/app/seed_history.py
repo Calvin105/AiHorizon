@@ -186,6 +186,7 @@ def _build_case(
             "after": 0.11, "in_spec": True, "shots_measured": 30, "recurred_after_days": None,
         }
 
+    settled_by = change or observation
     return Case(
         station_id=station_id, profile_id=profile_id,
         rules_version=SEED_RULES_VERSION,
@@ -197,7 +198,7 @@ def _build_case(
             "cause_id": cause_id,
             "runners_up": [],
             "confirmed_by": {
-                "check": (change or observation).name if (change or observation) else "check",
+                "check": settled_by.name if settled_by else "check",
                 "result": "confirmed",
             },
         },

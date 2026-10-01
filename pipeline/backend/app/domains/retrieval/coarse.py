@@ -55,7 +55,7 @@ def _answer_frequencies(cases: list[Case]) -> dict[str, dict[str, float]]:
     for case in cases:
         for axis in EQUALITY_AXES:
             value = _axis_value(case.fingerprint, axis)
-            if value:
+            if isinstance(value, str) and value:
                 counts[axis][value] = counts[axis].get(value, 0) + 1
 
     total = max(len(cases), 1)
@@ -96,7 +96,7 @@ def coarse_match(
         for axis in EQUALITY_AXES:
             mine = _axis_value(fingerprint, axis)
             theirs = _axis_value(case.fingerprint, axis)
-            if mine and theirs and mine == theirs:
+            if isinstance(theirs, str) and theirs and mine == theirs:
                 weight = AXIS_WEIGHTS.get(axis, 1.0) * inverse_freq.get(axis, {}).get(theirs, 1.0)
                 score += weight
                 matched_axes.append(axis)

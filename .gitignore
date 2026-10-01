@@ -11,3 +11,5 @@ __pycache__/
 !/**/.env*.example
 vision/vlm_bench/results/
 *.pyc
+# Local database snapshots taken before a demo reset — personal, not shared.
+pipeline/backend/backups/
