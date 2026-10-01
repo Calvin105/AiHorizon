@@ -57,6 +57,8 @@ ROWS = [
      lambda r: r["stress"]["shift"]["levels"][-1]["correct"], True),
     ("Phone-style framing measured correctly — worst of zoom 0.6-1.6x, off-centre, handheld",
      lambda r: _worst_correct(r, ["zoom", "reframe", "handheld"]), True),
+    ("Phone photo of the part on a desk, tilted up to 9%, measured correctly — worst level",
+     lambda r: _worst_correct(r, ["on_desk"]), True),
 ]
 
 

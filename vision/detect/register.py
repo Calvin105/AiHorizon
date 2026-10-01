@@ -22,6 +22,11 @@ photo coordinates. Classical and auditable, like the rest of detect/:
   3. refine the best hypothesis with iterative closest point: pair each
      position with its nearest deposit and refit the transform to those
      pairs (least-median of squares, so a stray blob can't pull it).
+  4. if the camera was tilted, refine once more as a perspective transform
+     (a homography) — kept only when it reaches more positions or sits
+     clearly closer. Each position's expected size is then scaled by its
+     own local magnification, so the far side of a tilted part isn't
+     measured as undersized and the near side as oversized.
 
 Registering is a last resort, not a default. A photo already framed like
 the recipe — most positions find a deposit, at the recipe's own spacing —
@@ -33,10 +38,9 @@ On a registered photo an offset shared by every deposit can't be told
 apart from framing, and `registration` in detect()'s output says it was
 applied.
 
-What this does not undo: a camera tilted enough to foreshorten the
-pattern (that needs a homography and fiducials), rotation past
-MAX_ROTATION_DEG, or a pattern cropped out of frame (a deposit that isn't
-in the picture reads as missing).
+What this does not undo: rotation past MAX_ROTATION_DEG, a tilt steep
+enough to hide deposits behind each other, or a pattern cropped out of
+frame (a deposit that isn't in the picture reads as missing).
 """
 
 from __future__ import annotations
@@ -72,6 +76,11 @@ SCALE_NUDGES = (0.92, 1.0, 1.08)
 MAX_ANCHORS = 8
 """Recipe positions tried as anchors, spread across the pattern."""
 ICP_ROUNDS = 10
+MIN_PERSPECTIVE_PAIRS = 6
+"""A homography has eight unknowns; fewer pairs than this would fit noise."""
+PERSPECTIVE_GAIN = 0.7
+"""With the same positions reached, the perspective fit has to sit this much
+closer (median distance) to be worth its extra freedom."""
 
 
 @dataclass
@@ -85,6 +94,8 @@ class Registration:
     positions_matched_as_framed: int = 0
     """The same count with the photo taken as framed, before registering."""
     positions: int = 0
+    perspective: bool = False
+    """Whether the camera tilt was corrected as well (a homography)."""
 
     def as_dict(self) -> dict:
         return {
@@ -95,6 +106,7 @@ class Registration:
             "positions_matched": self.positions_matched,
             "positions_matched_as_framed": self.positions_matched_as_framed,
             "positions": self.positions,
+            "perspective": self.perspective,
         }
 
 
@@ -173,6 +185,48 @@ def _refine(m: np.ndarray, recipe: np.ndarray, deposits: np.ndarray, pitch: floa
     return m
 
 
+def _homography_fit(
+    h: np.ndarray, recipe: np.ndarray, deposits: np.ndarray, pitch: float, scale: float,
+) -> np.ndarray | None:
+    """ICP again, refitting a homography instead of a similarity."""
+    if np.linalg.matrix_rank(np.c_[recipe, np.ones(len(recipe))]) < 3:
+        return None  # a single row of dots has no perspective to recover
+    for _ in range(ICP_ROUNDS):
+        moved = cv2.perspectiveTransform(recipe.reshape(-1, 1, 2), h).reshape(-1, 2)
+        d = np.linalg.norm(moved[:, None] - deposits[None], axis=2)
+        nearest = d.argmin(axis=1)
+        paired = d[np.arange(len(recipe)), nearest] < 0.5 * scale * pitch
+        if paired.sum() < MIN_PERSPECTIVE_PAIRS:
+            return None
+        refit, _ = cv2.findHomography(
+            recipe[paired], deposits[nearest[paired]], cv2.RANSAC, 0.25 * scale * pitch,
+        )
+        if refit is None or abs(refit[2, 2]) < 1e-12:
+            return None
+        refit = refit / refit[2, 2]
+        converged = np.allclose(refit, h, atol=1e-5)
+        h = refit
+        if converged:
+            break
+    return h
+
+
+def _local_scale(h: np.ndarray, recipe: np.ndarray) -> np.ndarray | None:
+    """Each position's linear magnification under the homography —
+    sqrt(|det J|), with det J = det(H) / w³ — or None if the map folds."""
+    w = recipe @ h[2, :2] + h[2, 2]
+    det = np.linalg.det(h)
+    if det <= 0 or np.any(w <= 0):
+        return None
+    return np.sqrt(det / w**3)
+
+
+def _spread(moved: np.ndarray, blobs: np.ndarray, reach: np.ndarray) -> float:
+    d = np.linalg.norm(moved[:, None] - blobs[None], axis=2).min(axis=1)
+    within = d <= reach
+    return float(np.median(d[within])) if within.any() else math.inf
+
+
 def register(blobs: list[dict], profile: Profile) -> tuple[Profile, Registration]:
     n = len(profile.points)
     if n < 2 or len(blobs) < MIN_PAIRS:
@@ -210,17 +264,33 @@ def register(blobs: list[dict], profile: Profile) -> tuple[Profile, Registration
     scale = math.hypot(m[0, 0], m[1, 0])
 
     moved = _apply(m, recipe)
-    matched = _reached(moved, radii * scale, every_blob)
+    point_radii = radii * scale
+    matched = _reached(moved, point_radii, every_blob)
+
+    perspective = False
+    h = _homography_fit(np.vstack([m, [0.0, 0.0, 1.0]]), recipe, deposits, recipe_pitch, scale)
+    local = _local_scale(h, recipe) if h is not None else None
+    if h is not None and local is not None:
+        tilted = cv2.perspectiveTransform(recipe.reshape(-1, 1, 2), h).reshape(-1, 2)
+        tilted_radii = radii * local
+        tilted_matched = _reached(tilted, tilted_radii, every_blob)
+        closer = (
+            _spread(tilted, every_blob, tilted_radii * CAPTURE_FACTOR)
+            < PERSPECTIVE_GAIN * _spread(moved, every_blob, point_radii * CAPTURE_FACTOR)
+        )
+        if tilted_matched > matched or (tilted_matched == matched and closer):
+            moved, point_radii, matched, perspective = tilted, tilted_radii, tilted_matched, True
+
     gain_needed = max(2, math.ceil(GAIN_SHARE * n))
     if matched - framed_matched < gain_needed or matched < max(MIN_PAIRS, math.ceil(ACCEPT_SHARE * n)):
         return profile, as_framed
 
     points = [
-        ProfilePoint(index=p.index, cx=float(q[0]), cy=float(q[1]), r=p.r * scale)
-        for p, q in zip(profile.points, moved, strict=True)
+        ProfilePoint(index=p.index, cx=float(q[0]), cy=float(q[1]), r=float(r))
+        for p, q, r in zip(profile.points, moved, point_radii, strict=True)
     ]
     return replace(profile, points=points), Registration(
         applied=True, scale=scale, rotation_deg=math.degrees(math.atan2(m[1, 0], m[0, 0])),
         shift_px=(float(m[0, 2]), float(m[1, 2])), positions_matched=matched,
-        positions_matched_as_framed=framed_matched, positions=n,
+        positions_matched_as_framed=framed_matched, positions=n, perspective=perspective,
     )

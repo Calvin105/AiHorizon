@@ -1,6 +1,6 @@
-# Evaluation — 2026-10-02 01:40
+# Evaluation — 2026-10-02 03:59
 
-Ran in 52.6s. All images synthetic (vision/synth), all operator answers simulated (evaluation/scenarios.py, team judgement). No API, no database, no LLM.
+Ran in 65.3s. All images synthetic (vision/synth), all operator answers simulated (evaluation/scenarios.py, team judgement). No API, no database, no LLM.
 
 ## A. Measurement — does the photo raise the right signal?
 
@@ -145,3 +145,7 @@ Chance level for top-1 is 14% (1 in 7).
 | handheld | 2 combined level | 89% | 0% | 11% | 0% |
 | handheld | 3 combined level | 89% | 0% | 11% | 0% |
 | handheld | 4 combined level | 89% | 0% | 11% | 0% |
+| on_desk | 0 x 3% camera tilt | 89% | 0% | 11% | 0% |
+| on_desk | 1 x 3% camera tilt | 89% | 0% | 11% | 0% |
+| on_desk | 2 x 3% camera tilt | 89% | 0% | 11% | 0% |
+| on_desk | 3 x 3% camera tilt | 89% | 0% | 11% | 0% |

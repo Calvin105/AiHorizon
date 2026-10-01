@@ -70,6 +70,28 @@ def test_a_photo_framed_unlike_the_recipe_is_still_measured(client, catalog):
     assert result["cv_output"]["registration"]["applied"] is True
 
 
+def test_a_phone_photo_of_a_card_on_a_desk_is_measured(client, catalog):
+    # The printed sample lying on a darker desk, shot at an angle: the desk
+    # used to be read as one giant deposit and the photo refused.
+    img = cv2.imdecode(np.frombuffer(photo_bytes("missing_carryover"), np.uint8), cv2.IMREAD_COLOR)
+    card = cv2.copyMakeBorder(img, 60, 60, 60, 60, cv2.BORDER_CONSTANT, value=(250, 250, 250))
+    scene = cv2.copyMakeBorder(card, 120, 120, 160, 160, cv2.BORDER_CONSTANT, value=(120, 110, 100))
+    h, w = scene.shape[:2]
+    tilt = 0.08 * w
+    warp = cv2.getPerspectiveTransform(
+        np.float32([[0, 0], [w, 0], [w, h], [0, h]]),
+        np.float32([[tilt, 0.3 * tilt], [w - tilt, 0.3 * tilt], [w, h], [0, h]]),
+    )
+    photo = cv2.warpPerspective(scene, warp, (w, h), borderValue=(120, 110, 100))
+    case_id = open_case(client, catalog)
+
+    result = post_photo(client, case_id, cv2.imencode(".jpg", photo)[1].tobytes())
+    assert result["quality_ok"] is True
+    assert result["signals"]["missing_count"] == 3
+    assert result["small_then_big_above_chance"] is True
+    assert result["cv_output"]["registration"]["perspective"] is True
+
+
 def test_a_photo_framed_like_the_recipe_is_not_registered(client, catalog):
     case_id = open_case(client, catalog)
     result = post_photo(client, case_id, photo_bytes("misaligned"))

@@ -1,7 +1,7 @@
 {
-  "generated_at": "2026-10-02 01:40",
+  "generated_at": "2026-10-02 03:59",
   "quick": false,
-  "seconds": 52.6,
+  "seconds": 65.3,
   "sizes": {
     "measurement_per_condition": 40,
     "stress_per_condition_per_level": 20,
@@ -989,6 +989,43 @@
         },
         {
           "level": 4,
+          "correct": 0.89,
+          "rejected": 0.0,
+          "missed": 0.11,
+          "false_alarm": 0.0,
+          "n": 100
+        }
+      ]
+    },
+    "on_desk": {
+      "unit": "x 3% camera tilt",
+      "levels": [
+        {
+          "level": 0,
+          "correct": 0.89,
+          "rejected": 0.0,
+          "missed": 0.11,
+          "false_alarm": 0.0,
+          "n": 100
+        },
+        {
+          "level": 1,
+          "correct": 0.89,
+          "rejected": 0.0,
+          "missed": 0.11,
+          "false_alarm": 0.0,
+          "n": 100
+        },
+        {
+          "level": 2,
+          "correct": 0.89,
+          "rejected": 0.0,
+          "missed": 0.11,
+          "false_alarm": 0.0,
+          "n": 100
+        },
+        {
+          "level": 3,
           "correct": 0.89,
           "rejected": 0.0,
           "missed": 0.11,

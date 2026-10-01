@@ -92,14 +92,65 @@ def measure_blobs(binary: np.ndarray, frame_area: float) -> list[dict]:
     return blobs
 
 
+SUBSTRATE_SHARE = (0.15, 0.92)
+"""How much of the frame a part lying on a darker surface plausibly covers."""
+SUBSTRATE_EDGE_CONTACT = 0.25
+"""At or above this share of the frame's edge pixels on the substrate, the
+photo is framed on the part itself and there is no surround to mask."""
+
+
+def mask_surround(gray: np.ndarray) -> tuple[np.ndarray, float | None]:
+    """A part photographed lying on something darker — a card on a desk, a
+    board in a fixture — comes back with the surround painted in the
+    substrate's own grey, so segment() sees what it was built for: deposits
+    on one background. Painted rather than cropped, so every coordinate
+    still refers to the original photo.
+
+    Without this, illumination flattening reads the desk-to-card edge as a
+    lighting gradient, and the deposits merge into the grey blob it leaves.
+    Untouched whenever the light substrate already reaches the frame edge,
+    which every photo framed on the part itself does — so no photo the
+    pipeline already measured is affected.
+
+    Returns the image and, when a surround was masked, the substrate's area:
+    the speck floor in measure_blobs() is a share of the part, not of a photo
+    that happens to include a lot of desk."""
+    h, w = gray.shape
+    blurred = cv2.GaussianBlur(gray, (9, 9), 0)
+    _, light = cv2.threshold(blurred, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+    count, labels, stats, _ = cv2.connectedComponentsWithStats(light, connectivity=8)
+    if count <= 1:
+        return gray, None
+    biggest = 1 + int(np.argmax(stats[1:, cv2.CC_STAT_AREA]))
+    share = stats[biggest, cv2.CC_STAT_AREA] / float(h * w)
+    if not SUBSTRATE_SHARE[0] <= share <= SUBSTRATE_SHARE[1]:
+        return gray, None
+    region = labels == biggest
+    edge = np.concatenate([region[0], region[-1], region[:, 0], region[:, -1]])
+    if edge.mean() >= SUBSTRATE_EDGE_CONTACT:
+        return gray, None
+
+    # The substrate's outline, holes (the deposits themselves) filled, pulled
+    # in a little so the substrate's own bright rim and shadow go too.
+    contours, _ = cv2.findContours(region.astype(np.uint8) * 255, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    outline = np.zeros((h, w), np.uint8)
+    cv2.drawContours(outline, [max(contours, key=cv2.contourArea)], -1, 255, thickness=cv2.FILLED)
+    margin = max(3, int(0.015 * min(h, w))) | 1
+    outline = cv2.erode(outline, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (margin, margin)))
+
+    painted = gray.copy()
+    painted[outline == 0] = np.uint8(np.median(gray[region]))
+    return painted, float(np.count_nonzero(outline))
+
+
 def segment_image(raw: bytes) -> tuple[np.ndarray, list[dict]] | None:
     """Bytes in, (bgr image, blob list) out. None if the bytes don't decode."""
     arr = np.frombuffer(raw, np.uint8)
     bgr = cv2.imdecode(arr, cv2.IMREAD_COLOR)
     if bgr is None:
         return None
-    gray = cv2.cvtColor(bgr, cv2.COLOR_BGR2GRAY)
-    frame_area = float(gray.shape[0] * gray.shape[1])
+    gray, substrate_area = mask_surround(cv2.cvtColor(bgr, cv2.COLOR_BGR2GRAY))
+    frame_area = substrate_area or float(gray.shape[0] * gray.shape[1])
     binary = segment(gray)
     blobs = measure_blobs(binary, frame_area)
     return bgr, blobs

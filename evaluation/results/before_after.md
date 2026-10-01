@@ -1,4 +1,4 @@
-# Before / after — 2026-09-29 00:53 → 2026-10-02 01:40
+# Before / after — 2026-09-29 00:53 → 2026-10-02 03:59
 
 | Measure | Before | After | |
 |---|---|---|---|
@@ -13,3 +13,4 @@
 | Worst false-alarm rate — board clutter | 20% | 9% | better |
 | Photo 50 px off the recipe's position, measured correctly | 6% | 89% | better |
 | Phone-style framing measured correctly — worst of zoom 0.6-1.6x, off-centre, handheld | — | 89% | not tested before |
+| Phone photo of the part on a desk, tilted up to 9%, measured correctly — worst level | — | 89% | not tested before |

@@ -140,6 +140,27 @@ def reframe(img, pixels, _rng):
     return cv2.copyMakeBorder(img, p, p // 3, p, p // 3, cv2.BORDER_REPLICATE)
 
 
+def on_desk(img, level, rng):
+    """A phone photo of the part lying on a darker desk: a margin of the
+    part's own background, a desk around it, the camera tilted (the far
+    edge foreshortened by `level` x 3% of the width) and a little rotated,
+    lit unevenly, slightly soft, saved as a JPEG. The deposits stay in
+    frame; everything about where and how they appear changes."""
+    desk = (118, 108, 98)
+    card = cv2.copyMakeBorder(img, 50, 50, 50, 50, cv2.BORDER_REPLICATE)
+    scene = cv2.copyMakeBorder(card, 110, 110, 150, 150, cv2.BORDER_CONSTANT, value=desk)
+    h, w = scene.shape[:2]
+    d = 0.03 * level * w
+    src = np.float32([[0, 0], [w, 0], [w, h], [0, h]])
+    dst = np.float32([[d, 0.3 * d], [w - d, 0.3 * d], [w, h], [0, h]])
+    out = cv2.warpPerspective(scene, cv2.getPerspectiveTransform(src, dst), (w, h), borderValue=desk)
+    turn = cv2.getRotationMatrix2D((w / 2, h / 2), float(rng.uniform(-4, 4)), float(rng.uniform(0.85, 1.1)))
+    out = cv2.warpAffine(out, turn, (w, h), borderValue=desk)
+    out = uneven_light(out, 40, rng)
+    out = noise(blur(out, 1.0, rng), 4, rng)
+    return jpeg(out, 75, rng)
+
+
 def handheld(img, level, rng):
     """Framing faults together, as a phone held over the part has them:
     a little rotation, a different distance, and an off-centre frame."""
@@ -169,4 +190,5 @@ DEGRADATIONS: dict[str, tuple[Degrade, list[float], str]] = {
     "zoom": (zoom, [0.6, 0.8, 1.25, 1.6], "x scale"),
     "reframe": (reframe, [50, 100, 200, 300], "px off-centre"),
     "handheld": (handheld, [1, 2, 3, 4], "combined level"),
+    "on_desk": (on_desk, [0, 1, 2, 3], "x 3% camera tilt"),
 }
