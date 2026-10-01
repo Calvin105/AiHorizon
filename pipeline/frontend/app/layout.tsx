@@ -15,8 +15,10 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "NSW Automation — Troubleshooting Pipeline",
-  description: "Dispense-defect troubleshooting, per AiHorizon/DESIGN.md",
+  title: "AI Dispensing Defect Detective",
+  description:
+    "Measures a dispense photo, interviews the operator, ranks the likely causes with every reason " +
+    "traceable to its source, and closes a case only on what was proved.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

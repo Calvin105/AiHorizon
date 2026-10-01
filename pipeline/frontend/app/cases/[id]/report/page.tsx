@@ -10,7 +10,71 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ApiError } from "@/lib/api/client";
 import { getCase } from "@/lib/api/cases";
 import { getReport } from "@/lib/api/report";
-import type { Case, Report } from "@/lib/api/types";
+import type { Case, Report, Verification } from "@/lib/api/types";
+import { formatCitations, formatSource, SOURCE_NOTES } from "@/lib/sources";
+
+const SIGNAL_NAMES: Record<string, string> = {
+  size_cv: "Size spread (CV)",
+  missing_count: "Missing deposits",
+  irregular_count: "Irregular deposits",
+  small_then_big_chance_p: "Small-then-big pattern",
+};
+
+function signalValue(signal: string, value: number | null | undefined): string {
+  if (value === null || value === undefined) return "—";
+  if (signal === "size_cv") return value.toFixed(3);
+  if (signal === "small_then_big_chance_p") return `p = ${value.toFixed(2)}`;
+  return String(value);
+}
+
+/** What the photo after the fix showed — every check, not just the one
+ * that decided the case, and the hold-time labelled as the operator's
+ * report because a photo can't see how long a fix lasted. */
+function VerificationBlock({ v }: { v: Verification }) {
+  return (
+    <div className="space-y-2">
+      <p>
+        <span className="font-medium">{v.in_spec ? "Back in spec" : "Not back in spec"}</span>
+        {v.signal && (
+          <span className="text-muted-foreground">
+            {" "}— deciding signal {SIGNAL_NAMES[v.signal] ?? v.signal}:{" "}
+            {signalValue(v.signal, v.before)} → {signalValue(v.signal, v.after)}
+          </span>
+        )}
+      </p>
+      {v.checks && v.checks.length > 0 && (
+        <table className="w-full border-collapse text-[14px]">
+          <thead>
+            <tr className="border-b text-left text-muted-foreground">
+              <th className="py-1 pr-2 font-medium">Measured</th>
+              <th className="py-1 pr-2 font-medium">Before</th>
+              <th className="py-1 pr-2 font-medium">After</th>
+              <th className="py-1 pr-2 font-medium">Pass if</th>
+              <th className="py-1 font-medium">Result</th>
+            </tr>
+          </thead>
+          <tbody>
+            {v.checks.map((c) => (
+              <tr key={c.signal} className="border-b">
+                <td className="py-1 pr-2">{SIGNAL_NAMES[c.signal] ?? c.signal}</td>
+                <td className="py-1 pr-2 font-mono">{signalValue(c.signal, c.before)}</td>
+                <td className="py-1 pr-2 font-mono">{signalValue(c.signal, c.after)}</td>
+                <td className="py-1 pr-2 text-muted-foreground">{c.limit}</td>
+                <td className="py-1">{c.ok ? "pass" : "fail"}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+      <p className="text-[13px] text-muted-foreground">
+        {v.deposits_measured ? `${v.deposits_measured} deposits measured in the verification photo. ` : ""}
+        {v.shots_measured
+          ? `Held for ${v.shots_measured} shots, as reported by the operator.`
+          : "How long the fix held was not reported."}
+      </p>
+    </div>
+  );
+}
 
 /** One numbered section of the printed report. `break-inside-avoid` keeps
  * a section from being split across a page break, which is the difference
@@ -193,7 +257,7 @@ export default function CaseReportPage() {
 
         <Section n={3} title="AI Analysis">
           {report.explanation ? (
-            <p className="whitespace-pre-wrap">{report.explanation}</p>
+            <p className="whitespace-pre-wrap">{formatCitations(report.explanation)}</p>
           ) : (
             <p className="text-muted-foreground">
               No written explanation was generated for this case.
@@ -235,7 +299,7 @@ export default function CaseReportPage() {
                   <ul className="mt-1 ml-4 list-disc text-[13px] text-muted-foreground">
                     {cause.evidence.slice(0, 3).map((e, j) => (
                       <li key={j}>
-                        {e.detail} <span className="italic">[{e.source}]</span>
+                        {e.detail} <span className="italic">[{formatSource(e.source)}]</span>
                       </li>
                     ))}
                   </ul>
@@ -324,7 +388,17 @@ export default function CaseReportPage() {
           </p>
         </Section>
 
-        <Section n={7} title="Engineer Notes">
+        <Section n={7} title="Fix Verification">
+          {report.verification ? (
+            <VerificationBlock v={report.verification} />
+          ) : (
+            <p className="text-muted-foreground">
+              No re-measurement photo was taken after the fix, so nothing on this case shows it worked.
+            </p>
+          )}
+        </Section>
+
+        <Section n={8} title="Engineer Notes">
           {report.engineer_notes ? (
             <p className="whitespace-pre-wrap">{report.engineer_notes}</p>
           ) : (
@@ -345,6 +419,14 @@ export default function CaseReportPage() {
 
         <footer className="break-inside-avoid border-t pt-3 text-[13px] text-muted-foreground">
           <p>{report.disclaimer}</p>
+          <p className="mt-1">
+            Sources cited above:{" "}
+            {SOURCE_NOTES.map((n) => (
+              <span key={n.short}>
+                <span className="font-medium text-foreground">{n.short}</span> — {n.full}{" "}
+              </span>
+            ))}
+          </p>
           <p className="mt-1">
             Generated {new Date().toLocaleString()} &middot; Case #{report.case_id} &middot;
             Rules {report.rules_version}

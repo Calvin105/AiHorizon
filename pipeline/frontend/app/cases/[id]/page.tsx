@@ -18,7 +18,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TierInfo } from "@/components/tier-info";
 import { ApiError } from "@/lib/api/client";
 import { getCase, updateCase } from "@/lib/api/cases";
-import { getIntakeSpec } from "@/lib/api/intake";
+import { getFollowupBank, getIntakeSpec } from "@/lib/api/intake";
 import { getReport } from "@/lib/api/report";
 import type { Case, CheckOutcome, VisionResult } from "@/lib/api/types";
 
@@ -52,7 +52,10 @@ export default function CaseDetailPage() {
         const report = c.ranking ? await getReport(caseId, false).catch(() => null) : null;
         // The question spine, so the answers read in the words they were
         // asked in rather than as stored ids.
-        const questions = await getIntakeSpec().catch(() => []);
+        const [questions, followupQuestions] = await Promise.all([
+          getIntakeSpec().catch(() => []),
+          getFollowupBank().catch(() => []),
+        ]);
         if (cancelled) return;
         setArtifacts({
           caseData: c,
@@ -60,6 +63,8 @@ export default function CaseDetailPage() {
           questions,
           axes: c.fingerprint?.axes ?? {},
           axisNotes: c.fingerprint?.axis_notes ?? {},
+          followups: c.fingerprint?.followups ?? {},
+          followupQuestions,
           vision: (c.vision_result as VisionResult | null) ?? null,
           coarse: null,
           // The report already carries the same tally, so it's reused

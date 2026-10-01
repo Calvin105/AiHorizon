@@ -19,16 +19,33 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { apiRequest, ApiError } from "@/lib/api/client";
 import { createCheckResult, getCase } from "@/lib/api/cases";
 import { updateCase } from "@/lib/api/cases";
-import { getIntakeSpec, mapFreeText } from "@/lib/api/intake";
+import { getFollowupBank, getIntakeSpec, getNextFollowup, mapFreeText } from "@/lib/api/intake";
 import { rankCase } from "@/lib/api/ranking";
 import { getPrecedents } from "@/lib/api/retrieval";
 import { closeCase, getReport, verifyCase } from "@/lib/api/report";
 import { analysePhoto } from "@/lib/api/vision";
 import type {
-  Case, CoarseMatch, Fingerprint, FingerprintAxes, Question, Ranking, Verification, VisionResult,
+  Case, CoarseMatch, Fingerprint, FingerprintAxes, NextFollowUp, Question, Ranking, Verification, VisionResult,
 } from "@/lib/api/types";
+import { becauseClause, shortCause } from "@/lib/sources";
 
+/** The ranking in words, led by *why* — the brief asks for the reason
+ * behind the top cause ("ranked highest because the volume changes
+ * occasionally rather than continuously"), not just its percentage. */
 function describeRanking(ranking: Ranking): string {
+  const top = ranking.pass1[0];
+  const why = becauseClause(top.evidence);
+  // T4 names no lead, so its reasons are the rule engine's, not the verdict's.
+  const lead = !why
+    ? ""
+    : ranking.tier === "T4"
+      ? `The rule engine favours ${shortCause(top.label).toLowerCase()} because: ${why}.\n\n`
+      : `${shortCause(top.label)} leads because: ${why}.\n\n`;
+  const verdict = describeTier(ranking);
+  return why && ranking.pass1.some((c) => c.evidence.length > 0) ? lead + verdict : verdict;
+}
+
+function describeTier(ranking: Ranking): string {
   const top = ranking.pass1[0];
   const pct = Math.round(top.likelihood * 100);
   switch (ranking.tier) {
@@ -132,7 +149,10 @@ interface SuggestedCheck {
 const CHECK_SUGGESTIONS: Record<string, SuggestedCheck[]> = {
   volume_too_small_carryover: [
     { name: "Check the next dot after each small one", isChange: false, help: "is it oversized? that's the carryover signature" },
-    { name: "Purge and re-prime the syringe", isChange: true, help: "changes the fluid path" },
+    {
+      name: "Increase dispense time in small steps within your process spec", isChange: true,
+      help: "the NPL guide's fix for big dot / small dot — engineer to confirm the figure",
+    },
   ],
   pressure_time_instability: [
     { name: "Watch the pressure gauge across 20 shots", isChange: false, help: "look for it wandering, not just the set value" },
@@ -224,7 +244,7 @@ function nextUnansweredAxis(axes: FingerprintAxes | undefined):
 type StepId =
   | "intro" | "ask_photo" | "analyse_photo"
   | "ask_signature" | "ask_trajectory" | "ask_footprint" | "ask_inputs" | "ask_response"
-  | "ask_axis_other" | "save_fingerprint" | "retrieve_coarse" | "rank" | "loop_prompt"
+  | "ask_axis_other" | "save_fingerprint" | "ask_followup" | "retrieve_coarse" | "rank" | "loop_prompt"
   | "loop_check_name" | "loop_check_cause" | "loop_check_kind" | "loop_check_outcome"
   | "loop_check_detail" | "loop_submit"
   | "report" | "verify_prompt" | "ask_verify_shots" | "verify_photo"
@@ -252,6 +272,10 @@ const STAGE_HINTS: Record<StepId, Phase> = {
   ask_response: { n: 2, label: "Interview", hint: INTERVIEW_HINT },
   ask_axis_other: { n: 2, label: "Interview", hint: "Describe it in your own words — we'll file it against the closest option, or keep it as-is." },
   save_fingerprint: { n: 2, label: "Interview", hint: "Saving your answers…" },
+  ask_followup: {
+    n: 2, label: "Interview",
+    hint: "A follow-up, picked for this case — asked only because its answer can change the ranking.",
+  },
   retrieve_coarse: { n: 2, label: "Interview", hint: "Checking for similar past cases…" },
   rank: { n: 3, label: "Ranking", hint: "Comparing candidate causes against your answers and the photo." },
   loop_prompt: { n: 4, label: "Troubleshooting", hint: "Log a check to test the top candidate cause, or move straight to the report if you're confident." },
@@ -286,6 +310,12 @@ export default function CaseWizardPage() {
   /** Raw "Other (describe)" words per axis, kept whether or not the W7
    * mapper could place them on a real option. */
   const axisNotesRef = React.useRef<Record<string, string>>({});
+  /** Answers to adaptive follow-ups, keyed by question id. */
+  const followupsRef = React.useRef<Record<string, string>>({});
+  /** Every follow-up question, for labelling answers on file. */
+  const followupBankRef = React.useRef<Question[]>([]);
+  /** The follow-up currently on screen. */
+  const pendingFollowupRef = React.useRef<NextFollowUp | null>(null);
   /** Which axis the pending free-text answer belongs to. */
   const otherAxisRef = React.useRef<string | null>(null);
   const draftCheckRef = React.useRef<{
@@ -341,9 +371,13 @@ export default function CaseWizardPage() {
         },
         signals: {},
         axis_notes: { ...axisNotesRef.current },
+        followups: { ...followupsRef.current },
       };
       await updateCase(caseId, { fingerprint });
-      patchArtifacts({ axes: { ...axesRef.current }, axisNotes: { ...axisNotesRef.current } });
+      patchArtifacts({
+        axes: { ...axesRef.current }, axisNotes: { ...axisNotesRef.current },
+        followups: { ...followupsRef.current },
+      });
     } catch {
       // best-effort — see comment above
     }
@@ -458,7 +492,28 @@ export default function CaseWizardPage() {
         } finally {
           setBusy(false);
         }
-        return runStep("retrieve_coarse", caseData);
+        return runStep("ask_followup", caseData);
+      }
+
+      // Not a fixed sixth question: the backend runs every answer to every
+      // follow-up through the rule engine and returns the one whose answer
+      // would move this case's ranking most — or nothing, when no answer
+      // would. The reason is said out loud, so the operator knows why.
+      case "ask_followup": {
+        setBusy(true);
+        let next: NextFollowUp | null = null;
+        try {
+          next = await getNextFollowup(caseData.case_id);
+        } catch {
+          next = null; // a follow-up is a bonus; never block the case on one
+        } finally {
+          setBusy(false);
+        }
+        if (!next) return runStep("retrieve_coarse", caseData);
+        pendingFollowupRef.current = next;
+        say(`${next.question.prompt}\n\n${next.reason}`);
+        setPending({ kind: "chips-single", options: toChips(next.question) });
+        return;
       }
 
       case "retrieve_coarse": {
@@ -757,10 +812,12 @@ export default function CaseWizardPage() {
 
   React.useEffect(() => {
     let cancelled = false;
-    Promise.all([getCase(caseId), getIntakeSpec()])
-      .then(([caseData, questions]) => {
+    Promise.all([getCase(caseId), getIntakeSpec(), getFollowupBank().catch(() => [] as Question[])])
+      .then(([caseData, questions, followupBank]) => {
         if (cancelled) return;
         questionsRef.current = questions;
+        followupBankRef.current = followupBank;
+        followupsRef.current = { ...(caseData.fingerprint?.followups ?? {}) };
 
         const axes = caseData.fingerprint?.axes;
         axesRef.current = axes ? { ...axes } : {};
@@ -789,6 +846,8 @@ export default function CaseWizardPage() {
           questions,
           axes: axes ?? {},
           axisNotes: { ...axisNotesRef.current },
+          followups: { ...followupsRef.current },
+          followupQuestions: followupBank,
           vision,
           coarse: null,
           precedents: null,
@@ -850,6 +909,12 @@ export default function CaseWizardPage() {
           say(q.prompt);
           echo(Array.isArray(a.value) ? a.value.map((v) => labelFor(a.id, v)).join(", ") : labelFor(a.id, a.value));
         }
+        for (const [qid, value] of Object.entries(followupsRef.current)) {
+          const q = followupBankRef.current.find((x) => x.id === qid);
+          if (!q) continue;
+          say(q.prompt);
+          echo(q.options.find((o) => o.value === value)?.label ?? value);
+        }
         // After the replay, not before it: an engineer's reply is the thing
         // the operator came back for, so it lands next to the prompt instead
         // of scrolled up above the old answers.
@@ -889,7 +954,7 @@ export default function CaseWizardPage() {
         // photo -> interview -> retrieval -> rank.
         const nextAxis = nextUnansweredAxis(axes);
         if (nextAxis === null) {
-          void runStep("retrieve_coarse", caseData);
+          void runStep("ask_followup", caseData);
           return;
         }
         if (!caseData.vision_result) {
@@ -1013,6 +1078,17 @@ export default function CaseWizardPage() {
       echo(labelFor(single.axis, value));
       void persistAxes(caseData.case_id);
       void runStep(single.next, caseData);
+      return;
+    }
+
+    if (step === "ask_followup") {
+      const followup = pendingFollowupRef.current;
+      if (!followup) return;
+      pendingFollowupRef.current = null;
+      followupsRef.current = { ...followupsRef.current, [followup.question.id]: value };
+      echo(followup.question.options.find((o) => o.value === value)?.label ?? value);
+      // Saved before asking again: the next pick has to see this answer.
+      void persistAxes(caseData.case_id).then(() => runStep("ask_followup", caseData));
       return;
     }
 

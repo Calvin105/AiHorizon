@@ -2,16 +2,17 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { ArrowDown, ArrowUp, ExternalLink, Sparkles } from "lucide-react";
+import { ArrowDown, ArrowUp, ChevronDown, ChevronRight, ExternalLink, Sparkles } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ProfileGeometryPattern } from "@/components/profile-geometry-pattern";
 import { TierInfo } from "@/components/tier-info";
 import type {
-  Case, CauseComparison, CheckResult, CloseCaseResponse, CoarseMatch, FingerprintAxes,
+  Case, CauseComparison, CheckResult, CloseCaseResponse, CoarseMatch, Evidence, FingerprintAxes,
   Precedents, Question, Ranking, Report, VisionResult,
 } from "@/lib/api/types";
+import { formatCitations, formatSource, formatWeight, SOURCE_NOTES } from "@/lib/sources";
 
 export interface Artifacts {
   caseData: Case;
@@ -23,6 +24,10 @@ export interface Artifacts {
   axes: Partial<FingerprintAxes>;
   /** Raw "Other (describe)" words, keyed by axis id. */
   axisNotes: Record<string, string>;
+  /** Adaptive follow-up answers, keyed by question id, and the questions
+   * themselves so they read back in the words they were asked in. */
+  followups: Record<string, string>;
+  followupQuestions: Question[];
   vision: VisionResult | null;
   coarse: CoarseMatch[] | null;
   /** The learning-database tally over the coarse matches. */
@@ -100,6 +105,39 @@ function ArtifactCard({
   );
 }
 
+/** Why a cause sits where it does: every rule that fired, its signed
+ * weight in log-odds, and the page it came from. This is the "explain
+ * WHY" the brief asks for, at the moment the ranking is shown — the
+ * printable report used to be the only place it appeared. */
+function EvidenceList({ evidence }: { evidence: Evidence[] }) {
+  if (evidence.length === 0) {
+    return <p className="text-[11px] text-muted-foreground">Nothing fired for this cause — it sits on its starting odds.</p>;
+  }
+  return (
+    <ul className="space-y-1">
+      {evidence.map((e, i) => (
+        <li key={i} className="flex items-start gap-2 text-[11px] leading-snug">
+          <span
+            className={`mt-px shrink-0 rounded px-1 font-mono font-semibold ${
+              e.weight > 0
+                ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400"
+                : "bg-rose-500/15 text-rose-700 dark:text-rose-400"
+            }`}
+            title="Contribution in log-odds"
+          >
+            {formatWeight(e.weight)}
+          </span>
+          <span className="min-w-0">
+            <span className="text-foreground">{e.label.replace(/^Response: /, "")}</span>
+            <span className="text-muted-foreground"> — {e.detail} </span>
+            <span className="whitespace-nowrap italic text-sky-700 dark:text-sky-400">[{formatSource(e.source)}]</span>
+          </span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 function causeLabel(ranking: Ranking, causeId: string): string {
   return ranking.pass1.find((c) => c.cause_id === causeId)?.label ?? causeId;
 }
@@ -109,12 +147,25 @@ export function ArtifactPanel({ artifacts }: { artifacts: Artifacts }) {
   const containerRef = React.useRef<HTMLDivElement>(null);
   const [highlightedCardId, setHighlightedCardId] = React.useState<string | null>(null);
   const [expandedImage, setExpandedImage] = React.useState<string | null>(null);
+  /** Causes whose evidence is open. Null means "just the leader", so the
+   * top cause's reasons are visible without a click. */
+  const [openCauses, setOpenCauses] = React.useState<Set<string> | null>(null);
 
   // Tracking previous likelihoods for candidate causes to compute difference bars
   const [prevLikelihoods, setPrevLikelihoods] = React.useState<Record<string, number>>({});
   const lastPass1Ref = React.useRef<Record<string, number> | null>(null);
 
   const hasAxes = Object.values(artifacts.axes).some((v) => (Array.isArray(v) ? v.length : v));
+
+  function toggleCause(causeId: string) {
+    setOpenCauses((prev) => {
+      const leader = artifacts.ranking?.pass1[0]?.cause_id;
+      const next = new Set(prev ?? (leader ? [leader] : []));
+      if (next.has(causeId)) next.delete(causeId);
+      else next.add(causeId);
+      return next;
+    });
+  }
 
   /** An answer in the words it was offered in. */
   function answerLabel(axisId: string, value: string): string {
@@ -147,6 +198,15 @@ export function ArtifactPanel({ artifacts }: { artifacts: Artifacts }) {
       };
     })
     .filter((row): row is NonNullable<typeof row> => row !== null);
+
+  const followupRows = Object.entries(artifacts.followups ?? {}).map(([qid, value]) => {
+    const q = artifacts.followupQuestions?.find((x) => x.id === qid);
+    return {
+      axisId: qid,
+      prompt: q?.prompt ?? qid,
+      answer: q?.options.find((o) => o.value === value)?.label ?? value.replaceAll("_", " "),
+    };
+  });
 
   // Track and update candidate cause likelihood changes
   React.useEffect(() => {
@@ -406,6 +466,15 @@ export function ArtifactPanel({ artifacts }: { artifacts: Artifacts }) {
                   )}
                 </div>
               ))}
+              {followupRows.map((row) => (
+                <div key={row.axisId}>
+                  <dt className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                    <Badge variant="outline" className="h-4 px-1 text-[9px] font-medium">follow-up</Badge>
+                    {row.prompt}
+                  </dt>
+                  <dd>{row.answer}</dd>
+                </div>
+              ))}
             </dl>
           </ArtifactCard>
         )}
@@ -633,8 +702,9 @@ export function ArtifactPanel({ artifacts }: { artifacts: Artifacts }) {
             </div>
 
             <div className="space-y-2.5">
-              {artifacts.ranking.pass1.slice(0, 4).map((c) => {
+              {artifacts.ranking.pass1.slice(0, 4).map((c, idx) => {
                 const currentPct = Math.round(c.likelihood * 100);
+                const open = openCauses ? openCauses.has(c.cause_id) : idx === 0;
                 const prevPct = prevLikelihoods[c.cause_id];
                 const hasDiff = prevPct !== undefined && prevPct !== null;
                 const diff = hasDiff ? currentPct - prevPct : 0;
@@ -716,10 +786,36 @@ export function ArtifactPanel({ artifacts }: { artifacts: Artifacts }) {
                         <strong className="text-foreground">{currentPct}%</strong>
                       </div>
                     )}
+
+                    <div className="pt-0.5">
+                      <button
+                        type="button"
+                        onClick={() => toggleCause(c.cause_id)}
+                        className="inline-flex items-center gap-1 text-[11px] font-medium text-primary hover:underline"
+                      >
+                        {open ? <ChevronDown className="size-3" /> : <ChevronRight className="size-3" />}
+                        {open ? "Why" : `Why ${currentPct}%?`}
+                      </button>
+                      {open && (
+                        <div className="mt-1.5">
+                          <EvidenceList evidence={c.evidence} />
+                        </div>
+                      )}
+                    </div>
                   </div>
                 );
               })}
             </div>
+
+            <p className="mt-3 border-t pt-2 text-[10px] leading-relaxed text-muted-foreground">
+              Each reason adds its weight (log-odds) to the cause&apos;s starting odds, so every
+              percentage traces back to the rules listed. Sources:{" "}
+              {SOURCE_NOTES.map((n) => (
+                <span key={n.short}>
+                  <span className="font-medium text-foreground">{n.short}</span> — {n.full}{" "}
+                </span>
+              ))}
+            </p>
           </ArtifactCard>
         )}
 
@@ -764,7 +860,9 @@ export function ArtifactPanel({ artifacts }: { artifacts: Artifacts }) {
               <Badge>{artifacts.report.defect.magnitude}</Badge>
               <Badge variant="outline">{"★".repeat(artifacts.report.defect.stars)}{"☆".repeat(5 - artifacts.report.defect.stars)}</Badge>
             </div>
-            {artifacts.report.explanation && <p className="text-xs">{artifacts.report.explanation}</p>}
+            {artifacts.report.explanation && (
+              <p className="whitespace-pre-wrap text-xs">{formatCitations(artifacts.report.explanation)}</p>
+            )}
             <p className="mt-2 text-xs text-muted-foreground">{artifacts.report.disclaimer}</p>
           </ArtifactCard>
         )}

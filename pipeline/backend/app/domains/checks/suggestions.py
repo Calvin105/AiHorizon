@@ -33,7 +33,7 @@ CHECK_SUGGESTIONS: dict[str, list[SuggestedCheck]] = {
         SuggestedCheck("Check the next dot after each small one", False, "is it oversized? that's the carryover signature"),
         SuggestedCheck(
             "Increase dispense time in small steps within your process spec", True,
-            "matc82's fix for big dot / small dot — engineer to confirm the figure",
+            "the NPL guide's fix for big dot / small dot — engineer to confirm the figure",
         ),
     ],
     "pressure_time_instability": [

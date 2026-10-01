@@ -193,6 +193,26 @@ export interface Fingerprint {
   /** Raw words from "Other (describe)", keyed by axis id. Kept for a human
    * to read; never scored. */
   axis_notes?: Record<string, string>;
+  /** Answers to adaptive follow-ups, keyed by question id. Ranked like any
+   * answer, never used to match past cases. */
+  followups?: Record<string, string>;
+}
+
+/** What the ranking would lead with after one follow-up answer. */
+export interface FollowUpPreview {
+  value: string;
+  label: string;
+  top_cause_id: string;
+  top_label: string;
+  top_likelihood: number;
+}
+
+/** The follow-up worth asking next, chosen because its answers can move
+ * this case's ranking — `reason` says how. */
+export interface NextFollowUp {
+  question: Question;
+  reason: string;
+  previews: FollowUpPreview[];
 }
 
 // ---- Vision (step 3) --------------------------------------------------------

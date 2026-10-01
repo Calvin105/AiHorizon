@@ -82,7 +82,10 @@ export default function HomePage() {
   return (
     <div className="mx-auto w-full max-w-3xl space-y-5 px-4 py-8 sm:px-6 sm:py-10">
       <div className="flex items-center justify-between gap-3">
-        <h1 className="text-2xl font-semibold tracking-tight">NSW Automation</h1>
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">AI Dispensing Defect Detective</h1>
+          <p className="text-xs text-muted-foreground">Dispensing troubleshooting for NSW Automation lines</p>
+        </div>
         <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
           How ranking works <TierInfo />
         </span>
