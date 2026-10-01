@@ -45,13 +45,12 @@ def coarse(case_id: int, db: Session = Depends(get_db)) -> list[CoarseMatchOut]:
     "/fine",
     response_model=list[FineMatchOut],
     summary="Step 5b: fine case retrieval",
-    description="Distance across discriminating signals only, over CONFIRMED cases only. This is what Gate B reads.",
+    description="CONFIRMED cases on the same material family and dispenser class whose signals sit "
+    "within one spread of this case's, on average. This is what Gate B reads.",
 )
 def fine(case_id: int, db: Session = Depends(get_db)) -> list[FineMatchOut]:
     case = _get_case_or_404(db, case_id)
-    matches = fine_match(
-        db, fingerprint=case.fingerprint or {"axes": {}, "signals": {}}, exclude_case_id=case_id
-    )
+    matches = fine_match(db, case)
     return [FineMatchOut(case_id=m.case_id, distance=m.distance, cause_id=m.cause_id) for m in matches]
 
 

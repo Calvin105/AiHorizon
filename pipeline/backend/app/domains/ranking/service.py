@@ -67,12 +67,14 @@ def run_ranking(db: Session, case: Case) -> dict:
             pass2_result = fresh
             case.llm_critic_used = True
 
+    # Gate B first: it can reorder the ranking, and the agreement check and
+    # Gate A have to judge the cause that is actually shown on top.
+    matches = fine_match(db, case)
+    ranked, gate_b_result = gate_b(ranked, matches)
+
     pass2_top_id, critic_note = pass2.critic_verdict(pass2_result)
     agree = passes_agree(ranked[0].cause_id, pass2_top_id)
     gate_a_result = gate_a(ranked[0], fingerprint)
-
-    matches = fine_match(db, fingerprint=fingerprint, exclude_case_id=case.case_id)
-    ranked, gate_b_result = gate_b(ranked, matches)
 
     tier = compute_tier(agree, gate_a_result, gate_b_result)
 

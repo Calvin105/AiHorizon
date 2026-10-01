@@ -54,13 +54,18 @@ def gate_a(top: RankedCause, fingerprint: dict) -> GateAResult:
             ),
         )
 
-    # No exact chance test exists for this signal in the current pipeline
-    # (only the dispense-order pattern has one) — conservative default per
-    # DESIGN.md's own T4 example (size_cv alone, no order data): treat as
-    # at-chance rather than claim a test that wasn't actually run.
+    # Only the dispense-order pattern separates one cause from the rest: of
+    # the seven, golden/causes.json gives an image signature to carryover
+    # and to board bending alone. A size spread or a distorted deposit is
+    # real, but several causes produce it — DESIGN.md's own T4 example is
+    # size_cv 0.486 saying the volume is unstable and nothing saying why.
+    # So the measurement stands, and it is not counted as deciding.
     return GateAResult(
         above_chance=False, deciding_signal=deciding.label, p_value=None,
-        note=f"No chance baseline is computed for '{deciding.label}' yet — treated conservatively as undecided.",
+        note=(
+            f"'{deciding.label}' is measured, but several causes produce it — it shows something is "
+            "wrong, not which cause, so it can't decide between them."
+        ),
     )
 
 

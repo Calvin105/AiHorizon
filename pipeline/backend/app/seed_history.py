@@ -24,12 +24,22 @@ The families below use the real axis values from intake/spec.py and the
 real cause ids from golden/causes.json — a fingerprint built from invented
 values would match nothing and quietly tally zero.
 
+Each family's signals are *measured*, not typed: the family's sample photo
+from vision/samples goes through the same run_vision() the API uses, and
+each case varies its size spread a little around that reading. Hand-typed
+numbers had drifted from anything the pipeline produces — a size_cv_chance_p
+field it never computes, and a size_cv of 0.44 on a missing-deposit family
+whose photos measure 0.05 — and Gate B compares live cases against them.
+
 Re-running is safe: every case this writes carries `rules_version`
 ``SEED_RULES_VERSION`` and the script deletes those rows first, so it
 replaces its own history and never touches cases you ran by hand.
 """
 
+import json
 from datetime import UTC, datetime, timedelta
+from functools import lru_cache
+from pathlib import Path
 
 import app.core.models  # noqa: F401  (register every model first)
 from app.core.database import SessionLocal
@@ -39,10 +49,33 @@ from app.domains.checks.suggestions import suggestions_for
 from app.domains.enums import CaseTier, CheckOutcome, DiagnosedState, RankTier
 from app.domains.profiles.model import DispenseProfile
 from app.domains.stations.model import DispenseStation
+from app.domains.vision.service import run_vision
+
+SAMPLES = Path(__file__).resolve().parents[3] / "vision" / "samples"
 
 #: Marks the rows this script owns, so a re-run replaces its own history
 #: instead of accumulating duplicates or deleting hand-run cases.
 SEED_RULES_VERSION = "nsw-pack@1-history"
+
+#: Each case's size spread, as a multiple of its family photo's — a spread
+#: of real-looking readings rather than one number repeated twelve times.
+SPREAD_VARIATION = (0.86, 1.0, 1.12, 0.93, 1.07, 0.9, 1.15, 0.97, 1.04, 0.88, 1.1, 0.95)
+
+
+@lru_cache
+def measured_signals(sample: str) -> dict:
+    """The signals run_vision() reads off one of the project's sample photos."""
+    sidecar = json.loads((SAMPLES / f"{sample}.json").read_text())
+    geometry = {k: sidecar[k] for k in ("pattern", "width", "height", "profile")}
+    result = run_vision((SAMPLES / f"{sample}.png").read_bytes(), geometry)
+    if not result.quality_ok:
+        raise RuntimeError(f"{sample}.png failed its own quality gate: {result.quality_reason}")
+    return dict(result.signals)
+
+
+def _varied(signals: dict, offset: int) -> dict:
+    factor = SPREAD_VARIATION[offset % len(SPREAD_VARIATION)]
+    return {**signals, "size_cv": round(signals["size_cv"] * factor, 4)}
 
 
 def _fingerprint(signature, trajectory, footprint, inputs, response, signals=None):
@@ -93,8 +126,8 @@ FAMILY_A = [
 ]
 FAMILY_A_FINGERPRINT = _fingerprint(
     ["size_varies"], "random", "material", ["new_lot_or_syringe"], "purge_or_prime",
-    {"size_cv": 0.31, "size_cv_chance_p": 0.01},
 )
+FAMILY_A_PHOTO = "inconsistent"
 
 #: Family B — starved and missing deposits on silicone, mostly a blocked
 #: or contaminated fluid path. This is the family case #8 sits in.
@@ -116,8 +149,8 @@ FAMILY_B = [
 ]
 FAMILY_B_FINGERPRINT = _fingerprint(
     ["missing"], "always_been_like_this", "machine", ["nothing_unusual"], "nothing_helps",
-    {"size_cv": 0.44, "size_cv_chance_p": 0.02},
 )
+FAMILY_B_PHOTO = "ghost"
 
 #: Family C — oversized and smeared deposits traced to standoff/clamping.
 FAMILY_C = [
@@ -134,8 +167,9 @@ FAMILY_C = [
 ]
 FAMILY_C_FINGERPRINT = _fingerprint(
     ["spread_or_smeared", "too_much"], "sudden_step", "recipe", ["nothing_unusual"],
-    "raise_pressure_or_time", {"size_cv": 0.19, "size_cv_chance_p": 0.03},
+    "raise_pressure_or_time",
 )
+FAMILY_C_PHOTO = "overrun"
 
 
 def _build_case(
@@ -183,7 +217,8 @@ def _build_case(
         verification = {
             "signal": "size_cv",
             "before": fingerprint["signals"].get("size_cv"),
-            "after": 0.11, "in_spec": True, "shots_measured": 30, "recurred_after_days": None,
+            "after": round(measured_signals("good")["size_cv"], 4), "in_spec": True,
+            "shots_measured": 30, "shots_source": "operator", "recurred_after_days": None,
         }
 
     settled_by = change or observation
@@ -242,13 +277,13 @@ def seed_history() -> None:
 
         start = datetime.now(UTC) - timedelta(days=180)
         families = [
-            (FAMILY_A, FAMILY_A_FINGERPRINT, default),
-            (FAMILY_B, FAMILY_B_FINGERPRINT, silicone),
-            (FAMILY_C, FAMILY_C_FINGERPRINT, default),
+            (FAMILY_A, FAMILY_A_FINGERPRINT, measured_signals(FAMILY_A_PHOTO), default),
+            (FAMILY_B, FAMILY_B_FINGERPRINT, measured_signals(FAMILY_B_PHOTO), silicone),
+            (FAMILY_C, FAMILY_C_FINGERPRINT, measured_signals(FAMILY_C_PHOTO), default),
         ]
 
         written = 0
-        for family, fingerprint, profile in families:
+        for family, fingerprint, signals, profile in families:
             for offset, (complaint, text, (cause_id, confirmed)) in enumerate(family):
                 db.add(
                     _build_case(
@@ -259,7 +294,7 @@ def seed_history() -> None:
                         # rewrite the whole family's history.
                         fingerprint={
                             "axes": dict(fingerprint["axes"]),
-                            "signals": dict(fingerprint["signals"]),
+                            "signals": _varied(signals, offset),
                             "axis_notes": {},
                         },
                         cause_id=cause_id, confirmed=confirmed,
