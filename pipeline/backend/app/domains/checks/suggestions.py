@@ -31,7 +31,10 @@ class SuggestedCheck:
 CHECK_SUGGESTIONS: dict[str, list[SuggestedCheck]] = {
     "volume_too_small_carryover": [
         SuggestedCheck("Check the next dot after each small one", False, "is it oversized? that's the carryover signature"),
-        SuggestedCheck("Purge and re-prime the syringe", True, "changes the fluid path"),
+        SuggestedCheck(
+            "Increase dispense time in small steps within your process spec", True,
+            "matc82's fix for big dot / small dot — engineer to confirm the figure",
+        ),
     ],
     "pressure_time_instability": [
         SuggestedCheck("Watch the pressure gauge across 20 shots", False, "look for it wandering, not just the set value"),

@@ -81,9 +81,15 @@ def gate_b(ranked: list[RankedCause], fine_matches: list[FineMatch]) -> tuple[li
     contradicting = [m for m in with_cause if m.cause_id != top.cause_id]
 
     if not with_cause or len(contradicting) / len(with_cause) <= 0.5:
+        note = (
+            f"{len(fine_matches)} matching confirmed cases, every one diagnosed as {top.label.lower()} — "
+            "precedent agrees. Agreement never raises a likelihood; it only lets the tier reach T1."
+            if with_cause and not contradicting
+            else f"{len(fine_matches)} matching confirmed case(s), {len(contradicting)} caused by something "
+            "else — not enough to contradict the lead, so no adjustment."
+        )
         return ranked, GateBResult(
-            applied=False, matched_count=len(fine_matches), contradicting_count=len(contradicting),
-            note=f"{len(fine_matches)} matching confirmed case(s); precedent agrees or is inconclusive — no adjustment.",
+            applied=False, matched_count=len(fine_matches), contradicting_count=len(contradicting), note=note,
         )
 
     fraction = len(contradicting) / len(with_cause)

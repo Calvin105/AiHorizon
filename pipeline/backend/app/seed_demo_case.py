@@ -34,6 +34,10 @@ from pathlib import Path
 
 import httpx
 
+# The catalog's own demo profile (app/seed.py), reused rather than
+# duplicated; created here only on a database seeded some other way.
+from app.seed import DEMO_PROFILE_NAME
+
 BASE_URL = "http://localhost:8001/api"
 REPO_ROOT = Path(__file__).resolve().parents[3]
 SAMPLES = REPO_ROOT / "vision" / "samples"
@@ -42,8 +46,6 @@ DEFECT_PHOTO = SAMPLES / "inconsistent.png"
 FIXED_PHOTO = SAMPLES / "good.png"
 GEOMETRY_SIDECAR = SAMPLES / "good.json"
 
-#: Marks what this script owns so a re-run replaces its own case.
-DEMO_PROFILE_NAME = "Demo Grid 27G (matches sample photos)"
 
 #: Occasional volume swings, random positions, cleared by a purge — the
 #: fingerprint the brief's own worked example describes, and the one the
@@ -73,12 +75,17 @@ def fail(message: str) -> None:
     sys.exit(1)
 
 
-def main() -> None:
+def main(client: httpx.Client | None = None) -> int:
+    """Drives the case and returns its id. Pass a client to run in-process
+    (app/reset_demo.py hands it a TestClient); without one it talks to the
+    live backend at BASE_URL, which is the integration test."""
     for path in (DEFECT_PHOTO, FIXED_PHOTO, GEOMETRY_SIDECAR):
         if not path.exists():
             fail(f"missing sample: {path}")
 
-    client = httpx.Client(base_url=BASE_URL, timeout=60.0)
+    owns_client = client is None
+    if client is None:
+        client = httpx.Client(base_url=BASE_URL, timeout=60.0)
     try:
         client.get("/health").raise_for_status()
     except (httpx.HTTPError, OSError):
@@ -235,7 +242,9 @@ def main() -> None:
     print(f"  wizard  http://localhost:3001/troubleshoot/{case_id}")
     print(f"  case    http://localhost:3001/cases/{case_id}")
     print(f"  report  http://localhost:3001/cases/{case_id}/report")
-    client.close()
+    if owns_client:
+        client.close()
+    return case_id
 
 
 if __name__ == "__main__":

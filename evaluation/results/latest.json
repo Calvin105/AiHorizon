@@ -1,7 +1,7 @@
 {
-  "generated_at": "2026-10-02 01:29",
+  "generated_at": "2026-10-02 01:40",
   "quick": false,
-  "seconds": 51.9,
+  "seconds": 52.6,
   "sizes": {
     "measurement_per_condition": 40,
     "stress_per_condition_per_level": 20,
@@ -212,33 +212,33 @@
     "overall": {
       "questions_only@1.0": {
         "n": 420,
-        "top1": 0.6905,
-        "top3": 0.931,
+        "top1": 0.7143,
+        "top3": 0.9357,
         "abstain": 0.0357,
-        "top1_when_answered": 0.716,
-        "tied_top": 0.0286,
-        "brier": 0.08,
-        "mean_stars": 1.75
+        "top1_when_answered": 0.7407,
+        "tied_top": 0.0667,
+        "brier": 0.0783,
+        "mean_stars": 1.73
       },
       "questions_only@0.75": {
         "n": 420,
-        "top1": 0.5214,
-        "top3": 0.8024,
+        "top1": 0.5429,
+        "top3": 0.8071,
         "abstain": 0.0333,
-        "top1_when_answered": 0.5394,
-        "tied_top": 0.0381,
-        "brier": 0.1015,
-        "mean_stars": 1.44
+        "top1_when_answered": 0.5616,
+        "tied_top": 0.0619,
+        "brier": 0.1002,
+        "mean_stars": 1.42
       },
       "questions_only@0.5": {
         "n": 420,
-        "top1": 0.3786,
-        "top3": 0.7452,
+        "top1": 0.4024,
+        "top3": 0.75,
         "abstain": 0.0333,
-        "top1_when_answered": 0.3916,
-        "tied_top": 0.0571,
-        "brier": 0.1126,
-        "mean_stars": 1.33
+        "top1_when_answered": 0.4163,
+        "tied_top": 0.0738,
+        "brier": 0.1114,
+        "mean_stars": 1.32
       },
       "photo_only": {
         "n": 420,
@@ -252,64 +252,64 @@
       },
       "photo_and_questions@1.0": {
         "n": 420,
-        "top1": 0.8,
-        "top3": 0.9333,
+        "top1": 0.8048,
+        "top3": 0.9405,
         "abstain": 0.0143,
-        "top1_when_answered": 0.8116,
-        "tied_top": 0.0048,
-        "brier": 0.0767,
+        "top1_when_answered": 0.8164,
+        "tied_top": 0.0119,
+        "brier": 0.0762,
         "mean_stars": 2.08
       },
       "photo_and_questions@0.75": {
         "n": 420,
-        "top1": 0.6524,
-        "top3": 0.8571,
+        "top1": 0.6619,
+        "top3": 0.869,
         "abstain": 0.0143,
-        "top1_when_answered": 0.6618,
-        "tied_top": 0.0214,
-        "brier": 0.0961,
-        "mean_stars": 1.7
+        "top1_when_answered": 0.6715,
+        "tied_top": 0.0262,
+        "brier": 0.0959,
+        "mean_stars": 1.69
       },
       "photo_and_questions@0.5": {
         "n": 420,
         "top1": 0.569,
-        "top3": 0.8286,
+        "top3": 0.8357,
         "abstain": 0.0143,
         "top1_when_answered": 0.5773,
-        "tied_top": 0.0238,
-        "brier": 0.1052,
-        "mean_stars": 1.56
+        "tied_top": 0.0262,
+        "brier": 0.1049,
+        "mean_stars": 1.57
       }
     },
     "per_cause": {
       "volume_too_small_carryover": {
         "n": 60,
-        "top1": 0.5,
-        "top3": 0.7333,
+        "top1": 0.5833,
+        "top3": 0.7833,
         "abstain": 0.0167,
-        "top1_when_answered": 0.5085,
-        "tied_top": 0.0167,
-        "brier": 0.1478,
-        "mean_stars": 1.23
+        "top1_when_answered": 0.5932,
+        "tied_top": 0.05,
+        "brier": 0.1434,
+        "mean_stars": 1.3
       },
       "pressure_time_instability": {
         "n": 60,
         "top1": 0.9333,
-        "top3": 0.9833,
+        "top3": 1.0,
         "abstain": 0.0,
         "top1_when_answered": 0.9333,
         "tied_top": 0.0,
-        "brier": 0.056,
-        "mean_stars": 2.23
+        "brier": 0.0611,
+        "mean_stars": 2.15
       },
       "air_in_fluid_path": {
         "n": 60,
-        "top1": 0.85,
+        "top1": 0.8333,
         "top3": 0.9833,
         "abstain": 0.0,
-        "top1_when_answered": 0.85,
+        "top1_when_answered": 0.8333,
         "tied_top": 0.0,
-        "brier": 0.0784,
+        "brier": 0.0761,
         "mean_stars": 1.62
       },
       "material_rheology_change": {
@@ -319,17 +319,17 @@
         "abstain": 0.0,
         "top1_when_answered": 0.8167,
         "tied_top": 0.0333,
-        "brier": 0.0685,
+        "brier": 0.0696,
         "mean_stars": 1.97
       },
       "nozzle_blockage": {
         "n": 60,
         "top1": 0.7667,
-        "top3": 0.9833,
+        "top3": 1.0,
         "abstain": 0.0,
         "top1_when_answered": 0.7667,
         "tied_top": 0.05,
-        "brier": 0.0779,
+        "brier": 0.0766,
         "mean_stars": 2.2
       },
       "dispense_height_or_board_bending": {
@@ -339,7 +339,7 @@
         "abstain": 0.05,
         "top1_when_answered": 0.386,
         "tied_top": 0.0333,
-        "brier": 0.1255,
+        "brier": 0.1254,
         "mean_stars": 1.3
       },
       "equipment_condition": {
@@ -357,36 +357,36 @@
       "by_stars": [
         {
           "stars": 0,
-          "n": 17,
-          "accuracy": 0.1765
+          "n": 23,
+          "accuracy": 0.2609
         },
         {
           "stars": 1,
-          "n": 551,
-          "accuracy": 0.5354
+          "n": 522,
+          "accuracy": 0.523
         },
         {
           "stars": 2,
-          "n": 397,
-          "accuracy": 0.7355
+          "n": 429,
+          "accuracy": 0.7483
         },
         {
           "stars": 3,
-          "n": 213,
-          "accuracy": 0.9249
+          "n": 210,
+          "accuracy": 0.9476
         },
         {
           "stars": 4,
-          "n": 64,
-          "accuracy": 0.9688
+          "n": 58,
+          "accuracy": 0.9655
         }
       ],
       "by_percent": [
         {
           "bin": "0-40%",
           "n": 209,
-          "mean_shown": 0.3504,
-          "accuracy": 0.4545
+          "mean_shown": 0.3529,
+          "accuracy": 0.4593
         },
         {
           "bin": "40-55%",
@@ -402,26 +402,26 @@
         },
         {
           "bin": "70-85%",
-          "n": 283,
-          "mean_shown": 0.7626,
-          "accuracy": 0.7385
+          "n": 284,
+          "mean_shown": 0.7649,
+          "accuracy": 0.757
         },
         {
           "bin": "85-100%",
-          "n": 220,
-          "mean_shown": 0.9045,
-          "accuracy": 0.9773
+          "n": 219,
+          "mean_shown": 0.9147,
+          "accuracy": 0.9772
         }
       ]
     },
     "confusion": {
       "volume_too_small_carryover": {
-        "volume_too_small_carryover": 30,
-        "pressure_time_instability": 21,
+        "volume_too_small_carryover": 35,
+        "pressure_time_instability": 18,
         "nozzle_blockage": 1,
-        "air_in_fluid_path": 4,
+        "air_in_fluid_path": 3,
         "(no cause ahead)": 1,
-        "dispense_height_or_board_bending": 3
+        "dispense_height_or_board_bending": 2
       },
       "pressure_time_instability": {
         "pressure_time_instability": 56,
@@ -431,17 +431,18 @@
       },
       "air_in_fluid_path": {
         "material_rheology_change": 4,
-        "air_in_fluid_path": 51,
+        "air_in_fluid_path": 50,
         "pressure_time_instability": 3,
         "dispense_height_or_board_bending": 1,
-        "equipment_condition": 1
+        "equipment_condition": 1,
+        "volume_too_small_carryover": 1
       },
       "material_rheology_change": {
         "material_rheology_change": 49,
         "air_in_fluid_path": 7,
         "nozzle_blockage": 2,
         "dispense_height_or_board_bending": 1,
-        "pressure_time_instability": 1
+        "volume_too_small_carryover": 1
       },
       "nozzle_blockage": {
         "nozzle_blockage": 46,
@@ -461,10 +462,11 @@
       "equipment_condition": {
         "dispense_height_or_board_bending": 3,
         "material_rheology_change": 10,
-        "pressure_time_instability": 18,
+        "pressure_time_instability": 17,
         "equipment_condition": 20,
         "air_in_fluid_path": 5,
         "nozzle_blockage": 2,
+        "volume_too_small_carryover": 1,
         "(no cause ahead)": 2
       }
     }

@@ -127,7 +127,9 @@ QUESTIONS: list[Question] = [
             QuestionOption("new_lot_or_syringe", "New lot or syringe just started", "first job off it"),
             QuestionOption("near_out_time", "Near or past out-time", "been on the machine longer than spec allows"),
             QuestionOption("syringe_nearly_empty", "Syringe nearly empty", "down to the last of the barrel"),
-            QuestionOption("ambient_changed", "Room temp or humidity changed", "hot day, aircon out, wet weather"),
+            # matc82 sec 2.9.1: temperature moves the material's rheology;
+            # humidity has little effect on a sealed cartridge.
+            QuestionOption("ambient_changed", "Room temperature changed", "hot day, aircon out overnight"),
             QuestionOption("air_supply_changed", "Air supply changed or serviced", "plant air down, wet line, new regulator"),
             QuestionOption(
                 "nothing_unusual", "Nothing unusual",

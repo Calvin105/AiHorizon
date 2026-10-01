@@ -54,6 +54,12 @@ def _has(fp: Fingerprint, axis: str, value: str) -> bool:
     return got == value
 
 
+def _followup_is(fp: Fingerprint, question_id: str, value: str) -> bool:
+    """An adaptive follow-up's answer (intake/followups.py). Kept out of
+    `axes` so it ranks but never enters case matching."""
+    return (fp.get("followups") or {}).get(question_id) == value
+
+
 # ---- reusable signal rules -------------------------------------------------
 
 def _size_cv_instability(weight: float):
@@ -131,11 +137,14 @@ CAUSE_RULES: dict[str, list[CauseRule]] = {
             "matc82 sec 3.5 p.18-19",
             _carryover_pattern(2.2), kind="signal",
         ),
+        # matc82 sec 3.5's own remedy is more volume — "increase the dispense
+        # time" — so that is what counts as evidence here. This used to be
+        # "purging helps", which the section never says.
         _r(
-            "Response: purging helps",
-            "Purging is the standard remedy for insufficient volume reaching the pad.",
-            "matc82 sec 3.5 p.18-19",
-            _gated(lambda fp: _has(fp, "response", "purge_or_prime"), _answer(0.6)),
+            "Response: turning pressure or time up helps",
+            "matc82's fix for big dot / small dot is a larger dispensed volume: increase the dispense time.",
+            "matc82 sec 3.5 p.19",
+            _gated(lambda fp: _has(fp, "response", "raise_pressure_or_time"), _answer(1.0)),
         ),
     ],
     "pressure_time_instability": [
@@ -202,14 +211,16 @@ CAUSE_RULES: dict[str, list[CauseRule]] = {
         ),
         _r(
             "Near or past out-time",
-            "matc82 ties dispensed volume directly to material condition against pot life / out-time.",
-            "matc82 sec 2.9.1 p.13",
+            "A material's rheology alters over time as it cures, changing flow rate and so the dispensed "
+            "volume — the longer it has been out, the further it has moved.",
+            "matc82 sec 2.5 p.8",
             _gated(lambda fp: _has(fp, "inputs", "near_out_time"), _answer(1.4)),
         ),
         _r(
-            "Room temperature or humidity changed",
-            "Ambient conditions change fluid viscosity, and so the dispensed volume.",
-            "matc82 sec 2.5 p.8",
+            "Room temperature changed",
+            "Ambient temperature changes the material's rheology in the cartridge, and so the dispensed "
+            "volume. (matc82 adds that humidity has little effect on sealed cartridges.)",
+            "matc82 sec 2.9.1 p.13",
             _gated(lambda fp: _has(fp, "inputs", "ambient_changed"), _answer(1.0)),
         ),
         _r(
@@ -220,8 +231,9 @@ CAUSE_RULES: dict[str, list[CauseRule]] = {
         ),
         _r(
             "Response: warming up helps",
-            "Warm-up recovering the process is consistent with a viscosity effect.",
-            "matc82 sec 2.5 p.8",
+            "Warm-up recovering the process is consistent with a viscosity effect — matc82's answer to "
+            "ambient drift is a heated nozzle holding the material at a constant temperature.",
+            "matc82 sec 2.9.1 p.13",
             _gated(lambda fp: _has(fp, "response", "let_it_warm_up"), _answer(1.0)),
         ),
     ],
@@ -292,6 +304,74 @@ CAUSE_RULES: dict[str, list[CauseRule]] = {
         ),
     ],
 }
+
+# ---- adaptive follow-ups (intake/followups.py) --------------------------------
+# Asked only when their answers can move the ranking; each answer is evidence
+# with its own source, exactly like a spine answer.
+
+def _fu(question_id: str, value: str, weight: float):
+    return _gated(lambda fp: _followup_is(fp, question_id, value), _answer(weight))
+
+
+CAUSE_RULES["volume_too_small_carryover"] += [
+    _r("Next dot after a small one is oversized",
+       "Seen by eye: a very small or missing dot followed by an oversized one — the hallmark matc82 describes.",
+       "matc82 sec 3.5 p.18-19", _fu("next_dot", "oversized", 1.6)),
+    _r("Next dot after a small one is normal",
+       "The dot after a small one comes out normal size — not the big dot / small dot pattern.",
+       "matc82 sec 3.5 p.18-19", _fu("next_dot", "normal", -0.8)),
+]
+CAUSE_RULES["nozzle_blockage"] += [
+    _r("Small or missing dot without the oversized follow-on",
+       "Missed material that isn't caught by the next dot points to a restriction, not carryover.",
+       "matc82 sec 3.1 p.15-16", _fu("next_dot", "normal", 0.4)),
+]
+CAUSE_RULES["dispense_height_or_board_bending"] += [
+    _r("Worse in one area of the board",
+       "A board bent by its clamps changes the practical dispense height, and so the deposit shape, across its area.",
+       "matc82 sec 2.8 p.11-12", _fu("location", "one_area", 1.2)),
+    _r("Started when the board, fixture or clamping changed",
+       "Clamps out of line bend the board, and the bend can be much larger than the laminate's own warp.",
+       "matc82 sec 2.8 p.11-12", _fu("recent_change", "fixture_changed", 1.1)),
+    _r("Started when the needle changed",
+       "The right dispense height is set from the needle's inner diameter, so a different needle needs it re-set.",
+       "matc82 sec 2.7 p.11", _fu("recent_change", "needle_changed", 0.9)),
+    _r("Started when the program was edited",
+       "Dispense height, up height and dispense time are all programmed — a mistake there changes every deposit.",
+       "matc82 sec 2.11 p.14", _fu("recent_change", "program_changed", 0.6)),
+]
+CAUSE_RULES["material_rheology_change"] += [
+    _r("Started with a new lot or syringe",
+       "A new lot or syringe is a change of material — the brief's \"the material viscosity may have changed\".",
+       "brief p.3", _fu("recent_change", "new_material", 0.9)),
+    _r("Every position affected alike",
+       "A change in the material's flow rate shifts every deposit the same way, wherever it lands.",
+       "matc82 sec 2.5 p.8", _fu("location", "everywhere_same", 0.4)),
+]
+CAUSE_RULES["air_in_fluid_path"] += [
+    _r("Started with a new syringe or lot",
+       "A freshly loaded syringe is where trapped air gets in.",
+       "brief p.3", _fu("recent_change", "new_material", 0.5)),
+    _r("Random spots, different each board",
+       "The brief ties air to volume that changes occasionally rather than continuously.",
+       "brief p.3", _fu("location", "random_spots", 0.5)),
+]
+CAUSE_RULES["pressure_time_instability"] += [
+    _r("Pressure gauge wanders during a run",
+       "In a pressure-time system the dispensed volume follows the pressure, so a wandering supply moves every shot.",
+       "matc82 sec 2.1 p.6", _fu("pressure_gauge", "wanders", 1.3)),
+    _r("Pressure gauge steady",
+       "A steady supply argues against shot-to-shot pressure variation.",
+       "matc82 sec 2.1 p.6", _fu("pressure_gauge", "steady", -0.6)),
+    _r("Random spots, different each board",
+       "Pressure-time systems are the less repeatable kind — scatter with no position pattern fits.",
+       "matc82 sec 2.1 p.6", _fu("location", "random_spots", 0.3)),
+]
+CAUSE_RULES["equipment_condition"] += [
+    _r("Started after the machine was serviced",
+       "Something changed in the dispensing system itself — the brief's cue that it needs inspecting.",
+       "brief p.4", _fu("recent_change", "machine_serviced", 1.0)),
+]
 
 # "It has always been like this" argues against wear/contamination causes —
 # DESIGN.md is explicit that this is a different case class. Modeled as

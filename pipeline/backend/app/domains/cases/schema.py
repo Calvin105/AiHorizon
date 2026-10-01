@@ -28,6 +28,9 @@ class Fingerprint(BaseModel):
     axis stored as `unmapped` has its text here — DESIGN.md wants the
     words kept and the axis excluded from the match, never a silently
     forked enum. Read by humans, never scored."""
+    followups: dict[str, str] = {}
+    """Answers to adaptive follow-ups (intake/followups.py), keyed by
+    question id. Ranked like any answer, never used to match cases."""
 
 
 class ConfirmedBy(BaseModel):

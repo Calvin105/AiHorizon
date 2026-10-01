@@ -40,4 +40,9 @@ def with_answers(fingerprint: dict | None, incoming: dict) -> dict:
     if IMAGE_ONLY_SIGNATURE_VALUE in ((previous.get("axes") or {}).get("signature") or []):
         signature.append(IMAGE_ONLY_SIGNATURE_VALUE)
     axes["signature"] = signature
-    return {**incoming, "axes": axes, "signals": dict(previous.get("signals") or {})}
+    # A save that doesn't mention follow-ups leaves the ones on file alone.
+    followups = incoming["followups"] if "followups" in incoming else (previous.get("followups") or {})
+    return {
+        **incoming, "axes": axes, "followups": dict(followups),
+        "signals": dict(previous.get("signals") or {}),
+    }

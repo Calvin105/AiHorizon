@@ -171,6 +171,25 @@ FAMILY_C_FINGERPRINT = _fingerprint(
 )
 FAMILY_C_PHOTO = "overrun"
 
+#: Family D — starved dots with the big-dot / small-dot pattern on epoxy:
+#: carryover, confirmed by eye and fixed with more dispense time (matc82
+#: sec 3.5's own remedy). Measured, like the rest, from a sample photo —
+#: missing_carryover.png — so its signals carry the dispense-order pattern.
+FAMILY_D = [
+    ("Missing or starved deposit", "Gaps in the array, and the dot after each gap is fat.",
+     ("volume_too_small_carryover", True)),
+    ("Missing or starved deposit", "Every few dots one is missing, then an oversized one.",
+     ("volume_too_small_carryover", True)),
+    ("Missing or starved deposit", "Small dots then big dots since the new program went in.",
+     ("volume_too_small_carryover", True)),
+    ("Missing or starved deposit", "Missed dots on the fine-pitch job only.",
+     ("volume_too_small_carryover", False)),
+]
+FAMILY_D_FINGERPRINT = _fingerprint(
+    ["missing"], "always_been_like_this", "recipe", ["nothing_unusual"], "raise_pressure_or_time",
+)
+FAMILY_D_PHOTO = "missing_carryover"
+
 
 def _build_case(
     *, station_id, profile_id, complaint, complaint_text, fingerprint, cause_id,
@@ -280,6 +299,7 @@ def seed_history() -> None:
             (FAMILY_A, FAMILY_A_FINGERPRINT, measured_signals(FAMILY_A_PHOTO), default),
             (FAMILY_B, FAMILY_B_FINGERPRINT, measured_signals(FAMILY_B_PHOTO), silicone),
             (FAMILY_C, FAMILY_C_FINGERPRINT, measured_signals(FAMILY_C_PHOTO), default),
+            (FAMILY_D, FAMILY_D_FINGERPRINT, measured_signals(FAMILY_D_PHOTO), default),
         ]
 
         written = 0

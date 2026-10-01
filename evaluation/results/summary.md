@@ -1,6 +1,6 @@
-# Evaluation — 2026-10-02 01:29
+# Evaluation — 2026-10-02 01:40
 
-Ran in 51.9s. All images synthetic (vision/synth), all operator answers simulated (evaluation/scenarios.py, team judgement). No API, no database, no LLM.
+Ran in 52.6s. All images synthetic (vision/synth), all operator answers simulated (evaluation/scenarios.py, team judgement). No API, no database, no LLM.
 
 ## A. Measurement — does the photo raise the right signal?
 
@@ -32,13 +32,13 @@ Correct, by dispense pattern:
 
 | Evidence given | Top-1 | In top 3 | 'No cause ahead' | Top-1 when it named one | Brier (lower=better) |
 |---|---|---|---|---|---|
-| questions_only@1.0 | 69% | 93% | 4% | 72% | 0.08 |
-| questions_only@0.75 | 52% | 80% | 3% | 54% | 0.1015 |
-| questions_only@0.5 | 38% | 75% | 3% | 39% | 0.1126 |
+| questions_only@1.0 | 71% | 94% | 4% | 74% | 0.0783 |
+| questions_only@0.75 | 54% | 81% | 3% | 56% | 0.1002 |
+| questions_only@0.5 | 40% | 75% | 3% | 42% | 0.1114 |
 | photo_only | 36% | 47% | 38% | 58% | 0.1093 |
-| photo_and_questions@1.0 | 80% | 93% | 1% | 81% | 0.0767 |
-| photo_and_questions@0.75 | 65% | 86% | 1% | 66% | 0.0961 |
-| photo_and_questions@0.5 | 57% | 83% | 1% | 58% | 0.1052 |
+| photo_and_questions@1.0 | 80% | 94% | 1% | 82% | 0.0762 |
+| photo_and_questions@0.75 | 66% | 87% | 1% | 67% | 0.0959 |
+| photo_and_questions@0.5 | 57% | 84% | 1% | 58% | 0.1049 |
 
 Chance level for top-1 is 14% (1 in 7).
 
@@ -46,41 +46,41 @@ Chance level for top-1 is 14% (1 in 7).
 
 | True cause | Top-1 | In top 3 | 'No cause ahead' |
 |---|---|---|---|
-| volume_too_small_carryover | 50% | 73% | 2% |
-| pressure_time_instability | 93% | 98% | 0% |
-| air_in_fluid_path | 85% | 98% | 0% |
+| volume_too_small_carryover | 58% | 78% | 2% |
+| pressure_time_instability | 93% | 100% | 0% |
+| air_in_fluid_path | 83% | 98% | 0% |
 | material_rheology_change | 82% | 95% | 0% |
-| nozzle_blockage | 77% | 98% | 0% |
+| nozzle_blockage | 77% | 100% | 0% |
 | dispense_height_or_board_bending | 37% | 67% | 5% |
 | equipment_condition | 33% | 70% | 3% |
 
 ### What it picked instead (photo + questions, reliability 0.75)
 
-- **volume_too_small_carryover** → volume_too_small_carryover 30, pressure_time_instability 21, air_in_fluid_path 4, dispense_height_or_board_bending 3, nozzle_blockage 1, (no cause ahead) 1
+- **volume_too_small_carryover** → volume_too_small_carryover 35, pressure_time_instability 18, air_in_fluid_path 3, dispense_height_or_board_bending 2, nozzle_blockage 1, (no cause ahead) 1
 - **pressure_time_instability** → pressure_time_instability 56, air_in_fluid_path 2, volume_too_small_carryover 1, material_rheology_change 1
-- **air_in_fluid_path** → air_in_fluid_path 51, material_rheology_change 4, pressure_time_instability 3, dispense_height_or_board_bending 1, equipment_condition 1
-- **material_rheology_change** → material_rheology_change 49, air_in_fluid_path 7, nozzle_blockage 2, dispense_height_or_board_bending 1, pressure_time_instability 1
+- **air_in_fluid_path** → air_in_fluid_path 50, material_rheology_change 4, pressure_time_instability 3, dispense_height_or_board_bending 1, equipment_condition 1, volume_too_small_carryover 1
+- **material_rheology_change** → material_rheology_change 49, air_in_fluid_path 7, nozzle_blockage 2, dispense_height_or_board_bending 1, volume_too_small_carryover 1
 - **nozzle_blockage** → nozzle_blockage 46, air_in_fluid_path 6, material_rheology_change 6, pressure_time_instability 1, dispense_height_or_board_bending 1
 - **dispense_height_or_board_bending** → pressure_time_instability 28, dispense_height_or_board_bending 22, equipment_condition 4, (no cause ahead) 3, air_in_fluid_path 2, nozzle_blockage 1
-- **equipment_condition** → equipment_condition 20, pressure_time_instability 18, material_rheology_change 10, air_in_fluid_path 5, dispense_height_or_board_bending 3, nozzle_blockage 2, (no cause ahead) 2
+- **equipment_condition** → equipment_condition 20, pressure_time_instability 17, material_rheology_change 10, air_in_fluid_path 5, dispense_height_or_board_bending 3, nozzle_blockage 2, (no cause ahead) 2, volume_too_small_carryover 1
 
 ### Calibration — when it is confident, is it right? (photo + questions, all reliabilities)
 
 | Stars shown | Cases | Top-1 accuracy |
 |---|---|---|
-| 0 | 17 | 18% |
-| ★ | 551 | 54% |
-| ★★ | 397 | 74% |
-| ★★★ | 213 | 92% |
-| ★★★★ | 64 | 97% |
+| 0 | 23 | 26% |
+| ★ | 522 | 52% |
+| ★★ | 429 | 75% |
+| ★★★ | 210 | 95% |
+| ★★★★ | 58 | 97% |
 
 | Top cause shown at | Cases | Mean shown | Actually right |
 |---|---|---|---|
-| 0-40% | 209 | 35% | 45% |
+| 0-40% | 209 | 35% | 46% |
 | 40-55% | 172 | 49% | 60% |
 | 55-70% | 358 | 62% | 63% |
-| 70-85% | 283 | 76% | 74% |
-| 85-100% | 220 | 90% | 98% |
+| 70-85% | 284 | 76% | 76% |
+| 85-100% | 219 | 91% | 98% |
 
 ## C. Stress — damaged photos
 
