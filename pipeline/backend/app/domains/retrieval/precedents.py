@@ -133,12 +133,17 @@ def precedent_stats(db: Session, case: Case) -> PrecedentStats:
 
     top = by_cause[0]
     cases_word = "case" if top.count == 1 else "cases"
+    # A tie is reported as a tie: naming whichever cause sorted first would
+    # claim a pattern the history doesn't have.
+    tied = [t.label.lower() for t in by_cause if t.count == top.count]
+    leader = tied[0] if len(tied) == 1 else ", ".join(tied[:-1]) + " or " + tied[-1]
+    each = " each" if len(tied) > 1 else ""
     return PrecedentStats(
         total=total, diagnosed_total=diagnosed_total, matched_axes=matched_axes,
         by_cause=by_cause,
         sentence=(
-            f"Similar problems occurred {times} previously. In {top.count} {cases_word}, "
-            f"the main cause was {top.label.lower()}."
+            f"Similar problems occurred {times} previously. In {top.count} {cases_word}{each}, "
+            f"the main cause was {leader}."
         ),
         note=(
             "Matched on " + ", ".join(matched_axes)

@@ -13,3 +13,7 @@ vision/vlm_bench/results/
 *.pyc
 # Local database snapshots taken before a demo reset — personal, not shared.
 pipeline/backend/backups/
+# The demo database is rebuilt by `python -m app.reset_demo`, offline and the
+# same way every time — tracking a binary that changes on every click only
+# bloated history.
+pipeline/backend/pipeline.db

@@ -98,7 +98,7 @@ Precedent enters as its own evidence row with its own weight, next to the rules 
 
 ## Workstreams
 
-Status: **[done]** shipped · **[next]** blocking · **[later]** wanted
+Status: **[done]** shipped · **[next]** blocking · **[later]** wanted · **[partly]** started. Markers last checked against the code on 2026-10-02.
 
 ### W1. A trustworthy test set (first, because every later step is measured against it)
 
@@ -106,23 +106,23 @@ Status: **[done]** shipped · **[next]** blocking · **[later]** wanted
 - **[done]** Golden case 2 (`nsw_missing_carryover`), where carryover is the right answer. The pair tests the exact failure we found: 1 of 4 at chance (p 0.62) against 3 of 3 (p 0.0098).
 - **[done]** `golden/causes.json` — the shared cause vocabulary both cases grade against, and the id space the case database uses.
 - **[done]** `check_golden.py` re-derives every signal, rejects a lookup that states a conclusion, enforces cause coverage.
-- **[next]** Generate the validation set. NSW provided no real photos and none are obtainable open-source, but we own the generator — `vision/synth/` composes defect operators and writes per-dot ground truth, so ~200 labelled cases is a script run, not a data-collection project. This is the thing every threshold on this page is waiting for.
-- **[next]** Scoring rule: a proper score over the cause set (Brier or log-loss), not top-1 accuracy. Top-1 accuracy cannot see calibration, which is the 80%.
+- **[done]** Generate the validation set. `evaluation/` composes about 6,600 labelled photos and 420 simulated cases per run from `vision/synth/` (built 2026-09-29; framing and desk-photo damage added 2026-10-02). NSW provided no real photos, so it is synthetic throughout.
+- **[done]** Scoring rule: Brier score per mode, reported next to top-1 accuracy, plus accuracy per star level and per displayed percentage (`evaluation/results/summary.md`).
 - **[later]** Tag each scenario's source of truth: generator label, the brief's example, a manual passage, or team judgement. Team-judgement scenarios only test consistency, not correctness.
 
 Do not hand-tune rule weights against two golden cases. Only structural changes generalise at this sample size.
 
-### W2. Cause model (web/packs/nsw/index.ts, web/core/infer.ts)
+### W2. Cause model (pipeline/backend/app/domains/ranking/rules.py)
 
-- **[next]** New causes grounded in the manual: marginal volume with carryover (§3.5, §4.5, §5.5), pressure-time pump variability (§2.1, §3.2), up height too low (§3.3), needle bore too small for the paste particles (§3.1). Case 2 fails outright today because the pack has no carryover cause to rank.
-- **[next]** Signal rules are binary thresholds today (`size_cv > 0.15`, `mean_circularity < 0.8`, `spread_index > 1.2`) and add the same weight at 0.16 as at 0.49. Scale each rule's weight by how far the value sits from its chance or nominal baseline.
-- **[next]** Dispense-order signal in the app: how often a small dot is followed by a big one, against chance, computed only when dispense order is known. The carryover rule fires only above chance. This fixes the "pattern found in noise" failure in code.
-- **[later]** Every rule gets a source (manual section and page, the brief, or "engineering judgement"), and the UI shows it.
-- **[later]** Every question gets a "Don't know" option. It adds no evidence and lowers confidence.
-- **[later]** Stars come from how much deciding evidence is known and how far #1 leads #2, not from the raw percentage.
+- **[partly]** New causes grounded in the manual: carryover (§3.5) and pressure-time variability (§2.1, §3.2) are causes now, and case 2 passes. **[next]** Up height too low (§3.3 — stringing, smearing, satellites) and needle bore too small for the particles (§3.1) are not.
+- **[done]** Signal rules ramp with distance from their baseline (`ramp()` in rules.py), so 0.16 and 0.49 on `size_cv` no longer score the same.
+- **[done]** Dispense-order signal: `small_then_big` with an exact binomial chance test (`vision/signals.py`); the carryover rule fires only below p 0.05.
+- **[done]** Every rule cites section and page, checked against the NPL guide's text on 2026-10-02 (the carryover remedy and the ambient-temperature citation were corrected then). The ranking card and the report expand each citation.
+- **[done]** Every question gets a "Don't know" option. It adds no evidence.
+- **[done]** Stars come from how much evidence is known and how far #1 leads #2 (`report/stars.py`); the evaluation measures ★★★ right 95% of the time, ★ 52%.
 - Keep cause percentages independent (not summing to 100), matching the brief's table, and say so on screen.
 
-### W3. Questions: a fixed spine, then adaptive follow-ups (web/packs/nsw/index.ts, web/engines/)
+### W3. Questions: a fixed spine, then adaptive follow-ups (pipeline/backend/app/domains/intake/)
 
 Five questions are always asked, whatever the complaint. They are the interview and they are the answer half of the fingerprint, and they only work as a key because every case has all five. Adaptive follow-ups are chosen per case and never enter the fingerprint: a question asked in one case and skipped in another cannot be compared across cases, and the current record's `answers` block has exactly that defect today.
 
@@ -191,12 +191,12 @@ Single deliberately. If three things help, the one that helps *most* is the diag
 
 `Answer.value` is a `string`, so the two multi-select axes need a value-array widening or a join convention before they can be stored.
 
-**Adaptive follow-ups**, unchanged in mechanism:
+**Adaptive follow-ups** — **[done]** 2026-10-02 in `intake/followups.py`: four questions (two are the brief's own examples), each answer run through `rank_causes`, the one asked is the one that would flip the lead or swing a cause most, with that reason shown; at most two, stored in `fingerprint.followups` so they rank but never match. The design as written:
 
 - For each unasked question, try every possible answer through `rankCauses` and ask the one that would move the ranking most.
 - No LLM, can say why it was asked, earns the brief's bonus for dynamic follow-up questions.
 - Skip what the photo already answers — `signature` and magnitude often come free from `vision/`, so the interview should open on `trajectory` or `footprint` when the image is good. Stop at 5–7 questions, or earlier once #1 clearly leads.
-- `NSW_FOLLOWUPS.missing` needs a third option — it cannot currently express "the next shot is oversized", which is the carryover signature.
+- `NSW_FOLLOWUPS.missing` needs a third option — it cannot currently express "the next shot is oversized", which is the carryover signature. **[done]** as the `next_dot` follow-up: bigger than normal / normal / haven't looked.
 
 ### W4. Troubleshooting loop
 
@@ -236,38 +236,39 @@ This is also why the manual side (W8) needs no vector store: 41 pages, and the p
 
 ### W6. Image evidence (vision/)
 
-- **[next]** Wire `vision/detect/` into the app. It is the only pipeline producing per-dot tags in dispense order, which the carryover signal needs; `main.py`, which the app calls today, does not.
-- **[next]** Fix `spread_index`. It reports 1.778 and 3.792 on the two golden images, neither of which is smeared, and that false signal feeds a false claim into the needle-height cause — through both passes, since it reaches Pass 2 as well.
-- **[next]** Quality gate: too few deposits, low contrast, or odd polarity means "can't measure reliably" and the run continues on questions only. This is upstream of everything, because a bad measurement fools both passes and they then agree confidently.
+- **[done]** Wire `vision/detect/` into the app. It is what the backend calls; `main.py` is no longer on the path.
+- **[done]** 2026-10-02: register the photo to the recipe (`detect/register.py`: scale, rotation, shift, then perspective when the camera was tilted), and mask a darker surround (`segment.mask_surround`), so a phone photo of the part on a desk measures like a clean one.
+- **[done]** `spread_index` is gone: it belonged to `main.py`, and nothing on the app's path computes it.
+- **[done]** Quality gate (`vision/quality.py`): too few deposits, glare-washed deposits, board clutter or unmatched geometry means "can't measure reliably" and the run continues on questions only.
 - **[later]** Fix the mismatched notes in `main.py` (they say "mean ± 2 sigma" where the code uses 1.40×/0.70× of the median).
 - Run on the 6 photos in `docs/personal/imgs/` and log the results, failures included. Only demo validated images.
 - Keep the VLM track paused (13.6%).
 
 ### W7. LLM, at most 2 calls per session
 
-- **[done]** Groq adapter (`llama-3.1-8b-instant`, 14,400 requests/day). The old Gemini ceiling of 20/day could not support a scored evaluation run; this can. Untested against the live API — no key on the machine yet.
+- **[done]** Groq adapter, now `openai/gpt-oss-20b` (`llama-3.1-8b-instant` was retired from Groq's catalog). Fails fast: one failed call turns it off for two minutes, and `LLM_ENABLED=false` turns it off outright.
 - Call 1 turns a free-text description into a defect and pre-filled answers.
 - Call 2 writes the final explanation, using passages retrieved for the top 3 causes, competitors included.
 - Pass 2 of the ranking gate is a third call, and it is the one worth the budget.
-- A validator checks every cited section was actually retrieved and every number exists in the computed results. If either check fails, the code-written explanation is shown instead, labelled as such. This is the `forbidden_claims` list from the golden cases promoted from test time to run time.
-- Cache responses by input.
+- **[partly]** A validator checks every cited section was among those the rules supplied (`report/explain.py`); if not, the code-written explanation is shown instead, labelled as such. Checking that every number exists in the computed results is not built yet.
+- **[later]** Cache responses by input. Not built; each call instead runs at most once per case and the result is stored.
 
 ### W8. Manual knowledge base
 
-- Hand-chunk the manual by section with page numbers (41 pages). This is more reliable than PDF parsing in the time available. The golden cases already carry 26 hand-verified passages to start from.
+- **[partly]** Hand-chunk the manual by section with page numbers (41 pages). Rules cite section and page directly; there is no passage store or keyword search yet. The golden cases carry 26 hand-verified passages to start from.
 - Each rule links to its passages, and free text is searched by keyword.
 - Mark topics the manual doesn't cover (sealants, silicone, UV glue) as having no manual source.
-- Credit the NPL / Crown copyright in the app and in the video.
+- **[done]** Credit the NPL / Crown copyright — in the app (ranking card and report), the README and the slides.
 
 ### W9. Report (existing Report in Assessment.tsx)
 
-- Add the original description, identified defect with stars, and quality score; causes with evidence and sources; the check log and confirmed fix; an editable engineer notes field; rules version, whether the LLM was used, and "preliminary triage aid, not a replacement for an engineer" (brief 1.2).
+- **[done]** Add the original description, identified defect with stars, and quality score; causes with evidence and sources; the check log and confirmed fix (with the full re-measurement); an editable engineer notes field; rules version, whether the LLM was used, and "preliminary triage aid, not a replacement for an engineer" (brief 1.2).
 - Show the confidence tier and, at T3 and T4, why the two passes disagreed.
 - Keep print-to-PDF.
 
 ### W10. Evaluation runner (this is the video's Testing section)
 
-- Run every scenario through the engine and report top-1 and top-3 accuracy, the proper score, stars vs correctness, citation validity (must be 100%), invented numbers (must be 0), questions asked, and whether reruns match.
+- **[partly]** `evaluation/run_eval.py` reports top-1 and top-3 accuracy, the Brier score, stars vs correctness and a photo stress test. Not yet: citation validity, invented numbers, questions asked, rerun stability — none of which can be measured without the LLM in the loop.
 - Report agreement rate between the two passes, and the error rate within each branch. Until that is measured, every threshold in the ranking gate is a placeholder.
 - Compare the brief's three levels: questions only, then with ranking, then with image, manual, and case history.
 - Run LLM-dependent checks on a small fixed subset.

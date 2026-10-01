@@ -182,6 +182,8 @@ FAMILY_D = [
      ("volume_too_small_carryover", True)),
     ("Missing or starved deposit", "Small dots then big dots since the new program went in.",
      ("volume_too_small_carryover", True)),
+    ("Missing or starved deposit", "Dry spots on the fine-pitch pads, fat dot after each one.",
+     ("volume_too_small_carryover", True)),
     ("Missing or starved deposit", "Missed dots on the fine-pitch job only.",
      ("volume_too_small_carryover", False)),
 ]

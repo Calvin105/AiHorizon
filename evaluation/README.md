@@ -5,7 +5,7 @@ Measures the real pipeline — the same `run_vision`, `rank_causes` and
 right answer is known. No API, database or LLM; deterministic seeds.
 
 ```bash
-uv run python evaluation/run_eval.py                  # ~30 s → results/latest.json, results/summary.md
+uv run python evaluation/run_eval.py                  # ~1 min → results/latest.json, results/summary.md
 uv run --with matplotlib python evaluation/plot.py    # → results/*.png (slide charts)
 ```
 
@@ -15,7 +15,14 @@ uv run --with matplotlib python evaluation/plot.py    # → results/*.png (slide
 `uv run python evaluation/compare.py` writes `results/before_after.md`,
 comparing `results/before_fixes.json` (the run before the 2026-09-29
 vision fixes: per-dot irregular count, lighting flattening, glare and
-clutter checks in the quality gate) with the latest run.
+clutter checks in the quality gate) with the latest run. Two later
+changes have their own tables, each against the run just before it:
+
+- `before_after_registration.md` — lining the recipe up with the photo
+  (2026-10-02): zoomed, off-centre and handheld framing 0% → 89% correct.
+- `before_after_card_photos.md` — masking a desk around the part and
+  correcting camera tilt (2026-10-02): a phone photo of the part on a desk
+  0% → 89% correct.
 
 ## The three parts
 
@@ -23,7 +30,7 @@ clutter checks in the quality gate) with the latest run.
 |---|---|---|---|
 | **A. Measurement** | Put a known defect in the photo: does the right signal fire? Does a good photo stay quiet? | The generator (`vision/synth`) | No |
 | **B. Diagnosis** | Photo + a simulated operator's answers: is the top cause right, and do the stars track how often? | Scenario cards (`scenarios.py`) | Partly — see below |
-| **C. Stress** | Damage the photo like a real camera would: does it stay right, or refuse, rather than silently mis-measure? | The generator | No |
+| **C. Stress** | Damage the photo like a real camera would — blur, noise, light, glare, JPEG, clutter, and since 2026-10-02 framing: zoom, off-centre, handheld, a part on a desk with the camera tilted. Does it stay right, or refuse, rather than silently mis-measure? | The generator | No |
 
 Outcome words used throughout:
 
@@ -44,9 +51,10 @@ Outcome words used throughout:
   is consistent with our own reading of the manual — not whether that
   reading matches NSW's floor. An engineer's review of the cards is the
   cheapest way to make Part B stronger.
-- **Gate B, Pass 2 and the troubleshooting loop are not exercised.** Part B
-  scores the first ranking only (Pass 1 + stars), before any check is run.
-  So these numbers are a floor for the full workflow, not its accuracy.
+- **Gate B, Pass 2, the follow-up questions and the troubleshooting loop
+  are not exercised.** Part B scores the first ranking only (Pass 1 +
+  stars), from the five spine answers, before any check is run. So these
+  numbers are a floor for the full workflow, not its accuracy.
 - **Chance is 14%** (one cause in seven).
 
 ## Third-party tools
