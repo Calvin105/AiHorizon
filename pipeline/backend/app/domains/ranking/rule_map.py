@@ -8,15 +8,18 @@ from what ranking does, and tests/test_rule_map.py fails the day a rule is
 added that no single answer or measurement reaches.
 """
 
+from collections.abc import Mapping
 from dataclasses import dataclass, field
-from functools import lru_cache
+from datetime import datetime
 
 from app.domains.causes.vocabulary import load_causes
 from app.domains.intake.followups import FOLLOWUPS, FollowUp
 from app.domains.intake.spec import QUESTIONS, Question
+from app.domains.ranking.model import RuleOverride
 from app.domains.ranking.pass1 import PRIOR
 from app.domains.ranking.rules import CAUSE_RULES, CauseRule
 from app.domains.ranking.service import CHECK_CONFIRMS_LOGIT, CHECK_RULES_OUT_LOGIT
+from app.domains.ranking.weights import edited_weight, rule_key, weigh
 
 
 @dataclass(frozen=True)
@@ -83,7 +86,9 @@ FOLLOWUP_TITLES = {
 @dataclass
 class Cell:
     cause_id: str
+    rule_key: str
     weight: float
+    """At the weight in force; 0 when an engineer switched the rule off."""
     label: str
     detail: str
     source: str
@@ -120,6 +125,28 @@ class CauseColumn:
 
 
 @dataclass
+class RuleInfo:
+    """One rule, for the rules page's list."""
+
+    key: str
+    cause_id: str
+    label: str
+    detail: str
+    source: str
+    kind: str
+    manual_weight: float
+    """The weight in rules.py, from the NPL guide or the NSW brief."""
+    weight: float
+    """The weight in force: the manual's, unless an engineer changed it."""
+    full_strength: float | None
+    """Signal rules only: what it adds at its strongest reading."""
+    triggers: list[str]
+    """The ids of the table rows that fire it."""
+    note: str | None = None
+    updated_at: datetime | None = None
+
+
+@dataclass
 class RuleMap:
     prior: float
     rule_count: int
@@ -127,6 +154,7 @@ class RuleMap:
     check_rules_out: float
     causes: list[CauseColumn]
     groups: list[Group]
+    rules: list[RuleInfo]
 
 
 EMPTY_FINGERPRINT: dict = {"axes": {}, "signals": {}, "followups": {}}
@@ -135,13 +163,15 @@ Hits = dict[tuple[str, int], tuple[float, CauseRule]]
 
 
 def fires(fingerprint: dict) -> Hits:
-    """Every rule that fires on this fingerprint, keyed by (cause, position)."""
+    """Every rule whose test passes on this fingerprint, keyed by (cause,
+    position), with its contribution at the weight in force. A rule an
+    engineer switched off still passes its test, so it keeps its place in
+    the table, at 0."""
     hits: Hits = {}
     for cause_id, rules in CAUSE_RULES.items():
         for i, rule in enumerate(rules):
-            weight = rule.evaluate(fingerprint)
-            if weight is not None:
-                hits[(cause_id, i)] = (weight, rule)
+            if rule.evaluate(fingerprint) is not None:
+                hits[(cause_id, i)] = (weigh(cause_id, rule, fingerprint) or 0.0, rule)
     return hits
 
 
@@ -151,8 +181,9 @@ def _cells(hits: Hits, mild: Hits | None = None) -> list[Cell]:
         mild_hit = (mild or {}).get(key)
         cells.append(
             Cell(
-                cause_id=key[0], weight=round(weight, 4), label=rule.label, detail=rule.detail,
-                source=rule.source, weight_mild=round(mild_hit[0], 4) if mild_hit else None,
+                cause_id=key[0], rule_key=rule_key(key[0], rule), weight=round(weight, 4), label=rule.label,
+                detail=rule.detail, source=rule.source,
+                weight_mild=round(mild_hit[0], 4) if mild_hit else None,
             )
         )
     return cells
@@ -210,8 +241,42 @@ def _followup_group(followup: FollowUp) -> Group:
     )
 
 
-@lru_cache
-def rule_map() -> RuleMap:
+def _rules(groups: list[Group], edits: Mapping[str, RuleOverride]) -> list[RuleInfo]:
+    triggers: dict[str, list[str]] = {}
+    full_strength: dict[str, float] = {}
+    for group in groups:
+        for row in group.rows:
+            for cell in row.cells:
+                triggers.setdefault(cell.rule_key, []).append(row.id)
+                if group.kind == "measured":
+                    full_strength[cell.rule_key] = cell.weight
+
+    out = []
+    for cause_id, rules in CAUSE_RULES.items():
+        for rule in rules:
+            key = rule_key(cause_id, rule)
+            edit = edits.get(key)
+            weight = edited_weight(key)
+            out.append(
+                RuleInfo(
+                    key=key, cause_id=cause_id, label=rule.label, detail=rule.detail, source=rule.source,
+                    kind=rule.kind, manual_weight=rule.evaluate.weight,
+                    weight=rule.evaluate.weight if weight is None else weight,
+                    full_strength=full_strength.get(key), triggers=triggers.get(key, []),
+                    note=edit.note if edit else None, updated_at=edit.updated_at if edit else None,
+                )
+            )
+    return out
+
+
+def rule_map(edits: Mapping[str, RuleOverride] | None = None) -> RuleMap:
+    """`edits` are the saved overrides, for their notes; the weights in
+    force come from ranking/weights.py, as ranking reads them."""
+    groups = [
+        _measured_group(),
+        *(_question_group(q) for q in QUESTIONS),
+        *(_followup_group(f) for f in FOLLOWUPS),
+    ]
     return RuleMap(
         prior=PRIOR,
         rule_count=sum(len(rules) for rules in CAUSE_RULES.values()),
@@ -221,9 +286,6 @@ def rule_map() -> RuleMap:
             CauseColumn(cause_id=c["id"], label=c["label"], rule_count=len(CAUSE_RULES.get(c["id"], [])))
             for c in load_causes()
         ],
-        groups=[
-            _measured_group(),
-            *(_question_group(q) for q in QUESTIONS),
-            *(_followup_group(f) for f in FOLLOWUPS),
-        ],
+        groups=groups,
+        rules=_rules(groups, edits or {}),
     )

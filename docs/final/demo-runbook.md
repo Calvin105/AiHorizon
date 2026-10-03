@@ -46,10 +46,14 @@ to it is the offline backup.
 - Slides in presenter view on the same laptop, or on a second screen if there is one.
 - Between judging slots, open a fresh case for the next team of judges, so every demo
   starts at the photo step.
-- The **home page's rule map** is the answer to "how does it rank?" and "where do the
-  weights come from?". Click *Load the demo case*: air and pressure-time tie at 59%.
-  Hover the two answers under *Follow-up · Pressure gauge* to show how each would break
-  the tie. Then click the *Air in syringe* column to show how its 59% is built, page by page.
+- **Ranking rules** (button at the top right of the home page) is the answer to "how
+  does it rank?" and "where do the weights come from?". The *List* shows all 42 rules
+  with their pages. On the *Map* tab, click *Load the demo case*: air and pressure-time
+  tie at 59%. Hover the two answers under *Follow-up · Pressure gauge* to show how each
+  would break the tie, then click the *Air in syringe* column to show how its 59% is built.
+- If a judge edits a weight to try it, *Restore all* on the List tab puts every rule
+  back to the manual's (so does `--reset`). An edited weight changes the live demo's
+  numbers, so check for the "edited" count before the next slot.
 
 ## The 2-minute demo — clicks and lines
 

@@ -57,3 +57,11 @@ export function formatCitations(text: string): string {
     .replace(/matc82 sec ([\d.]+) p\.([\d-]+)/g, (_, sec: string, page: string) => `NPL guide §${sec}, p.${page.replace("-", "–")}`)
     .replace(/brief p\.([\d-]+)/g, (_, page: string) => `NSW brief p.${page.replace("-", "–")}`);
 }
+
+/** Rule details mention the guide by its file name ("matc82's fix for big
+ * dot / small dot…"). On screen it is the NPL guide, as every citation is. */
+export function plainDetail(text: string): string {
+  return formatCitations(text)
+    .replace(/^matc82\b/, "The NPL guide")
+    .replace(/\bmatc82\b/g, "the NPL guide");
+}

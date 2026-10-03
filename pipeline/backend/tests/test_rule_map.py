@@ -60,3 +60,78 @@ def test_rules_endpoint(client):
     assert body["rule_count"] == sum(len(rules) for rules in CAUSE_RULES.values())
     assert [c["cause_id"] for c in body["causes"]] == list(CAUSE_RULES)
     assert body["groups"][0]["kind"] == "measured"
+
+
+# ---- the rules page: every rule listed, and editable --------------------------
+
+AIR_PURGE = "air_in_fluid_path:response-purging-or-a-new-syringe-helps"
+SIZE_SPREAD = "pressure_time_instability:size-varies-shot-to-shot-no-clear-pattern"
+PURGED = {"axes": {"response": "purge_or_prime"}, "signals": {}, "followups": {}}
+
+
+def _rule(body, key):
+    return next(r for r in body["rules"] if r["key"] == key)
+
+
+def _air(fingerprint):
+    return next(c.likelihood for c in rank_causes(fingerprint) if c.cause_id == "air_in_fluid_path")
+
+
+def test_every_rule_is_listed_once_with_what_fires_it():
+    rules = rule_map().rules
+    assert len(rules) == len({r.key for r in rules}) == sum(len(rs) for rs in CAUSE_RULES.values())
+    assert all(r.triggers for r in rules)
+    assert all(r.weight == r.manual_weight and r.note is None for r in rules)
+
+
+def test_an_edit_changes_the_ranking_and_a_restore_undoes_it(client):
+    prior = math.log(PRIOR / (1 - PRIOR))
+    before = _air(PURGED)
+
+    body = client.put(f"/api/rules/{AIR_PURGE}", json={"weight": 2.0, "note": "Seen on our line"}).json()
+    rule = _rule(body, AIR_PURGE)
+    assert (rule["manual_weight"], rule["weight"], rule["note"]) == (1.1, 2.0, "Seen on our line")
+    assert math.isclose(_air(PURGED), 1 / (1 + math.exp(-(prior + 2.0))))
+    hit = next(e for c in rank_causes(PURGED) if c.cause_id == "air_in_fluid_path" for e in c.evidence)
+    assert hit.edited
+
+    body = client.delete(f"/api/rules/{AIR_PURGE}").json()
+    assert _rule(body, AIR_PURGE)["weight"] == 1.1
+    assert _air(PURGED) == before
+
+
+def test_zero_switches_a_rule_off_but_keeps_it_listed(client):
+    body = client.put(f"/api/rules/{AIR_PURGE}", json={"weight": 0, "note": "Not on this line"}).json()
+    assert not any(e.label.startswith("Response: purging") for c in rank_causes(PURGED) for e in c.evidence)
+    rows = [r for g in body["groups"] for r in g["rows"]]
+    cell = next(c for r in rows if r["id"] == "response:purge_or_prime" for c in r["cells"])
+    assert cell["weight"] == 0
+
+
+def test_an_edited_measurement_keeps_its_ramp(client):
+    body = client.put(f"/api/rules/{SIZE_SPREAD}", json={"weight": 2.8, "note": "Doubled"}).json()
+    rule = _rule(body, SIZE_SPREAD)
+    assert rule["manual_weight"] == 1.4 and rule["full_strength"] == 4.2  # 2.8 at its 1.5 cap
+
+
+def test_setting_the_manual_weight_back_is_a_restore(client):
+    client.put(f"/api/rules/{AIR_PURGE}", json={"weight": 2.0, "note": "Trying it"})
+    body = client.put(f"/api/rules/{AIR_PURGE}", json={"weight": 1.1, "note": "Back again"}).json()
+    assert _rule(body, AIR_PURGE)["note"] is None
+
+
+def test_edits_need_a_reason_and_a_real_rule(client):
+    assert client.put(f"/api/rules/{AIR_PURGE}", json={"weight": 2.0, "note": ""}).status_code == 422
+    assert client.put(f"/api/rules/{AIR_PURGE}", json={"weight": 9, "note": "Way up"}).status_code == 422
+    assert client.put("/api/rules/no-such-rule", json={"weight": 1, "note": "Nope"}).status_code == 404
+
+
+def test_saved_edits_come_back_after_a_restart(client):
+    from app.core.database import SessionLocal
+    from app.domains.ranking import overrides, weights
+
+    client.put(f"/api/rules/{AIR_PURGE}", json={"weight": 2.0, "note": "Seen on our line"})
+    weights.replace_all({})
+    with SessionLocal() as db:
+        overrides.load(db)
+    assert weights.edited_weight(AIR_PURGE) == 2.0

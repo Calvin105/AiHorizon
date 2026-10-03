@@ -1,12 +1,17 @@
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import get_settings
+from app.core.database import SessionLocal
 from app.domains.cases.router import router as cases_router
 from app.domains.causes.router import router as causes_router
 from app.domains.intake.router import router as intake_router
 from app.domains.materials.router import router as materials_router
 from app.domains.profiles.router import router as profiles_router
+from app.domains.ranking import overrides
 from app.domains.ranking.router import router as ranking_router
 from app.domains.ranking.router import rules_router
 from app.domains.report.router import router as report_router
@@ -16,7 +21,17 @@ from app.domains.vision.router import router as vision_router
 
 settings = get_settings()
 
+
+@asynccontextmanager
+async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
+    # Rule edits saved by an engineer stay in force across restarts.
+    with SessionLocal() as db:
+        overrides.load(db)
+    yield
+
+
 app = FastAPI(
+    lifespan=lifespan,
     title=settings.app_name,
     description=(
         "Implements AiHorizon/DESIGN.md's 8-step troubleshooting pipeline end to end: "

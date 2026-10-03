@@ -8,6 +8,7 @@ from app.domains.cases.model import Case
 from app.domains.checks.model import CheckResult
 from app.domains.materials.model import FluidMaterial
 from app.domains.profiles.model import DispenseProfile
+from app.domains.ranking.model import RuleOverride
 from app.domains.stations.model import DispenseStation
 
-__all__ = ["Base", "Case", "CheckResult", "DispenseProfile", "DispenseStation", "FluidMaterial"]
+__all__ = ["Base", "Case", "CheckResult", "DispenseProfile", "DispenseStation", "FluidMaterial", "RuleOverride"]

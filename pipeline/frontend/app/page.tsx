@@ -4,6 +4,7 @@ import * as React from "react";
 import Link from "next/link";
 import {
   ArrowRight,
+  ChartBarDecreasing,
   Compass,
   Database,
   Factory,
@@ -14,7 +15,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
-import { RuleMap } from "@/components/rule-map";
+import { buttonVariants } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { TierInfo } from "@/components/tier-info";
 import { ApiError } from "@/lib/api/client";
@@ -46,8 +47,7 @@ function plural(n: number, word: string) {
  * The home page is a status board, not a landing page: where the line
  * stands, what is waiting on someone, and every place to go from here, all
  * on one screen. Counts that need action sit on the tile that acts on them,
- * so the grid is both the menu and the to-do list. Beside it on a wide
- * screen, below it on a narrow one: the rule map every ranking is built from.
+ * so the grid is both the menu and the to-do list.
  */
 export default function HomePage() {
   const [data, setData] = React.useState<HomeData | null>(null);
@@ -82,119 +82,123 @@ export default function HomePage() {
   }, [data]);
 
   return (
-    <div className="mx-auto w-full max-w-3xl px-4 py-8 sm:px-6 sm:py-10 min-[1240px]:grid min-[1240px]:max-w-[100rem] min-[1240px]:grid-cols-[26rem_minmax(0,1fr)] min-[1240px]:items-start min-[1240px]:gap-8">
-      <div className="space-y-5">
-        <div className="flex items-center justify-between gap-3">
-          <div>
-            <h1 className="text-2xl font-semibold tracking-tight">AI Dispensing Defect Detective</h1>
-            <p className="text-xs text-muted-foreground">Dispensing troubleshooting for NSW Automation lines</p>
-          </div>
-          <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
-            How ranking works <TierInfo />
-          </span>
+    <div className="mx-auto w-full max-w-3xl space-y-5 px-4 py-8 sm:px-6 sm:py-10">
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">AI Dispensing Defect Detective</h1>
+          <p className="text-xs text-muted-foreground">Dispensing troubleshooting for NSW Automation lines</p>
         </div>
-
-        {/* Where the line stands */}
-        <section className="rounded-xl bg-muted/60 p-4 sm:p-5">
-          {error ? (
-            <p className="text-sm text-destructive">{error}</p>
-          ) : !data || !stats ? (
-            <div className="space-y-3">
-              <Skeleton className="h-10 w-2/3" />
-              <Skeleton className="h-4 w-full" />
-            </div>
-          ) : (
-            <div className="space-y-4">
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                <LineIdentity stations={data.stations} />
-                <dl className="grid grid-cols-3 gap-x-5 gap-y-1 text-sm sm:grid-cols-1 sm:text-right">
-                  <Stat label="Open cases" value={stats.open.length} />
-                  <Stat label="Closed cases" value={stats.closed.length} />
-                  <Stat label="Last case" value={stats.lastOpened ? shortDate(stats.lastOpened) : "—"} />
-                </dl>
-              </div>
-              <ProvenBar proven={stats.proven} closed={stats.closed.length} />
-            </div>
-          )}
-        </section>
-
-        {/* What is waiting on someone. Each line names the oldest case so the
-            reader knows what they're walking into before they click. */}
-        {stats && (
-          <section className="space-y-2">
-            {stats.escalated.length > 0 && (
-              <Notice
-                href="/cases?view=review"
-                tone="urgent"
-                text={
-                  `${plural(stats.escalated.length, "case")} waiting for a senior engineer. ` +
-                  `Oldest: #${stats.escalated[0].case_id}` +
-                  (stats.escalated[0].escalation_note ? ` — "${stats.escalated[0].escalation_note}"` : "")
-                }
-              />
-            )}
-            {stats.stale.length > 0 && (
-              <Notice
-                href="/cases?view=open"
-                tone="info"
-                text={staleText(stats.stale)}
-              />
-            )}
-            {stats.escalated.length === 0 && stats.stale.length === 0 && (
-              <p className="px-1 text-sm text-muted-foreground">Nothing is waiting on anyone.</p>
-            )}
-          </section>
-        )}
-
-        {/* Actions. The one everyone comes here for is full width; the rest
-            share the grid, and only work that's waiting gets a count. */}
-        <nav className="grid grid-cols-2 gap-3" aria-label="Main actions">
+        <span className="inline-flex shrink-0 items-center gap-2">
           <Link
-            href="/troubleshoot"
-            className="group col-span-2 flex items-center gap-4 rounded-xl bg-primary p-4 text-primary-foreground shadow-sm transition-opacity hover:opacity-90 sm:p-5"
+            href="/rules"
+            className={buttonVariants({ variant: "outline", size: "sm", className: "gap-1.5" })}
+            title="The rules every ranking is built from"
           >
-            <span className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-primary-foreground/15">
-              <FilePlus2 className="size-5" />
-            </span>
-            <span className="min-w-0 flex-1">
-              <span className="block text-base font-semibold">Troubleshoot a new case</span>
-              <span className="block text-sm opacity-80">Photo, five questions, ranked causes, what to check first</span>
-            </span>
-            <ArrowRight className="size-5 shrink-0 transition-transform group-hover:translate-x-0.5" />
+            <ChartBarDecreasing className="size-3.5" />
+            Ranking rules
           </Link>
-          <Tile
-            href="/cases?view=review"
-            icon={LifeBuoy}
-            label="Needs review"
-            hint="Cases an operator escalated"
-            count={stats?.escalated.length}
-            tone="urgent"
-          />
-          <Tile
-            href="/cases?view=open"
-            icon={FolderOpen}
-            label="Open cases"
-            hint="Pick up where someone left off"
-            count={stats?.open.length}
-            tone="info"
-          />
-          <Tile href="/cases" icon={History} label="Past cases" hint="Every case and how it closed" />
-          <Tile href="/profiles" icon={Compass} label="Dispense profiles" hint="Nominal specs and patterns" />
-        </nav>
-
-        {/* Setup, kept apart from the day-to-day actions above. */}
-        <div className="flex justify-center border-t pt-4">
-          <Link
-            href="/catalog"
-            className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
-          >
-            <Database className="size-4" />
-            Stations, materials and profiles setup
-          </Link>
-        </div>
+          <TierInfo />
+        </span>
       </div>
 
-      <RuleMap className="mt-10 min-[1240px]:mt-0" />
+      {/* Where the line stands */}
+      <section className="rounded-xl bg-muted/60 p-4 sm:p-5">
+        {error ? (
+          <p className="text-sm text-destructive">{error}</p>
+        ) : !data || !stats ? (
+          <div className="space-y-3">
+            <Skeleton className="h-10 w-2/3" />
+            <Skeleton className="h-4 w-full" />
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+              <LineIdentity stations={data.stations} />
+              <dl className="grid grid-cols-3 gap-x-5 gap-y-1 text-sm sm:grid-cols-1 sm:text-right">
+                <Stat label="Open cases" value={stats.open.length} />
+                <Stat label="Closed cases" value={stats.closed.length} />
+                <Stat label="Last case" value={stats.lastOpened ? shortDate(stats.lastOpened) : "—"} />
+              </dl>
+            </div>
+            <ProvenBar proven={stats.proven} closed={stats.closed.length} />
+          </div>
+        )}
+      </section>
+
+      {/* What is waiting on someone. Each line names the oldest case so the
+          reader knows what they're walking into before they click. */}
+      {stats && (
+        <section className="space-y-2">
+          {stats.escalated.length > 0 && (
+            <Notice
+              href="/cases?view=review"
+              tone="urgent"
+              text={
+                `${plural(stats.escalated.length, "case")} waiting for a senior engineer. ` +
+                `Oldest: #${stats.escalated[0].case_id}` +
+                (stats.escalated[0].escalation_note ? ` — "${stats.escalated[0].escalation_note}"` : "")
+              }
+            />
+          )}
+          {stats.stale.length > 0 && (
+            <Notice
+              href="/cases?view=open"
+              tone="info"
+              text={staleText(stats.stale)}
+            />
+          )}
+          {stats.escalated.length === 0 && stats.stale.length === 0 && (
+            <p className="px-1 text-sm text-muted-foreground">Nothing is waiting on anyone.</p>
+          )}
+        </section>
+      )}
+
+      {/* Actions. The one everyone comes here for is full width; the rest
+          share the grid, and only work that's waiting gets a count. */}
+      <nav className="grid grid-cols-2 gap-3" aria-label="Main actions">
+        <Link
+          href="/troubleshoot"
+          className="group col-span-2 flex items-center gap-4 rounded-xl bg-primary p-4 text-primary-foreground shadow-sm transition-opacity hover:opacity-90 sm:p-5"
+        >
+          <span className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-primary-foreground/15">
+            <FilePlus2 className="size-5" />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-base font-semibold">Troubleshoot a new case</span>
+            <span className="block text-sm opacity-80">Photo, five questions, ranked causes, what to check first</span>
+          </span>
+          <ArrowRight className="size-5 shrink-0 transition-transform group-hover:translate-x-0.5" />
+        </Link>
+        <Tile
+          href="/cases?view=review"
+          icon={LifeBuoy}
+          label="Needs review"
+          hint="Cases an operator escalated"
+          count={stats?.escalated.length}
+          tone="urgent"
+        />
+        <Tile
+          href="/cases?view=open"
+          icon={FolderOpen}
+          label="Open cases"
+          hint="Pick up where someone left off"
+          count={stats?.open.length}
+          tone="info"
+        />
+        <Tile href="/cases" icon={History} label="Past cases" hint="Every case and how it closed" />
+        <Tile href="/profiles" icon={Compass} label="Dispense profiles" hint="Nominal specs and patterns" />
+      </nav>
+
+      {/* Setup, kept apart from the day-to-day actions above. */}
+      <div className="flex justify-center border-t pt-4">
+        <Link
+          href="/catalog"
+          className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
+        >
+          <Database className="size-4" />
+          Stations, materials and profiles setup
+        </Link>
+      </div>
     </div>
   );
 }

@@ -20,6 +20,7 @@ from fastapi.testclient import TestClient
 
 import app.core.models  # registers every model on Base.metadata
 from app.core.database import Base, engine
+from app.domains.ranking import weights
 from app.main import app
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
@@ -30,6 +31,7 @@ SAMPLES = REPO_ROOT / "vision" / "samples"
 def fresh_db():
     Base.metadata.drop_all(engine)
     Base.metadata.create_all(engine)
+    weights.replace_all({})  # the manual's weights, whatever an earlier test edited
     yield
 
 

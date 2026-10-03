@@ -4,24 +4,10 @@ import * as React from "react";
 import { Check, Play, RotateCcw, TrendingUp } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
-import { ApiError } from "@/lib/api/client";
-import { getRuleMap } from "@/lib/api/ranking";
 import type { EvidenceGroup, EvidenceRow, RuleCell, RuleMap as RuleTable } from "@/lib/api/types";
-import { formatSource, formatWeight, shortCause } from "@/lib/sources";
+import { SHORT_NAMES, oddsEffect, ruleName, tone, weightText } from "@/lib/rules";
+import { formatSource, formatWeight, plainDetail, shortCause } from "@/lib/sources";
 import { cn } from "@/lib/utils";
-
-/** Column headers have room for two short lines; the full label is one
- * click away in the detail strip. */
-const SHORT_NAMES: Record<string, string> = {
-  volume_too_small_carryover: "Carryover",
-  pressure_time_instability: "Pressure-time",
-  air_in_fluid_path: "Air in syringe",
-  material_rheology_change: "Material change",
-  nozzle_blockage: "Needle blockage",
-  dispense_height_or_board_bending: "Height or board bend",
-  equipment_condition: "Equipment",
-};
 
 /** The demo case's photo and answers, before its follow-ups
  * (docs/final/demo-runbook.md). Air and pressure-time tie at 59%. */
@@ -39,35 +25,6 @@ type Focus =
 interface Indexed {
   row: EvidenceRow;
   group: EvidenceGroup;
-}
-
-/** Green for, red against, deeper for stronger. Literal class names so
- * Tailwind can see them. */
-function tone(weight: number): string {
-  const w = Math.abs(weight);
-  if (weight > 0) {
-    if (w >= 2) return "bg-emerald-600 text-white dark:bg-emerald-500 dark:text-emerald-950";
-    if (w >= 1.2) return "bg-emerald-500/35 text-emerald-950 dark:text-emerald-100";
-    if (w >= 0.7) return "bg-emerald-500/20 text-emerald-900 dark:text-emerald-200";
-    return "bg-emerald-500/10 text-emerald-800 dark:text-emerald-300";
-  }
-  return w >= 0.7
-    ? "bg-rose-500/25 text-rose-900 dark:text-rose-200"
-    : "bg-rose-500/15 text-rose-800 dark:text-rose-300";
-}
-
-/** "Response: purging or a new syringe helps" → "Purging or a new syringe helps". */
-function ruleName(label: string): string {
-  const name = label.replace(/^Response: /, "");
-  return name.charAt(0).toUpperCase() + name.slice(1);
-}
-
-/** What a log-odds weight does, in words: +1.1 multiplies the odds by 3.0. */
-function oddsEffect(weight: number, cause: string): string {
-  const factor = Math.exp(weight);
-  return factor >= 1
-    ? `multiplies the odds of ${cause} by ${factor >= 10 ? Math.round(factor) : factor.toFixed(1)}`
-    : `cuts the odds of ${cause} to ${Math.round(factor * 100)}% of what they were`;
 }
 
 /** Ticking follows the interview: one answer per single-choice question,
@@ -94,55 +51,25 @@ function scoresFor(table: RuleTable, index: Map<string, Indexed>, ticked: string
  * them up exactly as the engine does, so the percentages in the header are
  * the ones a case with those answers would get from the rule engine.
  */
-export function RuleMap({ className }: { className?: string }) {
-  const [table, setTable] = React.useState<RuleTable | null>(null);
-  const [error, setError] = React.useState<string | null>(null);
+export function RuleMap({ table, className }: { table: RuleTable; className?: string }) {
   const [ticked, setTicked] = React.useState<string[]>([]);
   const [hovered, setHovered] = React.useState<Focus | null>(null);
   const [pinned, setPinned] = React.useState<Focus | null>(null);
 
-  React.useEffect(() => {
-    getRuleMap()
-      .then(setTable)
-      .catch((err: unknown) =>
-        setError(err instanceof ApiError ? err.message : "Could not reach the API."),
-      );
-  }, []);
-
   const index = React.useMemo(() => {
     const out = new Map<string, Indexed>();
-    for (const group of table?.groups ?? []) for (const row of group.rows) out.set(row.id, { row, group });
+    for (const group of table.groups) for (const row of group.rows) out.set(row.id, { row, group });
     return out;
   }, [table]);
 
-  const scores = React.useMemo(
-    () => (table ? scoresFor(table, index, ticked) : {}),
-    [table, index, ticked],
-  );
+  const scores = React.useMemo(() => scoresFor(table, index, ticked), [table, index, ticked]);
 
   // Hovering an answer previews what ticking it would do to every cause.
   const previewRowId = hovered?.kind === "row" ? hovered.rowId : null;
   const preview = React.useMemo(() => {
     const entry = previewRowId ? index.get(previewRowId) : undefined;
-    return table && entry ? scoresFor(table, index, withToggled(ticked, entry)) : null;
+    return entry ? scoresFor(table, index, withToggled(ticked, entry)) : null;
   }, [table, index, ticked, previewRowId]);
-
-  if (error) {
-    return (
-      <section className={cn("rounded-xl bg-muted/60 p-4 text-sm text-muted-foreground", className)}>
-        The rule map couldn&apos;t load: {error}
-      </section>
-    );
-  }
-  if (!table) {
-    return (
-      <section className={cn("space-y-3", className)}>
-        <Skeleton className="h-6 w-1/2" />
-        <Skeleton className="h-4 w-full" />
-        <Skeleton className="h-96 w-full" />
-      </section>
-    );
-  }
 
   const name = (causeId: string) =>
     SHORT_NAMES[causeId] ?? shortCause(table.causes.find((c) => c.cause_id === causeId)?.label ?? causeId);
@@ -165,22 +92,17 @@ export function RuleMap({ className }: { className?: string }) {
   return (
     <section
       className={cn("space-y-3", className)}
-      aria-labelledby="rule-map-title"
+      aria-label="Rule map"
       onKeyDown={(e) => {
         if (e.key === "Escape") setPinned(null);
       }}
     >
       <div className="flex flex-wrap items-end justify-between gap-x-4 gap-y-2">
-        <div className="min-w-0 max-w-2xl space-y-1">
-          <h2 id="rule-map-title" className="text-lg font-semibold tracking-tight">
-            How it ranks: the rule map
-          </h2>
-          <p className="text-sm text-muted-foreground">
-            Every percentage comes from this table. Each cause starts at {asPct(table.prior)}, and every
-            answer or measurement that applies adds its weight: green for, red against.{" "}
-            {table.rule_count} rules, each citing a page of the NPL guide or the NSW brief.
-          </p>
-        </div>
+        <p className="min-w-0 max-w-2xl text-sm text-muted-foreground">
+          Rows are what the photo and the operator can tell it; columns are the causes. Tick what you
+          see and each cause&apos;s percentage builds up from {asPct(table.prior)}, exactly as a case
+          would be ranked: green adds, red takes away.
+        </p>
         <div className="flex shrink-0 gap-2">
           <Button
             variant="outline"
@@ -357,10 +279,10 @@ export function RuleMap({ className }: { className?: string }) {
                                   on && "ring-2 ring-emerald-700/50 ring-offset-1 ring-offset-emerald-50 dark:ring-offset-emerald-950",
                                   focus?.kind === "cell" && focus.rowId === row.id && focus.causeId === cause.cause_id && "ring-2 ring-foreground/60",
                                 )}
-                                aria-label={`${row.label}: ${formatWeight(cell.weight)} for ${cause.label}, from ${formatSource(cell.source)}`}
+                                aria-label={`${row.label}: ${weightText(cell.weight)} for ${cause.label}, from ${formatSource(cell.source)}`}
                               >
-                                {row.mild_text && <TrendingUp className="size-3" aria-hidden />}
-                                {formatWeight(cell.weight)}
+                                {row.mild_text && cell.weight !== 0 && <TrendingUp className="size-3" aria-hidden />}
+                                {weightText(cell.weight)}
                               </button>
                             )}
                           </td>
@@ -438,7 +360,7 @@ function Detail({
               entry.row.cells.map((cell) => (
                 <span key={cell.cause_id} className="inline-flex items-center gap-1">
                   <span className={cn("rounded px-1 font-mono font-semibold", tone(cell.weight))}>
-                    {formatWeight(cell.weight)}
+                    {weightText(cell.weight)}
                   </span>
                   <span className="text-foreground">{name(cell.cause_id)}</span>
                 </span>
@@ -469,7 +391,7 @@ function Detail({
             {parts.map(({ row, cell }) => (
               <span key={row.id} className="inline-flex items-center gap-1">
                 <span className={cn("rounded px-1 font-mono font-semibold", tone(cell.weight))}>
-                  {formatWeight(cell.weight)}
+                  {weightText(cell.weight)}
                 </span>
                 {row.label}
                 <span className="text-muted-foreground italic">({formatSource(cell.source)})</span>
@@ -532,7 +454,7 @@ function CellDetail({ row, cell, causeName }: { row: EvidenceRow; cell: RuleCell
     <div className="space-y-1">
       <p className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
         <span className={cn("rounded px-1.5 font-mono text-xs font-semibold", tone(cell.weight))}>
-          {formatWeight(cell.weight)}
+          {weightText(cell.weight)}
         </span>
         <span className="font-medium">{ruleName(cell.label)}</span>
         <span className="text-muted-foreground">→ {causeName}</span>
@@ -540,13 +462,14 @@ function CellDetail({ row, cell, causeName }: { row: EvidenceRow; cell: RuleCell
           {formatSource(cell.source)}
         </span>
       </p>
-      <p className="text-[0.8rem] text-muted-foreground">{cell.detail}</p>
+      <p className="text-[0.8rem] text-muted-foreground">{plainDetail(cell.detail)}</p>
       <p className="text-xs text-muted-foreground">
-        {row.mild_text && cell.weight_mild !== null
-          ? `Grows with the reading: ${formatWeight(cell.weight_mild)} at ${row.mild_text}, ` +
-            `${formatWeight(cell.weight)} at ${row.strong_text}. `
-          : ""}
-        {`${formatWeight(cell.weight)} ${oddsEffect(cell.weight, causeName.toLowerCase())}.`}
+        {cell.weight === 0
+          ? "Switched off on the List tab, so it adds nothing until it is restored."
+          : (row.mild_text && cell.weight_mild !== null
+              ? `Grows with the reading: ${formatWeight(cell.weight_mild)} at ${row.mild_text}, ` +
+                `${formatWeight(cell.weight)} at ${row.strong_text}. `
+              : "") + `${formatWeight(cell.weight)} ${oddsEffect(cell.weight, causeName.toLowerCase())}.`}
       </p>
     </div>
   );

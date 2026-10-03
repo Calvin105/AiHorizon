@@ -1,6 +1,7 @@
+from datetime import datetime
 from typing import Literal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class EvidenceOut(BaseModel):
@@ -9,6 +10,8 @@ class EvidenceOut(BaseModel):
     source: str
     weight: float
     kind: str
+    edited: bool = False
+    """An engineer changed this rule's weight from the manual's."""
 
 
 class Pass1CauseOut(BaseModel):
@@ -56,8 +59,10 @@ class RankingOut(BaseModel):
 
 class RuleCellOut(BaseModel):
     cause_id: str
+    rule_key: str
     weight: float
-    """Log-odds. For a photo measurement, the weight at full strength."""
+    """Log-odds, at the weight in force (0 when switched off). For a photo
+    measurement, the weight at full strength."""
     weight_mild: float | None = None
     """Photo measurements only: the weight just past normal."""
     label: str
@@ -94,6 +99,25 @@ class CauseColumnOut(BaseModel):
     rule_count: int
 
 
+class RuleOut(BaseModel):
+    key: str
+    cause_id: str
+    label: str
+    detail: str
+    source: str
+    kind: str
+    manual_weight: float
+    """The weight in the code, from the NPL guide or the NSW brief."""
+    weight: float
+    """The weight in force: the manual's unless an engineer changed it."""
+    full_strength: float | None
+    """Signal rules only: what it adds at its strongest reading."""
+    triggers: list[str]
+    """Ids of the evidence rows that fire it."""
+    note: str | None
+    updated_at: datetime | None
+
+
 class RuleMapOut(BaseModel):
     prior: float
     rule_count: int
@@ -101,3 +125,13 @@ class RuleMapOut(BaseModel):
     check_rules_out: float
     causes: list[CauseColumnOut]
     groups: list[EvidenceGroupOut]
+    rules: list[RuleOut]
+
+
+class RuleEditIn(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    weight: float = Field(ge=-5, le=5)
+    """0 switches the rule off."""
+    note: str = Field(min_length=3, max_length=500)
+    """Why. A weight that differs from the manual needs a reason someone can read."""

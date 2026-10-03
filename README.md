@@ -88,7 +88,7 @@ The brief's five steps, its dynamic-questions bonus, and all four bonus challeng
 | Step 1 bonus — dynamic follow-ups | Up to two more questions per case. Each one is chosen because its answer would change the ranking most, and the reason is shown ("would put pressure-time variability at 84%, now 59%") |
 | Step 2 — identify the defect | Defect signature + deviation magnitude + ★ confidence |
 | Step 3 — cause analysis | 7 causes from the manual, each reason citing its page |
-| Step 4 — troubleshooting score | Likelihood per cause, derived in log-odds, never asserted. "Why 59%?" opens every rule that fired |
+| Step 4 — troubleshooting score | Likelihood per cause, derived in log-odds, never asserted. "Why 59%?" opens every rule that fired; the *Ranking rules* page lists all 42, and an engineer can change a weight there, with a reason |
 | Step 5 — action plan | Ordered checks, observations before changes |
 | **Bonus 1** — image recognition | OpenCV metrology: size dispersion, shape, position, missing deposits. The photo is lined up with the recipe first, so a phone photo of the part — zoomed, off-centre, tilted, on a desk — measures |
 | **Bonus 2** — quality score | ★ rating from evidence strength and the #1–#2 gap |

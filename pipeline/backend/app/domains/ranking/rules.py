@@ -30,11 +30,25 @@ def ramp(value: float, baseline: float, spread: float, cap: float = 1.5) -> floa
 
 
 @dataclass(frozen=True)
+class Weighed:
+    """A rule's test, plus the weight it was given from the manual. Signal
+    rules scale that weight by how far the reading is past normal, so for
+    them it is the weight at strength 1. This is the number an engineer can
+    change on the rules page (ranking/weights.py)."""
+
+    weight: float
+    test: Callable[[Fingerprint], float | None]  # logit contribution, or None if it doesn't fire
+
+    def __call__(self, fp: Fingerprint) -> float | None:
+        return self.test(fp)
+
+
+@dataclass(frozen=True)
 class CauseRule:
     label: str
     detail: str
     source: str
-    evaluate: Callable[[Fingerprint], float | None]  # logit contribution, or None if it doesn't fire
+    evaluate: Weighed
     kind: Literal["signal", "answer"] = "answer"
 
 
@@ -62,17 +76,17 @@ def _followup_is(fp: Fingerprint, question_id: str, value: str) -> bool:
 
 # ---- reusable signal rules -------------------------------------------------
 
-def _size_cv_instability(weight: float):
+def _size_cv_instability(weight: float) -> Weighed:
     def rule(fp: Fingerprint) -> float | None:
         cv = _signal(fp, "size_cv")
         if cv is None:
             return None
         strength = ramp(cv, baseline=0.15, spread=0.20)
         return weight * strength if strength > 0 else None
-    return rule
+    return Weighed(weight, rule)
 
 
-def _carryover_pattern(weight: float):
+def _carryover_pattern(weight: float) -> Weighed:
     def rule(fp: Fingerprint) -> float | None:
         count = _signal(fp, "small_then_big_count")
         p = _signal(fp, "small_then_big_chance_p")
@@ -81,10 +95,10 @@ def _carryover_pattern(weight: float):
         # Further below the 0.05 chance line = stronger evidence, capped.
         strength = clamp(1.0 + (0.05 - p) / 0.05, 1.0, 2.0)
         return weight * strength
-    return rule
+    return Weighed(weight, rule)
 
 
-def _irregular_deposits(weight: float):
+def _irregular_deposits(weight: float) -> Weighed:
     """Counts distorted deposits rather than averaging circularity over the
     array — the mean hides a few bad dots among many good ones (see
     vision/signals.py). Same ramp as missing deposits: one is weak
@@ -95,10 +109,10 @@ def _irregular_deposits(weight: float):
             return None
         strength = ramp(float(count), baseline=0.0, spread=3.0)
         return weight * strength if strength > 0 else None
-    return rule
+    return Weighed(weight, rule)
 
 
-def _missing_without_carryover(weight: float):
+def _missing_without_carryover(weight: float) -> Weighed:
     def rule(fp: Fingerprint) -> float | None:
         missing = _signal(fp, "missing_count")
         p = _signal(fp, "small_then_big_chance_p")
@@ -106,27 +120,27 @@ def _missing_without_carryover(weight: float):
             return None  # the carryover rule already explains this pattern better
         strength = ramp(float(missing), baseline=0.0, spread=3.0)
         return weight * strength if strength > 0 else None
-    return rule
+    return Weighed(weight, rule)
 
 
-def _answer(weight: float):
+def _answer(weight: float) -> Weighed:
     def rule(_fp: Fingerprint) -> float | None:
         return weight
-    return rule
+    return Weighed(weight, rule)
 
 
 # ---- cause definitions ------------------------------------------------------
 # Each tuple: (rule, only fires when predicate(fp) is true)
 
-def _r(label: str, detail: str, source: str, evaluate, kind: Literal["signal", "answer"] = "answer") -> CauseRule:
+def _r(label: str, detail: str, source: str, evaluate: Weighed, kind: Literal["signal", "answer"] = "answer") -> CauseRule:
     return CauseRule(label=label, detail=detail, source=source, evaluate=evaluate, kind=kind)
 
 
-def _gated(predicate, make_rule):
+def _gated(predicate, make_rule: Weighed) -> Weighed:
     """Wrap an answer-triggered rule so it only evaluates when predicate(fp)."""
     def evaluate(fp: Fingerprint) -> float | None:
         return make_rule(fp) if predicate(fp) else None
-    return evaluate
+    return Weighed(make_rule.weight, evaluate)
 
 
 CAUSE_RULES: dict[str, list[CauseRule]] = {
@@ -309,7 +323,7 @@ CAUSE_RULES: dict[str, list[CauseRule]] = {
 # Asked only when their answers can move the ranking; each answer is evidence
 # with its own source, exactly like a spine answer.
 
-def _fu(question_id: str, value: str, weight: float):
+def _fu(question_id: str, value: str, weight: float) -> Weighed:
     return _gated(lambda fp: _followup_is(fp, question_id, value), _answer(weight))
 
 

@@ -12,7 +12,7 @@ import type {
   Case, CauseComparison, CheckResult, CloseCaseResponse, CoarseMatch, Evidence, FingerprintAxes,
   Precedents, Question, Ranking, Report, VisionResult,
 } from "@/lib/api/types";
-import { formatCitations, formatSource, formatWeight, SOURCE_NOTES } from "@/lib/sources";
+import { formatCitations, formatSource, formatWeight, SOURCE_NOTES, plainDetail } from "@/lib/sources";
 
 export interface Artifacts {
   caseData: Case;
@@ -129,8 +129,16 @@ function EvidenceList({ evidence }: { evidence: Evidence[] }) {
           </span>
           <span className="min-w-0">
             <span className="text-foreground">{e.label.replace(/^Response: /, "")}</span>
-            <span className="text-muted-foreground"> — {e.detail} </span>
+            <span className="text-muted-foreground"> — {plainDetail(e.detail)} </span>
             <span className="whitespace-nowrap italic text-sky-700 dark:text-sky-400">[{formatSource(e.source)}]</span>
+            {e.edited && (
+              <span
+                className="ml-1 rounded bg-amber-500/15 px-1 not-italic text-amber-900 dark:text-amber-200"
+                title="An engineer changed this rule's weight from the manual's — see Ranking rules"
+              >
+                edited
+              </span>
+            )}
           </span>
         </li>
       ))}

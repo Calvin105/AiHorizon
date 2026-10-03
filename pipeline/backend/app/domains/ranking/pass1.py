@@ -10,6 +10,7 @@ from dataclasses import dataclass, field
 
 from app.domains.causes.vocabulary import load_causes
 from app.domains.ranking.rules import CAUSE_RULES, Fingerprint
+from app.domains.ranking.weights import is_edited, weigh
 
 PRIOR = 0.15  # every cause starts equally unlikely; evidence does the rest
 
@@ -30,6 +31,8 @@ class RuleHit:
     source: str
     weight: float
     kind: str
+    edited: bool = False
+    """An engineer changed this rule's weight from the manual's."""
 
 
 @dataclass
@@ -50,12 +53,15 @@ def rank_causes(fingerprint: Fingerprint) -> list[RankedCause]:
         evidence: list[RuleHit] = []
 
         for rule in CAUSE_RULES.get(cause_id, []):
-            weight = rule.evaluate(fingerprint)
+            weight = weigh(cause_id, rule, fingerprint)
             if weight is None:
                 continue
             logit += weight
             evidence.append(
-                RuleHit(label=rule.label, detail=rule.detail, source=rule.source, weight=weight, kind=rule.kind)
+                RuleHit(
+                    label=rule.label, detail=rule.detail, source=rule.source, weight=weight, kind=rule.kind,
+                    edited=is_edited(cause_id, rule),
+                )
             )
 
         ranked.append(

@@ -20,6 +20,13 @@ if [[ "${1:-}" == "--reset" ]]; then
   (cd "$BACKEND" && uv run python -m app.reset_demo)
 fi
 
+# Bring the database's schema up to date. Does nothing when it already is;
+# it matters after pulling a change that adds a table, as rule edits did.
+if ! (cd "$BACKEND" && uv run alembic upgrade head) >/dev/null 2>&1; then
+  echo "Could not upgrade the database. Run: cd pipeline/backend && uv run alembic upgrade head"
+  exit 1
+fi
+
 if [[ ! -f "$FRONTEND/.next/BUILD_ID" ]]; then
   echo "No production build yet — building the frontend once..."
   (cd "$FRONTEND" && pnpm build)

@@ -241,6 +241,8 @@ export interface Evidence {
   source: string;
   weight: number;
   kind: "signal" | "answer" | "check";
+  /** An engineer changed this rule's weight from the manual's. */
+  edited?: boolean;
 }
 
 export interface Pass1Cause {
@@ -517,7 +519,9 @@ export interface CoarseMatch {
 /** GET /rules — the rule table, read off the rule engine itself. */
 export interface RuleCell {
   cause_id: string;
-  /** Log-odds. For a photo measurement, the weight at full strength. */
+  rule_key: string;
+  /** Log-odds at the weight in force (0 when switched off). For a photo
+   * measurement, the weight at full strength. */
   weight: number;
   /** Photo measurements only: the weight just past normal. */
   weight_mild: number | null;
@@ -549,6 +553,26 @@ export interface EvidenceGroup {
   rows: EvidenceRow[];
 }
 
+/** One rule, for the rules page's list. */
+export interface Rule {
+  key: string;
+  cause_id: string;
+  label: string;
+  detail: string;
+  source: string;
+  kind: "signal" | "answer";
+  /** The weight in the code, from the NPL guide or the NSW brief. */
+  manual_weight: number;
+  /** The weight in force: the manual's, unless an engineer changed it. */
+  weight: number;
+  /** Signal rules only: what it adds at its strongest reading. */
+  full_strength: number | null;
+  /** Ids of the evidence rows that fire it. */
+  triggers: string[];
+  note: string | null;
+  updated_at: string | null;
+}
+
 export interface RuleMap {
   prior: number;
   rule_count: number;
@@ -556,4 +580,5 @@ export interface RuleMap {
   check_rules_out: number;
   causes: { cause_id: string; label: string; rule_count: number }[];
   groups: EvidenceGroup[];
+  rules: Rule[];
 }

@@ -7,6 +7,7 @@ from dataclasses import dataclass
 
 from app.domains.causes.vocabulary import load_causes
 from app.domains.ranking.rules import CAUSE_RULES, Fingerprint
+from app.domains.ranking.weights import weigh
 
 
 @dataclass
@@ -31,7 +32,7 @@ def compare_causes(fingerprint: Fingerprint) -> list[CauseComparison]:
     for cause in load_causes():
         supports, contradicts = [], []
         for rule in CAUSE_RULES.get(cause["id"], []):
-            weight = rule.evaluate(fingerprint)
+            weight = weigh(cause["id"], rule, fingerprint)
             if weight is None:
                 continue
             row = ComparisonRow(label=rule.label, detail=rule.detail, source=rule.source, weight=weight)
