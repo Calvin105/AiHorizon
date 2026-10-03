@@ -103,3 +103,16 @@ data that engineers approve, and the up-height cause.
 Slide 12 separates our work from what we used, as rule c.2 asks. Have each team member
 name the part they can explain in depth — the briefing asks that every member understands
 the solution.
+
+**18. Every rule belongs to one cause — isn't that rigid?**
+Less than it looks. One answer can move several causes up or down: "it has always been like
+this" raises board bending and lowers blockage and wear. A rule can also read combinations,
+such as missing dots *without* the carryover pattern. The real limit is that we set the
+weights from the manual. Next, the rules become a table NSW engineers can edit. Once there
+are enough proved cases, the weights get fitted from them in the same structure, so every %
+still shows its reasons.
+
+**19. Air is confirmed — why does pressure-time still show a high %?**
+Each % is per cause, as in the brief's own table, because two faults can happen together.
+Confirming air doesn't prove the pressure is stable. The fresh photo does: size spread back
+from 0.49 to 0.05.
