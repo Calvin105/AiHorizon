@@ -56,7 +56,8 @@ Start on the pre-opened case at the photo step. Talk while it works; don't wait 
 | 0:00 | Attach `inconsistent.png` — or photograph the printed card with the phone | "A photo of the deposits. It lines the recipe up with the picture and measures every dot." |
 | 0:10 | Signature is pre-ticked **Size varies** → *That's right* | "The photo already answered question one; I just confirm it." |
 | 0:15 | *Random* → *The material* → *New lot or syringe* → *Confirm* → *Purging or priming* | "Five questions an operator can answer — 'Don't know' is always allowed." |
-| 0:35 | The follow-up appears — point at "Asked because…" | "It simulated every answer and asks the one that could change its mind." → *Steady at the set value* |
+| 0:35 | The follow-up appears — point at "Asked because…" → *Steady at the set value* | "Air and pressure-time were tied at 59%. It simulated every answer and asked the one that could break the tie." |
+| 0:42 | A second follow-up, "Where on the board…" → *Everywhere, about the same* | Keep talking; this answer leaves air at 59%. |
 | 0:45 | Ranking appears — point at the chat line, then **Why 59%?** on the right | "Air leads because the problem comes and goes and purging helps — each reason with its weight and its page in the NPL guide." |
 | 1:05 | *Log a check* → **Air trapped…** → *Hold the syringe up to the light* → *Confirms it* → *Log it* | "Look first — it costs nothing. It re-ranks instantly." |
 | 1:20 | *Log a check* → **Air trapped…** → *Purge the line, or swap in a fresh syringe* → *Confirms it* → *Log it* | "Now exactly one change — that's what lets it claim the fix." |
