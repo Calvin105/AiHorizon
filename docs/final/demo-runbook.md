@@ -46,6 +46,10 @@ to it is the offline backup.
 - Slides in presenter view on the same laptop, or on a second screen if there is one.
 - Between judging slots, open a fresh case for the next team of judges, so every demo
   starts at the photo step.
+- The **home page's rule map** is the answer to "how does it rank?" and "where do the
+  weights come from?". Click *Load the demo case*: air and pressure-time tie at 59%.
+  Hover the two answers under *Follow-up · Pressure gauge* to show how each would break
+  the tie. Then click the *Air in syringe* column to show how its 59% is built, page by page.
 
 ## The 2-minute demo — clicks and lines
 

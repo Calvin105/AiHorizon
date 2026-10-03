@@ -47,6 +47,8 @@ class FollowUp:
     question: Question
     applies: Callable[[dict], bool]
     """Whether the question means anything for this case at all."""
+    asked_when: str
+    """`applies` in words, for the rule table on the home page."""
 
 
 FOLLOWUPS: list[FollowUp] = [
@@ -66,6 +68,7 @@ FOLLOWUPS: list[FollowUp] = [
         ),
         # DESIGN.md W3: the one branch where "what changed?" discriminates.
         applies=lambda fp: _axis(fp, "trajectory") == "sudden_step",
+        asked_when="Asked only when it started suddenly.",
     ),
     FollowUp(
         Question(
@@ -79,6 +82,7 @@ FOLLOWUPS: list[FollowUp] = [
             has_dont_know=False, has_other=False,
         ),
         applies=lambda fp: bool(_signature(fp)),
+        asked_when="Asked once the defect type is known.",
     ),
     FollowUp(
         Question(
@@ -94,6 +98,7 @@ FOLLOWUPS: list[FollowUp] = [
         # The photo answers this itself when it has the dispense order.
         applies=lambda fp: bool(_signature(fp) & {"missing", "too_little", "size_varies"})
         and "small_then_big_chance_p" not in (fp.get("signals") or {}),
+        asked_when="Asked when dots are missing, small or uneven and the photo gave no dispense order.",
     ),
     FollowUp(
         Question(
@@ -107,6 +112,7 @@ FOLLOWUPS: list[FollowUp] = [
             has_dont_know=False, has_other=False,
         ),
         applies=lambda fp: "size_varies" in _signature(fp),
+        asked_when="Asked when size varies shot to shot.",
     ),
 ]
 

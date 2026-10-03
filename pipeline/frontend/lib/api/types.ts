@@ -513,3 +513,47 @@ export interface CoarseMatch {
   score: number;
   matched_axes: string[];
 }
+
+/** GET /rules — the rule table, read off the rule engine itself. */
+export interface RuleCell {
+  cause_id: string;
+  /** Log-odds. For a photo measurement, the weight at full strength. */
+  weight: number;
+  /** Photo measurements only: the weight just past normal. */
+  weight_mild: number | null;
+  label: string;
+  detail: string;
+  source: string;
+}
+
+export interface EvidenceRow {
+  id: string;
+  label: string;
+  help: string;
+  mild_text: string | null;
+  strong_text: string | null;
+  /** Rows that can't count at the same time as this one. */
+  excludes: string[];
+  /** Empty when the answer adds no evidence either way. */
+  cells: RuleCell[];
+}
+
+export interface EvidenceGroup {
+  id: string;
+  kind: "measured" | "question" | "followup";
+  title: string;
+  prompt: string;
+  note: string;
+  /** One answer at a time, as the question is asked. */
+  single: boolean;
+  rows: EvidenceRow[];
+}
+
+export interface RuleMap {
+  prior: number;
+  rule_count: number;
+  check_confirms: number;
+  check_rules_out: number;
+  causes: { cause_id: string; label: string; rule_count: number }[];
+  groups: EvidenceGroup[];
+}

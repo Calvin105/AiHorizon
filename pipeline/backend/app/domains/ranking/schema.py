@@ -1,3 +1,5 @@
+from typing import Literal
+
 from pydantic import BaseModel
 
 
@@ -50,3 +52,52 @@ class RankingOut(BaseModel):
     tier: str
     top_cause_id: str
     runners_up: list[str]
+
+
+class RuleCellOut(BaseModel):
+    cause_id: str
+    weight: float
+    """Log-odds. For a photo measurement, the weight at full strength."""
+    weight_mild: float | None = None
+    """Photo measurements only: the weight just past normal."""
+    label: str
+    detail: str
+    source: str
+
+
+class EvidenceRowOut(BaseModel):
+    id: str
+    label: str
+    help: str
+    mild_text: str | None = None
+    strong_text: str | None = None
+    excludes: list[str] = []
+    """Rows that can't count at the same time as this one."""
+    cells: list[RuleCellOut]
+    """Empty when the answer adds no evidence either way."""
+
+
+class EvidenceGroupOut(BaseModel):
+    id: str
+    kind: Literal["measured", "question", "followup"]
+    title: str
+    prompt: str
+    note: str
+    single: bool
+    """One answer at a time, as the question is asked."""
+    rows: list[EvidenceRowOut]
+
+
+class CauseColumnOut(BaseModel):
+    cause_id: str
+    label: str
+    rule_count: int
+
+
+class RuleMapOut(BaseModel):
+    prior: float
+    rule_count: int
+    check_confirms: float
+    check_rules_out: float
+    causes: list[CauseColumnOut]
+    groups: list[EvidenceGroupOut]

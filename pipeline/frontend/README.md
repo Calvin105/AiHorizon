@@ -19,7 +19,7 @@ so measurement is unaffected.
 
 | Path | |
 |---|---|
-| `/` | Line status, proven vs unproven fixes, cases waiting for an engineer |
+| `/` | Line status, proven vs unproven fixes, cases waiting for an engineer — and the rule map (`components/rule-map.tsx`): every rule as a table you can tick to watch the percentages build |
 | `/troubleshoot` | Open a case |
 | `/troubleshoot/[id]` | The wizard — chat on the left, live artifacts on the right |
 | `/cases`, `/cases/[id]` | Case history and detail, with the engineer review panel |

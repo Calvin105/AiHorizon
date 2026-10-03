@@ -8,6 +8,7 @@ from app.domains.intake.router import router as intake_router
 from app.domains.materials.router import router as materials_router
 from app.domains.profiles.router import router as profiles_router
 from app.domains.ranking.router import router as ranking_router
+from app.domains.ranking.router import rules_router
 from app.domains.report.router import router as report_router
 from app.domains.retrieval.router import router as retrieval_router
 from app.domains.stations.router import router as stations_router
@@ -48,6 +49,7 @@ app.include_router(intake_router, prefix=settings.api_prefix)
 app.include_router(vision_router, prefix=settings.api_prefix)
 app.include_router(causes_router, prefix=settings.api_prefix)
 app.include_router(ranking_router, prefix=settings.api_prefix)
+app.include_router(rules_router, prefix=settings.api_prefix)
 app.include_router(retrieval_router, prefix=settings.api_prefix)
 app.include_router(report_router, prefix=settings.api_prefix)
 

@@ -1,13 +1,17 @@
+from dataclasses import asdict
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.domains.cases import crud as cases_crud
 from app.domains.enums import RankTier
-from app.domains.ranking.schema import RankingOut
+from app.domains.ranking.rule_map import rule_map
+from app.domains.ranking.schema import RankingOut, RuleMapOut
 from app.domains.ranking.service import run_ranking
 
 router = APIRouter(prefix="/cases/{case_id}", tags=["Ranking (step 5)"])
+rules_router = APIRouter(tags=["Ranking (step 5)"])
 
 
 @router.post(
@@ -30,3 +34,17 @@ def rank(case_id: int, db: Session = Depends(get_db)) -> RankingOut:
     case.rank_tier = RankTier(ranking["tier"])
     db.commit()
     return RankingOut(**ranking)
+
+
+@rules_router.get(
+    "/rules",
+    response_model=RuleMapOut,
+    summary="The rule table",
+    description=(
+        "Every answer, follow-up answer and photo measurement the rule engine knows, against "
+        "every cause it moves, with its weight in log-odds and the page it cites. Read off the "
+        "engine itself, so it is exactly what ranking applies."
+    ),
+)
+def rules() -> RuleMapOut:
+    return RuleMapOut(**asdict(rule_map()))

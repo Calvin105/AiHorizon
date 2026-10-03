@@ -118,6 +118,7 @@ Do not hand-tune rule weights against two golden cases. Only structural changes 
 - **[done]** Signal rules ramp with distance from their baseline (`ramp()` in rules.py), so 0.16 and 0.49 on `size_cv` no longer score the same.
 - **[done]** Dispense-order signal: `small_then_big` with an exact binomial chance test (`vision/signals.py`); the carryover rule fires only below p 0.05.
 - **[done]** Every rule cites section and page, checked against the NPL guide's text on 2026-10-02 (the carryover remedy and the ambient-temperature citation were corrected then). The ranking card and the report expand each citation.
+- **[done]** 2026-10-03: the rules as a table on the home page (`GET /api/rules`, `ranking/rule_map.py`). It is read off the engine by putting each answer and measurement through every rule, so it can't drift from ranking, and ticking rows adds them up exactly as ranking does. **[later]** Make that table the editable source engineers approve, rather than a view of the code.
 - **[done]** Every question gets a "Don't know" option. It adds no evidence.
 - **[done]** Stars come from how much evidence is known and how far #1 leads #2 (`report/stars.py`); the evaluation measures ★★★ right 95% of the time, ★ 52%.
 - Keep cause percentages independent (not summing to 100), matching the brief's table, and say so on screen.
