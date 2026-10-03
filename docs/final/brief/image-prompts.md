@@ -10,8 +10,14 @@ in Gemini, `--ar 210:297` in Midjourney.
 below, twice each if you can, because results vary a lot between runs.
 
 **Round 2: the inside pages.** In the same chat as the cover you liked, paste
-the page 2, 3 and 4 prompts; they begin "Same style as the cover you just made".
-In a new chat, swap that opening for the cover's `Style:` paragraph.
+the page 2–6 prompts; they begin "Same style as the cover you just made". Each
+also ends with a style fallback, so it works in a new chat too.
+
+Pages 2–4 are a three-page deep dive on the dual-brain ranking, each written
+from the code with its real thresholds and a real case. They carry a lot of
+small text. Generate them at the highest resolution your tool offers, since
+Gemini can output 2K or 4K, and expect to regenerate a few times. Pages 5 and
+6 are the feedback loop and the knowledge system.
 
 **Before printing anything generated:** image models misspell small text and
 invent numbers. Check every number against the list at the end. The safer
@@ -60,7 +66,7 @@ Layout, top to bottom:
 
 Render every quoted text exactly as written, spelled correctly. Add no other words, numbers, logos, people or watermarks.
 
-Style: an engineering drawing. Deep blueprint-navy background #0B2545 with a faint square grid, crisp white and pale-cyan linework, dimension arrows and leader-line callouts, labels in a technical monospaced font, and copper-orange #E9B07C only on the big numbers. A drafting title block in the bottom-right corner reading "AI DISPENSING DEFECT DETECTIVE · SHEET 1 OF 4 · REV A". The photo sits in a thin white frame, like a reference image pinned to the drawing. Precise, schematic, memorable from across a room.
+Style: an engineering drawing. Deep blueprint-navy background #0B2545 with a faint square grid, crisp white and pale-cyan linework, dimension arrows and leader-line callouts, labels in a technical monospaced font, and copper-orange #E9B07C only on the big numbers. A drafting title block in the bottom-right corner reading "AI DISPENSING DEFECT DETECTIVE · SHEET 1 OF 6 · REV A". The photo sits in a thin white frame, like a reference image pinned to the drawing. Precise, schematic, memorable from across a room.
 ```
 
 ### C · Scientific journal
@@ -107,30 +113,150 @@ Style: a bold editorial infographic, like a premium consulting report. Big confi
 
 ## Round 2 — the inside pages
 
-### Page 2 · The dual-brain ranking
+### Page 2 · The dual-brain ranking: how it decides
 
 ```
-Same style as the cover you just made — same colours, fonts and diagram style. Design page 2 of the brief: one A4 portrait page (210 × 297 mm), flat, straight-on and edge to edge, finished print artwork. If the style has a drawing title block, it reads "SHEET 2 OF 4".
+Same style as the cover you just made — same colours, fonts, icons and diagram style. Design page 2 of the brief: one A4 portrait page (210 × 297 mm), flat, straight-on and edge to edge, finished print artwork. If the style has a drawing title block, it reads "SHEET 2 OF 6".
 
-Layout, top to bottom:
-1. Section heading: "① The dual-brain ranking"
-2. Intro line: "Two independent readers, and two gates that can only lower confidence."
-3. A large flow diagram, left to right:
-   • Four small input boxes on the left — "Photo measurements", "Five answers", "Follow-up answers", "Check results" — with arrows into a big box "BRAIN 1 · THE INSTRUMENT", subtitle "42 rules, each citing a manual page". Its output: "7 causes, each with a %".
-   • Underneath, one input box, "Operator's own words", with an arrow into a second big box "BRAIN 2 · THE CRITIC (LLM)", subtitle "sees no measurements · can only object".
-   • Both brains feed a diamond, "Agree?", then two gates side by side: "GATE A · CHANCE" with "more than coincidence? p < 0.05", and "GATE B · PRECEDENT" with "can demote, never promote".
-   • Output on the right: four stacked badges from strongest to weakest: "T1 · one lead cause, backed", "T2 · lead cause, provisional", "T3 · both candidates shown", "T4 · no lead — the check that separates them".
-4. Bottom left, a panel titled "Why 59%?": a small waterfall chart for "Air trapped in the syringe" — a bar "start 15%", a step "+ comes and goes (brief p.3)", a step "+ purging helps (brief p.4)", ending at a highlighted total "59%".
-5. Bottom right, a panel titled "Is the confidence honest?": four bars labelled "★", "★★", "★★★", "★★★★" with values "52%", "75%", "95%", "97%" and the caption "top cause correct, by stars shown".
-6. Short paragraphs of body text drawn as neat grey placeholder lines.
+This page explains in detail how the system's dual-brain ranking reaches a decision. It is dense but orderly: clear hierarchy, generous gutters, every label legible.
 
-Render every quoted text exactly as written. Add no other words, numbers, logos or watermarks.
+TOP BAND (about 12% of the page)
+- Section heading: "① The dual-brain ranking"
+- Intro, two lines: "Two independent readers judge every case, and two gates can only lower its confidence. The output is a ranked list of causes plus an honest label for how sure it is."
+
+MAIN DIAGRAM (about half the page): a left-to-right flowchart in four columns, joined by arrows.
+Column 1, headed "INPUTS": five stacked boxes, each with a bold name and a small description.
+- "Photo measurements" — "size spread, missing dots, irregular shapes, dispense-order pattern"
+- "Five fixed answers" — "what it looks like · how it behaves · what it follows · material state · what helps"
+- "Up to 2 follow-up answers" — "asked only if the answer could change the ranking"
+- "Check results" — "logged while troubleshooting: confirms or rules out"
+- Set apart at the bottom: "Operator's own words" — "the complaint as typed, plus dispenser type and material"
+Column 2, headed "THE TWO BRAINS": two large boxes.
+- Top: "BRAIN 1 · THE INSTRUMENT" — "A rule engine: 42 rules from the NPL guide and the NSW brief, each citing its section and page. Same input, same answer, every time." The first four inputs point here. Its output arrow is labelled "7 causes, each with its own %, every reason listed".
+- Bottom: "BRAIN 2 · THE CRITIC (LLM)" — "A language model that reads only the operator's words, never the measurements or answers, and ranks the 7 causes its own way." Only "Operator's own words" points here. Its output arrow is labelled "its top pick, or abstain".
+Column 3, headed "CHECKS ON CONFIDENCE": a diamond and two gate boxes.
+- Diamond: "Do the brains agree?" with a small note "an abstaining critic counts as no objection"
+- "GATE A · CHANCE" — "Is the deciding measurement more than coincidence? Exact binomial test, p < 0.05"
+- "GATE B · PRECEDENT" — "Do proved past cases contradict the lead? Can demote, never promote"
+Column 4, headed "THE TIER": four stacked badges, strongest (green) to weakest (grey).
+- "T1" — "agree · measurement beats chance · proved precedent agrees → one lead cause, with its evidence and past cases"
+- "T2" — "agree · no decisive measurement or no proved precedent → lead cause, marked provisional"
+- "T3" — "disagree · measurement beats chance → both candidates, the measurement keeps the top slot"
+- "T4" — "disagree · measurement at chance → no lead cause; shows the check that separates them"
+
+BOTTOM LEFT (about 60% of the width): a numbered list titled "One ranking, step by step":
+"1  Brain 1 scores all 7 causes from the photo and the answers."
+"2  It asks up to 2 follow-ups, choosing those whose answers would move the ranking most."
+"3  Brain 2 reads only the operator's words and names a cause, or abstains."
+"4  Gate B checks the lead against proved past cases, and may demote it."
+"5  Gate A asks whether the deciding measurement beats chance."
+"6  Agreement and the gates set the tier. Each logged check re-runs the ranking."
+
+BOTTOM RIGHT: three stacked principle cards, each with a small icon.
+- "Agreement never raises confidence" — "two readers can agree on the same mistake, so agreement is not evidence"
+- "The critic can object, never add" — "its numbers are never merged into Brain 1's"
+- "Every % traces to a page" — "each reason shows its weight and its source"
+
+Render every quoted text exactly as written, spelled correctly. Add no other words, numbers, logos or watermarks. If space is tight, shrink the descriptions rather than dropping them.
+
+Style fallback if there is no cover in this chat: a premium industrial datasheet. White page, deep green #0E3B2E headings, PCB green #1F7A4D diagrams and icons, pale green #EEF5F1 rounded panels, copper #C8742B only for key numbers, serif headings, clean sans-serif body, flat vector diagrams with thin even strokes.
 ```
 
-### Page 3 · The feedback loop
+### Page 3 · Brain 1, the Instrument: how a percentage is built
 
 ```
-Same style as the cover you just made — same colours, fonts and diagram style. Design page 3 of the brief: one A4 portrait page (210 × 297 mm), flat, straight-on and edge to edge, finished print artwork. If the style has a drawing title block, it reads "SHEET 3 OF 4".
+Same style as the cover you just made — same colours, fonts, icons and diagram style. Design page 3 of the brief: one A4 portrait page (210 × 297 mm), flat, straight-on and edge to edge, finished print artwork. If the style has a drawing title block, it reads "SHEET 3 OF 6".
+
+This page explains in detail how Brain 1 turns evidence into a percentage, using a real case. Dense but orderly; every label legible.
+
+TOP BAND
+- Heading: "Brain 1 · The Instrument"
+- Subheading: "How a percentage is built, and how it chooses the next question."
+
+PANEL 1, full width, titled "Evidence adds up in log-odds":
+- A horizontal ruler with two aligned scales: log-odds "−1.73", "0", "+1.73" on top, and the matching percentages "15%", "50%", "85%" underneath.
+- Four short notes beside it:
+  "Every cause starts at 15%."
+  "Each rule that fires adds its weight: +1 multiplies the odds by 2.7; −0.6 roughly halves them."
+  "Measurements count more the further past normal: a size spread of 0.16 barely counts; 0.49 counts in full."
+  "Each cause gets its own %, so they don't add up to 100%."
+
+PANEL 2, full width, titled "Why 59%? A real case": two horizontal waterfall charts side by side on the same percentage scale.
+- Left, "Air trapped in the syringe": a bar "start 15%"; a step "+1.0 comes and goes · NSW brief p.3" reaching "32%"; a step "+1.1 purging helps · NSW brief p.4" reaching a highlighted total "59%".
+- Right, "Pressure-time variability": a bar "start 15%"; one step "+2.1 measured size spread 0.49, limit 0.15 · NPL §2.1 p.6" reaching a highlighted total "59%".
+- Between them, a bold tag: "A tie."
+
+PANEL 3, left half, titled "Which question next?":
+- One line: "Brain 1 runs every possible answer to every eligible question, and asks the one that could change the lead."
+- A small table headed "Does the pressure gauge move while it dispenses?" with three rows:
+  "It wanders" → "pressure-time 84% · takes the lead"
+  "Steady" → "pressure-time 44% · air leads at 59%"
+  "Can't see a gauge" → "adds no evidence"
+- A chat bubble, as it appears on screen: "Asked because the answer can change the lead: 'It wanders or dips during a run' would put pressure-time dispensing variability at 84% (now 59%)."
+- Small note: "At most 2 follow-ups, and none if no answer would move any cause by 10 points."
+
+PANEL 4, right half, titled "Checks settle it":
+- One line: "A check that confirms a cause adds +3.0; one that rules it out adds −3.0."
+- A sequence with arrows: "Air 59%" → "Syringe held to the light: air slug seen · confirms" → "97%" → "Line purged, dots even again · confirms" → "99.8%".
+
+FOOTER LINE: "Stars (0–5) combine how far #1 leads #2 with how much evidence is in. On screen, 'Why 59%?' lists every rule, weight and page."
+
+Render every quoted text exactly as written, spelled correctly. Add no other words, numbers, logos or watermarks. If space is tight, shrink the notes rather than dropping them.
+
+Style fallback if there is no cover in this chat: a premium industrial datasheet. White page, deep green #0E3B2E headings, PCB green #1F7A4D diagrams and icons, pale green #EEF5F1 rounded panels, copper #C8742B only for key numbers, serif headings, clean sans-serif body, flat vector diagrams with thin even strokes.
+```
+
+### Page 4 · Brain 2 and the two gates: how sure it is
+
+```
+Same style as the cover you just made — same colours, fonts, icons and diagram style. Design page 4 of the brief: one A4 portrait page (210 × 297 mm), flat, straight-on and edge to edge, finished print artwork. If the style has a drawing title block, it reads "SHEET 4 OF 6".
+
+This page explains in detail how the critic and the two gates decide how sure the system should be. Dense but orderly; every label legible.
+
+TOP BAND
+- Heading: "Brain 2 · The Critic, and the two gates"
+- Subheading: "How the system decides how sure to be."
+
+PANEL 1, left column, titled "The Critic (an LLM)":
+- Two short lists side by side. "Reads": "the operator's own words", "dispenser type", "material". "Never sees": "the measurements", "the five answers", "Brain 1's scores".
+- Callout: "Two readers that share their inputs share their mistakes."
+- A small bar graphic for the vote rule: "Its top cause must be at least 25% and at least 10 points ahead of its second. Otherwise it abstains."
+- Three short notes:
+  "Abstaining is not disagreeing."
+  "LLM off or offline: treated as abstaining, and the app carries on."
+  "Disagreeing can lower the tier to T3 or T4. It can never change a percentage."
+
+PANEL 2, right column, titled "Gate A · Chance":
+- One line: "The only photo pattern the NPL guide ties to a single cause is carryover (§3.5): a small or missing dot, then an oversized one."
+- Strip (a): a row of 15 dots in dispense order — empty, BIG, normal, normal, normal, normal, empty, BIG, normal, empty, BIG, normal, normal, normal, normal — with a curved arrow from each empty dot to the big dot after it. Caption: "3 of 3 small dots followed by an oversized one. 3 of 14 dots are oversized, so by chance: (3/14)³ ≈ 0.010." Green verdict tag: "Beats chance · carryover rule fires".
+- Strip (b): a row of 15 dots — small, normal, normal, BIG, normal, normal, small, normal, small, small, BIG, normal, BIG, normal, normal — with one arrow, from the tenth dot (small) to the eleventh (big). Caption: "1 of 4 small dots followed by an oversized one: p = 0.62." Grey verdict tag: "Coincidence · ignored".
+- Note: "A size spread is real, but several causes produce it, so it never counts as deciding."
+
+PANEL 3, left column, titled "Gate B · Precedent":
+- "Compares the lead with past cases that closed CONFIRMED: same material and dispenser type, measurements within one spread."
+- "Needs at least 3 such cases."
+- "More than half caused by something else → the lead is demoted by up to 0.4 log-odds."
+- "All agree → nothing is added; agreement only unlocks T1."
+- Pull quote: "If history could promote a cause, the system would grow more certain of whatever it diagnosed first."
+
+PANEL 4, right column, titled "Setting the tier": a decision tree.
+- Start: "Do the brains agree?"
+- Yes → "Measurement beats chance, and at least 3 proved cases, none contradicting?" → Yes: "T1 · one lead cause"; No: "T2 · lead cause, provisional".
+- No → "Measurement beats chance?" → Yes: "T3 · both candidates, measurement on top"; No: "T4 · no lead: run the check that separates them".
+
+BOTTOM BAND, titled "Is the confidence honest?":
+- A bar chart of four bars labelled "★", "★★", "★★★", "★★★★" with values "52%", "75%", "95%", "97%"; axis caption "top cause correct, by stars shown".
+- Beside it: "In every confidence band it is right at least as often as the % it shows." And in small grey type: "Simulated cases, photo + answers · chance 14% · measured on Brain 1 and the stars; the critic and gates were not part of this test."
+
+Render every quoted text exactly as written, spelled correctly. Add no other words, numbers, logos or watermarks. If space is tight, shrink the notes rather than dropping them.
+
+Style fallback if there is no cover in this chat: a premium industrial datasheet. White page, deep green #0E3B2E headings, PCB green #1F7A4D diagrams and icons, pale green #EEF5F1 rounded panels, copper #C8742B only for key numbers, serif headings, clean sans-serif body, flat vector diagrams with thin even strokes.
+```
+
+### Page 5 · The feedback loop
+
+```
+Same style as the cover you just made — same colours, fonts and diagram style. Design page 5 of the brief: one A4 portrait page (210 × 297 mm), flat, straight-on and edge to edge, finished print artwork. If the style has a drawing title block, it reads "SHEET 5 OF 6".
 
 Layout, top to bottom:
 1. Section heading: "② The feedback loop"
@@ -143,12 +269,14 @@ Layout, top to bottom:
 8. Short paragraphs of body text drawn as neat grey placeholder lines.
 
 Render every quoted text exactly as written. Add no other words, numbers, logos or watermarks.
+
+Style fallback if there is no cover in this chat: a premium industrial datasheet. White page, deep green #0E3B2E headings, PCB green #1F7A4D diagrams and icons, pale green #EEF5F1 rounded panels, copper #C8742B only for key numbers, serif headings, clean sans-serif body, flat vector diagrams with thin even strokes.
 ```
 
-### Page 4 · The knowledge system
+### Page 6 · The knowledge system
 
 ```
-Same style as the cover you just made — same colours, fonts and diagram style. Design page 4 of the brief: one A4 portrait page (210 × 297 mm), flat, straight-on and edge to edge, finished print artwork. If the style has a drawing title block, it reads "SHEET 4 OF 4".
+Same style as the cover you just made — same colours, fonts and diagram style. Design page 6 of the brief: one A4 portrait page (210 × 297 mm), flat, straight-on and edge to edge, finished print artwork. If the style has a drawing title block, it reads "SHEET 6 OF 6".
 
 Layout, top to bottom:
 1. Section heading: "③ The knowledge system"
@@ -162,6 +290,8 @@ Layout, top to bottom:
 6. Short paragraphs of body text drawn as neat grey placeholder lines.
 
 Render every quoted text exactly as written. Add no other words, numbers, logos or watermarks.
+
+Style fallback if there is no cover in this chat: a premium industrial datasheet. White page, deep green #0E3B2E headings, PCB green #1F7A4D diagrams and icons, pale green #EEF5F1 rounded panels, copper #C8742B only for key numbers, serif headings, clean sans-serif body, flat vector diagrams with thin even strokes.
 ```
 
 ---
@@ -187,14 +317,31 @@ Minimal conceptual illustration, portrait orientation: two glowing outlines of a
 Every figure below comes from the code or `evaluation/results/summary.md`
 (run of 2026-10-02).
 
-- **59%**: air trapped in the syringe. It starts at 15% and adds "comes and
-  goes" (brief p.3) and "purging helps" (brief p.4). Pressure-time
-  variability also sits at 59%, from the measured size spread. The follow-up
-  question breaks that tie.
-- **84%**: pressure-time variability if the operator answers that the gauge
-  wanders.
+- **Log-odds scale**: −1.73 = 15%, 0 = 50%, +1.73 = 85%. A weight of +1
+  multiplies the odds by 2.7; −0.6 multiplies them by 0.55.
+- **59%**: air trapped in the syringe. It goes 15% → **32%** after "comes and
+  goes" (+1.0, brief p.3), then → 59% after "purging helps" (+1.1, brief p.4).
+- **Also 59%**: pressure-time variability, from 15% plus +2.1 for the
+  measured size spread of 0.49 against a 0.15 limit (NPL §2.1 p.6). The
+  follow-up question breaks that tie.
+- **Size-spread weight**: 0.16 adds 0.07 ("barely counts"); 0.49 adds the full
+  2.1.
+- **Pressure gauge answers**: "wanders" puts pressure-time at **84%**;
+  "steady" puts it at **44%**, leaving air leading at 59%.
+- **Follow-ups**: at most 2, and only if some answer would move a cause by at
+  least 10 points.
+- **Checks**: a confirming check adds +3.0 and ruling out adds −3.0. Air goes
+  59% → **97%** → **99.8%** after two confirming checks.
+- **Critic vote**: its top cause must be at least 25% and at least 10 points
+  ahead of its second; otherwise it abstains.
 - **p = 0.010**: carryover, where all 3 small dots are each followed by an
-  oversized one. **p = 0.62**: 1 of 4, so it is treated as noise.
+  oversized one; 3 of 14 dots are oversized, and (3/14)³ = 0.0098. The rule
+  then adds about +4.0.
+- **p = 0.62**: 1 of 4 small dots is followed by an oversized one, so it is
+  treated as noise.
+- **Honesty claim**: in every band of shown percentage (0–40, 40–55, 55–70,
+  70–85, 85–100), the share actually right is at least the mean shown: 46 vs
+  35, 60 vs 49, 63 vs 62, 76 vs 76, 98 vs 91.
 - **★ 52% · ★★ 75% · ★★★ 95% · ★★★★ 97%**: how often the top cause is right,
   by stars shown.
 - **66% vs 54%**: photo + answers vs answers alone, when a quarter of the
