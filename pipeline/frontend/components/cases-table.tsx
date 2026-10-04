@@ -66,7 +66,11 @@ const columns: ColumnDef<Case>[] = [
   },
   {
     accessorKey: "rank_tier",
-    header: "Rank",
+    header: () => (
+      <span className="inline-flex items-center gap-1">
+        Tier <TierInfo />
+      </span>
+    ),
     cell: ({ getValue }) => {
       const tier = getValue<string | null>();
       return tier ? <Badge variant="outline">{tier}</Badge> : <span className="text-muted-foreground">—</span>;
@@ -74,11 +78,7 @@ const columns: ColumnDef<Case>[] = [
   },
   {
     accessorKey: "tier",
-    header: () => (
-      <span className="inline-flex items-center gap-1">
-        Tier <TierInfo />
-      </span>
-    ),
+    header: "Verdict",
     cell: ({ getValue }) => {
       const tier = getValue<CaseTier | null>();
       if (!tier) return <span className="text-muted-foreground">open</span>;

@@ -38,7 +38,7 @@ const OUTCOME_VARIANT: Record<CheckOutcome, "default" | "secondary" | "destructi
   inconclusive: "secondary",
 };
 
-/** The close tier's colour: only CONFIRMED claims a fix. */
+/** The verdict's colour: only CONFIRMED claims a fix. */
 const VERDICT_TONE: Record<string, string> = {
   CONFIRMED: "text-emerald-700 dark:text-emerald-400",
   PLAUSIBLE: "text-amber-700 dark:text-amber-400",

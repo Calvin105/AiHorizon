@@ -19,8 +19,8 @@ export function closeCase(caseId: number) {
   return apiRequest<CloseCaseResponse>(`/cases/${caseId}/close`, { method: "POST" });
 }
 
-/** What closing now would record: the tier and every condition still
- * unproved. Closes nothing. On a closed case, the gaps behind its tier. */
+/** What closing now would record: the verdict and every condition still
+ * unproved. Closes nothing. On a closed case, the gaps behind its verdict. */
 export function previewClose(caseId: number) {
   return apiRequest<CloseCaseResponse>(`/cases/${caseId}/close`);
 }

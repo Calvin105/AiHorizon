@@ -28,7 +28,7 @@ flowchart TD
     P -- No --> P1["Cannot close CONFIRMED"]
     P -- Yes --> Q["Add engineer notes"]
     Q --> R["Close case"]
-    R --> S{"Tier == CONFIRMED?"}
+    R --> S{"Verdict == CONFIRMED?"}
     S -- Yes --> T["CONFIRMED: report + evidence"]
     S -- No --> P1
 ```
@@ -90,7 +90,7 @@ The rule core, yes — on purpose, because it's auditable. What's new around it:
 - the case history only learns from proved fixes.
 
 **10. Can an operator just mark a case as fixed?**
-No. The close tier is computed from the check log and the re-measurement, and the
+No. The verdict is computed from the check log and the re-measurement, and the
 API refuses direct edits to it. Three changes at once, or a change aimed at a different
 cause than the one confirmed, can't close CONFIRMED.
 

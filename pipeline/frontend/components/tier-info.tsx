@@ -7,9 +7,9 @@ import {
 } from "@/components/ui/hover-card";
 
 /**
- * What "Rank", "Tier", "Diagnosed" and "Checks" mean — DESIGN.md steps 5 and
- * 8. Two different tiers show up side by side in this app (rank confidence
- * vs. close outcome) which is exactly the kind of thing that needs a legend
+ * What "Tier", "Verdict", "Diagnosed" and "Checks" mean — DESIGN.md steps 5 and
+ * 8. Two different labels show up side by side in this app (the tier, T1–T4,
+ * and the verdict a closed case gets) which is exactly the kind of thing that needs a legend
  * rather than a column header alone.
  */
 export function TierInfo() {
@@ -55,7 +55,7 @@ export function TierInfo() {
           </ul>
         </div>
         <div>
-          <p className="mb-1 font-medium text-foreground">Rank (T1–T4, step 5)</p>
+          <p className="mb-1 font-medium text-foreground">Tier (T1–T4, step 5)</p>
           <p className="text-muted-foreground">
             How much the ranking trusts its top candidate cause, right now — not whether it&apos;s
             actually right.
@@ -88,7 +88,7 @@ export function TierInfo() {
           </ul>
         </div>
         <div>
-          <p className="mb-1 font-medium text-foreground">Tier (step 8, set when the case closes)</p>
+          <p className="mb-1 font-medium text-foreground">Verdict (step 8, set when the case closes)</p>
           <ul className="space-y-1 text-muted-foreground">
             <li>
               <span className="text-foreground">CONFIRMED</span> — all five held: a check

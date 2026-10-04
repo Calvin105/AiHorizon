@@ -7,7 +7,7 @@ export const CLOSE_MEANING: Record<string, { headline: string; detail: string }>
     headline: "Fixed and proved",
     detail:
       "A check confirmed the cause, exactly one thing was changed, and the deciding signal was " +
-      "re-measured in spec and held. This is the only tier that claims the fix worked, and the " +
+      "re-measured in spec and held. This is the only verdict that claims the fix worked, and the " +
       "only one that feeds future rankings.",
   },
   PLAUSIBLE: {

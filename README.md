@@ -251,7 +251,7 @@ operating on them is real, and is what the bonus-3 claim demonstrates. No real N
 Automation production data was used; none was provided.
 
 `app/reset_demo.py` builds the four showcase cases differently: it drives the live
-API in-process, so their measurements, ranking, check log and close tier are all
+API in-process, so their measurements, ranking, check log and verdict are all
 produced by the real pipeline rather than written into the database.
 
 ---
