@@ -14,6 +14,7 @@ import type {
   Case, CauseComparison, CheckResult, CloseCaseResponse, CoarseMatch, Evidence, FingerprintAxes,
   Precedents, Question, Ranking, Report, VisionResult,
 } from "@/lib/api/types";
+import { CLOSE_MEANING } from "@/lib/close";
 import { formatCitations, formatSource, formatWeight, SOURCE_NOTES, plainDetail } from "@/lib/sources";
 
 export interface Artifacts {
@@ -43,32 +44,6 @@ export interface Artifacts {
 
 const TIER_VARIANT: Record<string, "default" | "secondary" | "destructive"> = {
   T1: "default", T2: "secondary", T3: "secondary", T4: "destructive",
-};
-
-/** What a closed case actually asserts. Closing is not the same as fixing:
- * step 8 tiers on what was *proved*, so a case can close with the cause
- * pinned down and nothing repaired. The tier name alone reads like a
- * verdict on the repair, so the plain sentence is shown next to it. */
-const CLOSE_MEANING: Record<string, { headline: string; detail: string }> = {
-  CONFIRMED: {
-    headline: "Fixed and proved",
-    detail:
-      "A check confirmed the cause, exactly one thing was changed, and the deciding signal was " +
-      "re-measured in spec and held. This is the only tier that claims the fix worked, and the " +
-      "only one that feeds future rankings.",
-  },
-  PLAUSIBLE: {
-    headline: "Not proved fixed",
-    detail:
-      "Some of the five close conditions were met, but not all — so the case is a documented " +
-      "lead, not a verified repair. It's shown to a human as context and adjusts nothing.",
-  },
-  UNVERIFIED: {
-    headline: "Nothing proved",
-    detail:
-      "None of the five close conditions were met. The case is on file with what was tried, " +
-      "and it adjusts nothing.",
-  },
 };
 
 function ArtifactCard({

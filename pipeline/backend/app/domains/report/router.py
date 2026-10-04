@@ -77,6 +77,17 @@ async def verify(
     return verification
 
 
+@router.get(
+    "/close", response_model=CloseCaseResponse, summary="What closing now would record",
+    description="The same five conditions as POST /close, applied without closing anything: the tier "
+    "the case would get, and every condition still unproved. On a closed case, the gaps behind the tier "
+    "it closed with -- the record keeps the tier, not the reasons.",
+)
+def close_preview(case_id: int, db: Session = Depends(get_db)) -> CloseCaseResponse:
+    result = close_case(_get_case_or_404(db, case_id))
+    return CloseCaseResponse(tier=result.tier.value, gaps=result.gaps)
+
+
 @router.post(
     "/close", response_model=CloseCaseResponse, summary="Close the case (step 8)",
     description="Applies the five-condition CONFIRMED rule. Never promotes ranking on its own — "

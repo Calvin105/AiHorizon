@@ -3,27 +3,32 @@
 import * as React from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { ArrowLeft, ArrowRight, Compass, FileText, LifeBuoy, Sparkles } from "lucide-react";
-import { toast } from "sonner";
+import {
+  ArrowLeft, ArrowRight, ChevronRight, Compass, FileText, LifeBuoy, NotebookPen, Sparkles, type LucideIcon,
+} from "lucide-react";
 
 import { ArtifactPanel, type Artifacts } from "@/components/wizard/artifact-panel";
+import { EngineerNotes, markReviewed } from "@/components/engineer-notes";
+import { ReasonsBacking } from "@/components/reasons-backing";
 import { Badge } from "@/components/ui/badge";
-import { Button, buttonVariants } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
+import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TierInfo } from "@/components/tier-info";
 import { ApiError } from "@/lib/api/client";
-import { getCase, updateCase } from "@/lib/api/cases";
+import { getCase } from "@/lib/api/cases";
 import { getFollowupBank, getIntakeSpec } from "@/lib/api/intake";
-import { getReport } from "@/lib/api/report";
-import type { Case, CheckOutcome, VisionResult } from "@/lib/api/types";
+import { getReport, previewClose } from "@/lib/api/report";
+import type { Case, CheckOutcome, CloseCaseResponse, VisionResult } from "@/lib/api/types";
+import { CLOSE_MEANING, DIAGNOSED_WORDS } from "@/lib/close";
 
 function yesNo(value?: boolean | null) {
   return value ? "yes" : "no";
+}
+
+function shortDate(iso: string) {
+  return new Date(iso).toLocaleDateString(undefined, { day: "numeric", month: "short" });
 }
 
 const OUTCOME_VARIANT: Record<CheckOutcome, "default" | "secondary" | "destructive"> = {
@@ -32,12 +37,25 @@ const OUTCOME_VARIANT: Record<CheckOutcome, "default" | "secondary" | "destructi
   inconclusive: "secondary",
 };
 
+/** The close tier's colour: only CONFIRMED claims a fix. */
+const VERDICT_TONE: Record<string, string> = {
+  CONFIRMED: "text-emerald-700 dark:text-emerald-400",
+  PLAUSIBLE: "text-amber-700 dark:text-amber-400",
+  UNVERIFIED: "text-rose-700 dark:text-rose-400",
+};
+
+/**
+ * The case's hub, laid out like the home page: where the case stands and
+ * what to do next first, in the middle of the screen, and the records it
+ * rests on folded away underneath. Every flow on a case comes back here.
+ */
 export default function CaseDetailPage() {
   const params = useParams<{ id: string }>();
   const caseId = Number(params.id);
 
   const [artifacts, setArtifacts] = React.useState<Artifacts | null>(null);
   const [caseData, setCaseData] = React.useState<Case | null>(null);
+  const [closePreview, setClosePreview] = React.useState<CloseCaseResponse | null>(null);
   const [error, setError] = React.useState<string | null>(null);
 
   React.useEffect(() => {
@@ -49,14 +67,17 @@ export default function CaseDetailPage() {
         // The report is compiled on demand, not stored on the case — fetch
         // it too so a past case reads the same as a freshly-finished one.
         // No LLM explanation here: browsing a case shouldn't spend a call.
-        const report = c.ranking ? await getReport(caseId, false).catch(() => null) : null;
-        // The question spine, so the answers read in the words they were
-        // asked in rather than as stored ids.
-        const [questions, followupQuestions] = await Promise.all([
+        const [report, preview, questions, followupQuestions] = await Promise.all([
+          c.ranking ? getReport(caseId, false).catch(() => null) : Promise.resolve(null),
+          // What's still unproved, from the same five conditions close uses.
+          previewClose(caseId).catch(() => null),
+          // The question spine, so the answers read in the words they were
+          // asked in rather than as stored ids.
           getIntakeSpec().catch(() => []),
           getFollowupBank().catch(() => []),
         ]);
         if (cancelled) return;
+        setClosePreview(preview);
         setArtifacts({
           caseData: c,
           photoUrl: null,
@@ -74,7 +95,7 @@ export default function CaseDetailPage() {
           comparison: null,
           checks: c.check_results ?? [],
           report,
-          close: c.tier ? { tier: c.tier, gaps: [] } : null,
+          close: c.tier ? { tier: c.tier, gaps: c.closed_at ? (preview?.gaps ?? []) : [] } : null,
         });
       })
       .catch((err: unknown) => setError(err instanceof ApiError ? err.message : "Could not reach the API."));
@@ -85,7 +106,7 @@ export default function CaseDetailPage() {
 
   if (error) {
     return (
-      <div className="mx-auto max-w-5xl px-6 py-10">
+      <div className="mx-auto max-w-3xl px-4 py-10 sm:px-6">
         <p className="text-sm text-destructive">{error}</p>
       </div>
     );
@@ -93,471 +114,366 @@ export default function CaseDetailPage() {
 
   if (!caseData || !artifacts) {
     return (
-      <div className="mx-auto max-w-5xl space-y-4 px-6 py-10">
-        <Skeleton className="h-9 w-1/3" />
-        <div className="grid gap-4 sm:grid-cols-3">
-          <Skeleton className="h-64 w-full" />
-          <Skeleton className="h-64 w-full" />
-          <Skeleton className="h-64 w-full" />
-        </div>
+      <div className="mx-auto max-w-3xl space-y-4 px-4 py-10 sm:px-6">
+        <Skeleton className="h-9 w-2/3" />
+        <Skeleton className="h-48 w-full" />
+        <Skeleton className="h-20 w-full" />
       </div>
     );
   }
 
-  return (
-    <div className="mx-auto max-w-5xl space-y-6 px-6 py-8">
-      <Link
-        href="/cases"
-        className={buttonVariants({ variant: "ghost", size: "sm", className: "-ml-2 gap-1.5" })}
-      >
-        <ArrowLeft className="size-4" />
-        All Cases
-      </Link>
+  const closed = Boolean(caseData.closed_at);
 
-      {/* Header bar */}
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">
-            Case #{caseData.case_id} &middot; {caseData.complaint ?? "unclassified"}
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            Opened {new Date(caseData.opened_at).toLocaleString()}
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          {caseData.tier && <Badge>{caseData.tier}</Badge>}
-          <Badge variant="outline">{caseData.diagnosed.replaceAll("_", " ")}</Badge>
-          {/* Three different facts, so three different badges. "Closed"
-              says the investigation was wrapped up; "resolved" says it was
-              fixed and proved. A case can be closed and not resolved —
-              case #8 is — and one badge covering both would have to lie
-              about one of them. */}
-          <Badge variant={caseData.closed_at ? "outline" : "secondary"}>
-            {caseData.closed_at ? "closed" : "open"}
-          </Badge>
-          {caseData.resolved && <Badge>resolved</Badge>}
-          {caseData.escalate && <Badge variant="destructive">needs review</Badge>}
-          <TierInfo />
-          <Link
-            href={`/cases/${caseData.case_id}/report`}
-            className={buttonVariants({ size: "sm", variant: "outline", className: "ml-2 gap-1.5" })}
-          >
-            <FileText className="size-3.5" />
-            Report
-          </Link>
-          <Link
-            href={`/troubleshoot/${caseData.case_id}`}
-            className={buttonVariants({
-              size: "sm",
-              variant: "default",
-              className: "ml-2 gap-1.5 font-medium shadow-xs",
-            })}
-          >
-            <Sparkles className="size-3.5" />
-            {caseData.closed_at ? "Reopen Case" : "Start Troubleshooting"}
-            <ArrowRight className="size-3.5" />
-          </Link>
-        </div>
+  return (
+    <div className="mx-auto w-full max-w-3xl space-y-5 px-4 py-8 sm:px-6 sm:py-10">
+      <div className="flex items-center justify-between gap-3">
+        <Link
+          href="/cases"
+          className={buttonVariants({ variant: "ghost", size: "sm", className: "-ml-2 gap-1.5" })}
+        >
+          <ArrowLeft className="size-4" />
+          All cases
+        </Link>
+        <TierInfo />
       </div>
+
+      <div>
+        <h1 className="text-2xl font-semibold tracking-tight">
+          Case #{caseData.case_id} &middot; {caseData.complaint ?? "unclassified"}
+        </h1>
+        <p className="text-sm text-muted-foreground">
+          {caseData.station.name} &middot; {caseData.profile.name} &middot; {caseData.profile.material.name}
+        </p>
+      </div>
+
+      <Verdict caseData={caseData} preview={closePreview} />
 
       {caseData.escalate && (
-        <ReviewPanel
-          caseData={caseData}
-          onChange={(updated) => setCaseData(updated)}
-        />
+        <ReviewPanel caseData={caseData} onChange={(updated) => setCaseData(updated)} />
       )}
 
-      {/* Quick Launch Troubleshooting Banner */}
-      <div className="flex flex-wrap items-center justify-between gap-4 rounded-lg border border-primary/25 bg-primary/5 p-4 shadow-xs">
-        <div className="space-y-0.5">
-          <div className="flex items-center gap-2">
-            <Badge variant="outline" className="border-primary/40 bg-primary/10 text-xs font-medium text-primary">
-              Interactive Diagnosis
-            </Badge>
-            {/* Was "Case resolved & closed" on anything with a closed_at,
-                which claimed a fix on every PLAUSIBLE case — closed means
-                the investigation ended, not that it worked. */}
-            <span className="text-xs text-muted-foreground">
-              {!caseData.closed_at
-                ? "Step-by-step diagnostic assistant"
-                : caseData.resolved
-                  ? `Closed as ${caseData.tier} — fixed and proved`
-                  : `Closed as ${caseData.tier ?? "unverified"} — not proved fixed`}
+      {/* The actions. The one this case is waiting for is full width, as on
+          the home page; the rest share the row under it. */}
+      <nav className="grid grid-cols-2 gap-3" aria-label="Case actions">
+        <Link
+          href={`/troubleshoot/${caseData.case_id}`}
+          className="group col-span-2 flex items-center gap-4 rounded-xl bg-primary p-4 text-primary-foreground shadow-sm transition-opacity hover:opacity-90 sm:p-5"
+        >
+          <span className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-primary-foreground/15">
+            <Sparkles className="size-5" />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-base font-semibold">
+              {closed ? "Reopen and log a check" : "Continue troubleshooting"}
             </span>
-          </div>
-          <p className="text-sm font-semibold text-foreground">
-            {caseData.closed_at
-              ? "Reopen it to log another check — the case re-ranks and can be closed again."
-              : "Ready to diagnose? Start the interview, ranking, and troubleshooting loop."}
-          </p>
-        </div>
-        <Link
-          href={`/troubleshoot/${caseData.case_id}`}
-          className={buttonVariants({ size: "default", className: "gap-2 font-medium shadow" })}
-        >
-          <Sparkles className="size-4" />
-          {caseData.closed_at ? "Reopen & Log Another Check" : "Start Troubleshooting Now"}
-          <ArrowRight className="size-4" />
+            <span className="block text-sm opacity-80">
+              {closed
+                ? "The causes re-rank, and closing again re-scores what's been proved"
+                : "Picks up where the case left off"}
+            </span>
+          </span>
+          <ArrowRight className="size-5 shrink-0 transition-transform group-hover:translate-x-0.5" />
         </Link>
-      </div>
+        <Tile
+          href={`/cases/${caseData.case_id}/report`}
+          icon={FileText}
+          label="Report"
+          hint="Every step on one printable page"
+        />
+        <Tile
+          href={caseData.escalate ? "#review" : "#notes"}
+          icon={caseData.escalate ? LifeBuoy : NotebookPen}
+          label={caseData.escalate ? "Answer the operator" : "Engineer notes"}
+          hint={caseData.engineer_notes ? "Written — read or edit" : "None yet"}
+        />
+      </nav>
 
-      <Tabs defaultValue="context" className="w-full">
-        <TabsList className="mb-4">
-          <TabsTrigger value="context">Links & Context</TabsTrigger>
-          <TabsTrigger value="artifacts">Diagnostic Artifacts</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="context" className="space-y-6">
-          {/* 3 Overview Cards: Station, Material, Profile */}
-          <div className="grid gap-4 lg:grid-cols-3">
-            {/* Station Card */}
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base">Station</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3 text-sm">
-                <Field label="Name" value={caseData.station.name} />
-                <Field label="Line" value={caseData.station.line} />
-                <Field
-                  label="Dispenser class"
-                  value={caseData.station.dispenser_class.replaceAll("_", "-")}
-                />
-                <Field label="Valve model" value={caseData.station.valve_model ?? "—"} />
-                <Field label="Heated reservoir" value={yesNo(caseData.station.heated_reservoir)} />
-                <Field label="Camera available" value={yesNo(caseData.station.camera_available)} />
-              </CardContent>
-            </Card>
-
-            {/* Material Card */}
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base">Material</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3 text-sm">
-                <Field label="Name" value={caseData.profile.material.name} />
-                <Field
-                  label="Family"
-                  value={caseData.profile.material.family.replaceAll("_", " ")}
-                />
-                <Field label="Part number" value={caseData.profile.material.part_number ?? "—"} />
-                <Field label="Lot" value={caseData.material_lot ?? "—"} />
-                <Field
-                  label="Two-part / thixotropic"
-                  value={`${yesNo(caseData.profile.material.two_part)} / ${yesNo(caseData.profile.material.thixotropic)}`}
-                />
-                <Field
-                  label="Pot life"
-                  value={
-                    caseData.profile.material.pot_life_hours != null
-                      ? `${caseData.profile.material.pot_life_hours} h`
-                      : "—"
-                  }
-                />
-              </CardContent>
-            </Card>
-
-            {/* Profile Card with Parameters and Drawn-Out Pattern Geometry */}
-            <Card className="lg:col-span-1">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base">Profile</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3.5 text-sm">
-                <Field label="Name" value={caseData.profile.name} />
-                <div className="grid grid-cols-2 gap-2">
-                  <Field label="Needle gauge" value={caseData.profile.needle_gauge ?? "—"} />
-                  <Field
-                    label="Needle ID"
-                    value={caseData.profile.needle_id_um ? `${caseData.profile.needle_id_um} µm` : "—"}
-                  />
-                </div>
-                <Field
-                  label="Set pressure / time"
-                  value={`${caseData.profile.set_pressure_kpa ?? "—"} kPa / ${caseData.profile.set_time_ms ?? "—"} ms`}
-                />
-                <Field
-                  label="Standoff / Speed"
-                  value={`${caseData.profile.standoff_um ? `${caseData.profile.standoff_um} µm` : "—"} / ${caseData.profile.speed_mm_s ? `${caseData.profile.speed_mm_s} mm/s` : "—"}`}
-                />
-                <Field
-                  label="Spec"
-                  value={
-                    caseData.profile.spec_metric && caseData.profile.spec_limit
-                      ? `${caseData.profile.spec_metric} ${caseData.profile.spec_limit}`
-                      : "—"
-                  }
-                />
-                <Field label="Rules version" value={caseData.rules_version} />
-                <Field
-                  label="Closed"
-                  value={caseData.closed_at ? new Date(caseData.closed_at).toLocaleString() : "open"}
-                />
-
-                {/* Profile Geometry Showcase Referral Button */}
-                <div className="mt-4 rounded-lg border border-sky-500/20 bg-sky-500/5 p-3.5 dark:border-sky-500/30 dark:bg-sky-500/10">
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-semibold text-sky-600 dark:text-sky-400">
-                        Dispense Pattern Geometry
-                      </span>
-                      {caseData.profile.geometry?.pattern && (
-                        <Badge variant="outline" className="font-mono text-[10px] uppercase">
-                          {caseData.profile.geometry.pattern}
-                        </Badge>
-                      )}
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      Full pattern showcase, nominal deposit targets, gantry coordinates, and substrate map.
-                    </p>
-                    <Link
-                      href={`/profiles/${caseData.profile.profile_id}?caseId=${caseData.case_id}`}
-                      className={buttonVariants({
-                        size: "sm",
-                        className: "w-full gap-1.5 bg-sky-600 text-white shadow-sm hover:bg-sky-700 dark:bg-sky-600 dark:hover:bg-sky-700",
-                      })}
-                    >
-                      <Compass className="size-3.5" />
-                      Check Out Geometry Showcase &rarr;
-                    </Link>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Operator description / complaint */}
-          {caseData.complaint_text && (
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-base">Complaint, in their words</CardTitle>
-              </CardHeader>
-              <CardContent className="text-sm text-muted-foreground">
-                {caseData.complaint_text}
-              </CardContent>
-            </Card>
+      {/* Under review, the notes box is in the review panel, next to the
+          question it answers. */}
+      {!caseData.escalate && (
+        <section id="notes" className="scroll-mt-6 space-y-1">
+          {caseData.escalation_note && (
+            <p className="text-sm text-muted-foreground">
+              The operator asked: &ldquo;{caseData.escalation_note}&rdquo; &middot; reviewed
+            </p>
           )}
+          <EngineerNotes
+            caseId={caseId}
+            initial={caseData.engineer_notes}
+            onSaved={(notes) => setCaseData((prev) => (prev ? { ...prev, engineer_notes: notes } : prev))}
+          />
+        </section>
+      )}
 
-          {/* Troubleshooting loop check log */}
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-3">
-              <CardTitle className="text-base">Troubleshooting loop</CardTitle>
-              {/* Changes and observations are counted separately: only
-                  changes bear on whether this case could close CONFIRMED. */}
-              <span className="text-xs text-muted-foreground">
-                {caseData.action_count} change{caseData.action_count === 1 ? "" : "s"} &middot;{" "}
-                {caseData.observation_count} looked
-              </span>
-            </CardHeader>
-            <CardContent>
-              {!caseData.check_results || caseData.check_results.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No checks logged yet.</p>
-              ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-12">#</TableHead>
-                      <TableHead>Check</TableHead>
-                      <TableHead>Kind</TableHead>
-                      <TableHead>Cause</TableHead>
-                      <TableHead>Outcome</TableHead>
-                      <TableHead>Detail</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {caseData.check_results.map((check) => (
-                      <TableRow key={check.check_result_id}>
-                        <TableCell>{check.sequence}</TableCell>
-                        <TableCell className="font-medium">{check.check_name}</TableCell>
-                        <TableCell className="text-muted-foreground">
-                          {check.is_change ? "changed" : "looked"}
-                        </TableCell>
-                        <TableCell>{check.cause_id ?? "—"}</TableCell>
-                        <TableCell>
-                          {check.outcome ? (
-                            <Badge variant={OUTCOME_VARIANT[check.outcome]}>
-                              {check.outcome.replaceAll("_", " ")}
-                            </Badge>
-                          ) : (
-                            "—"
-                          )}
-                        </TableCell>
-                        <TableCell className="text-muted-foreground">
-                          {check.result_detail ?? "—"}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Engineer notes — the one field on the case a human writes in
-              their own words. It was render-only until now, so the report
-              had a section nothing could ever fill. */}
-          {/* Under review, the notes box moves up into the review panel,
-              next to the question it answers. */}
-          {!caseData.escalate && (
-            <>
-              <Separator />
-              {caseData.escalation_note && (
-                <p className="text-sm text-muted-foreground">
-                  The operator asked: &ldquo;{caseData.escalation_note}&rdquo; &middot; reviewed
-                </p>
-              )}
-              <EngineerNotes
-                caseId={caseId}
-                initial={caseData.engineer_notes}
-                onSaved={(notes) =>
-                  setCaseData((prev) => (prev ? { ...prev, engineer_notes: notes } : prev))
-                }
-              />
-            </>
-          )}
-        </TabsContent>
-
-        <TabsContent value="artifacts">
-          <div className="rounded-lg border bg-card p-4">
-            <ArtifactPanel artifacts={artifacts} />
-          </div>
-        </TabsContent>
-      </Tabs>
+      <Details caseData={caseData} artifacts={artifacts} />
     </div>
   );
 }
 
-/** The engineer's own words on the case. Saved explicitly rather than on
- * blur or on a timer: this is the field a human is held to, and a note
- * that saves itself halfway through a sentence is worse than one that
- * waits to be told. */
-function EngineerNotes({
-  caseId, initial, onSaved, onMarkReviewed, placeholder,
-}: {
-  caseId: number;
-  initial: string | null;
-  onSaved: (notes: string | null) => void;
-  /** Review mode: a second button that saves the draft and clears the
-   * escalation in one go, so an unsaved reply can't be lost to it. */
-  onMarkReviewed?: (notes: string | null) => Promise<void>;
-  placeholder?: string;
-}) {
-  const [value, setValue] = React.useState(initial ?? "");
-  const [saving, setSaving] = React.useState(false);
-  const dirty = value.trim() !== (initial ?? "").trim();
+/** Where the case stands, in the order someone deciding what to do reads
+ * it: the verdict, the cause and what it rests on, and what isn't proved. */
+function Verdict({ caseData, preview }: { caseData: Case; preview: CloseCaseResponse | null }) {
+  const closed = Boolean(caseData.closed_at);
+  const ranking = caseData.ranking;
+  const top = ranking?.pass1[0];
+  const confirmedTop = caseData.diagnosed === "check_confirmed" && caseData.diagnosis?.cause_id === top?.cause_id;
+  const meaning = closed && caseData.tier ? CLOSE_MEANING[caseData.tier] : null;
 
-  async function save() {
-    setSaving(true);
-    try {
-      const notes = value.trim() || null;
-      await updateCase(caseId, { engineer_notes: notes });
-      onSaved(notes);
-      toast.success("Engineer notes saved.");
-    } catch (err) {
-      toast.error(err instanceof ApiError ? err.message : "Could not save the notes.");
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  async function markReviewed() {
-    if (!onMarkReviewed) return;
-    setSaving(true);
-    try {
-      await onMarkReviewed(value.trim() || null);
-    } finally {
-      setSaving(false);
-    }
-  }
+  const headline = closed ? (caseData.tier ?? "Closed") : caseData.escalate ? "Waiting for an engineer" : "In progress";
+  const subline = closed
+    ? meaning?.headline
+    : !ranking
+      ? "Not ranked yet — the photo and the interview come first"
+      : caseData.verification
+        ? "Re-measured after the fix — ready to close"
+        : "Ranked — testing the causes";
 
   return (
-    <div>
-      <div className="mb-1 flex items-center justify-between gap-2">
-        <h2 className="text-sm font-medium">Engineer notes</h2>
-        <div className="flex items-center gap-2">
-          <Button
-            size="sm"
-            variant={dirty && !onMarkReviewed ? "default" : "outline"}
-            disabled={!dirty || saving}
-            onClick={save}
+    <section className="space-y-4 rounded-xl bg-muted/60 p-4 sm:p-5">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p
+            className={`text-3xl font-bold tracking-tight ${
+              closed && caseData.tier ? VERDICT_TONE[caseData.tier] : caseData.escalate ? "text-destructive" : ""
+            }`}
           >
-            {saving ? "Saving…" : "Save notes"}
-          </Button>
-          {onMarkReviewed && (
-            <Button size="sm" disabled={saving} onClick={markReviewed}>
-              Mark reviewed
-            </Button>
-          )}
+            {headline}
+          </p>
+          <p className="text-sm font-medium">{subline}</p>
         </div>
+        <p className="shrink-0 text-right text-xs text-muted-foreground">
+          {closed && caseData.closed_at ? `Closed ${shortDate(caseData.closed_at)}` : `Opened ${shortDate(caseData.opened_at)}`}
+        </p>
       </div>
-      <Textarea
-        value={value}
-        onChange={(e) => setValue(e.target.value)}
-        placeholder={
-          placeholder ??
-          "Anything the next person on this machine should know — what you saw, what you ruled out, what you'd try next."
-        }
-        className="min-h-24 text-sm"
-      />
-    </div>
+
+      <div className="flex flex-wrap gap-2 text-xs">
+        <span className="rounded-md bg-background px-2 py-1">{DIAGNOSED_WORDS[caseData.diagnosed] ?? caseData.diagnosed}</span>
+        <span className="rounded-md bg-background px-2 py-1">
+          {caseData.action_count} changed &middot; {caseData.observation_count} looked
+        </span>
+      </div>
+
+      {ranking && top && (
+        <div className="space-y-1.5 border-t border-border/60 pt-3">
+          <p className="text-xs text-muted-foreground">
+            {confirmedTop ? "Cause, confirmed by a check" : "Leading cause"}
+          </p>
+          <p className="flex items-baseline justify-between gap-3">
+            <span className="font-semibold leading-snug">{top.label}</span>
+            <span className="shrink-0 font-mono font-semibold">{Math.round(top.likelihood * 100)}%</span>
+          </p>
+          <p className="text-xs text-muted-foreground">
+            <span className="mr-1.5 rounded bg-background px-1.5 py-0.5 font-semibold text-foreground">{ranking.tier}</span>
+            {ranking.tier_reason}
+          </p>
+          {ranking.backing && <ReasonsBacking backing={ranking.backing} />}
+        </div>
+      )}
+
+      {preview && (preview.gaps.length > 0 ? (
+        <div className="border-t border-border/60 pt-3">
+          <p className="text-xs font-medium">
+            {closed ? "What wasn't proved" : "Still needed to close CONFIRMED"}
+          </p>
+          <ul className="mt-1 ml-4 list-disc space-y-0.5 text-xs text-muted-foreground">
+            {preview.gaps.map((gap) => <li key={gap}>{gap}</li>)}
+          </ul>
+        </div>
+      ) : !closed ? (
+        <p className="border-t border-border/60 pt-3 text-xs font-medium">
+          All five conditions are met: closing now records CONFIRMED.
+        </p>
+      ) : null)}
+    </section>
   );
 }
 
-/** Shown while the case is escalated: the operator's question, where the
- * case stands, and the reviewer's two moves — answer in the notes, or take
- * over in the wizard and log a check. There is no way to set the cause
- * from here on purpose: only a check can prove one (DESIGN.md step 8). */
-function ReviewPanel({ caseData, onChange }: { caseData: Case; onChange: (updated: Case) => void }) {
-  const top = caseData.ranking?.pass1[0];
-
-  async function markReviewed(notes: string | null) {
-    try {
-      const updated = await updateCase(caseData.case_id, { engineer_notes: notes, escalate: false });
-      onChange(updated);
-      toast.success(
-        notes
-          ? "Marked reviewed. The operator sees your notes next time they open this case."
-          : "Marked reviewed.",
-      );
-    } catch (err) {
-      toast.error(err instanceof ApiError ? err.message : "Could not mark the case reviewed.");
-    }
-  }
-
+function Tile({ href, icon: Icon, label, hint }: { href: string; icon: LucideIcon; label: string; hint: string }) {
   return (
-    <section className="space-y-4 rounded-lg border border-destructive/30 bg-destructive/5 p-4">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="min-w-0 space-y-1">
-          <p className="flex items-center gap-1.5 text-sm font-medium text-destructive">
-            <LifeBuoy className="size-4" />
-            An operator asked for help
-          </p>
-          <p className="text-base font-semibold text-foreground">
-            {caseData.escalation_note ? `“${caseData.escalation_note}”` : "No question given."}
-          </p>
-          <p className="text-sm text-muted-foreground">
-            {caseData.ranking
-              ? `Ranking ${caseData.ranking.tier}` +
-                (top ? ` · ${top.label} ${Math.round(top.likelihood * 100)}%` : "")
-              : "Not ranked yet"}
-            {" · "}
-            {caseData.action_count} changed, {caseData.observation_count} looked
-          </p>
-        </div>
-        <Link
-          href={`/troubleshoot/${caseData.case_id}`}
-          className={buttonVariants({ variant: "outline", size: "sm", className: "gap-1.5 bg-background" })}
-        >
-          {caseData.closed_at ? "Reopen and log a check" : "Continue troubleshooting"}
-          <ArrowRight className="size-3.5" />
-        </Link>
+    <Link
+      href={href}
+      className="flex items-center gap-3 rounded-xl bg-muted/60 p-3 transition-colors hover:bg-muted sm:p-4"
+    >
+      <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-background">
+        <Icon className="size-5" />
+      </span>
+      <span className="min-w-0">
+        <span className="block text-sm leading-tight font-medium sm:text-base">{label}</span>
+        <span className="block truncate text-xs text-muted-foreground">{hint}</span>
+      </span>
+    </Link>
+  );
+}
+
+/** Shown while the case is escalated: the operator's question, and the
+ * reviewer's two moves — answer in the notes, or take over in the wizard
+ * and log a check (the action button below). There is no way to set the
+ * cause from here on purpose: only a check can prove one (DESIGN.md step 8). */
+function ReviewPanel({ caseData, onChange }: { caseData: Case; onChange: (updated: Case) => void }) {
+  return (
+    <section id="review" className="scroll-mt-6 space-y-4 rounded-xl border border-destructive/30 bg-destructive/5 p-4">
+      <div className="min-w-0 space-y-1">
+        <p className="flex items-center gap-1.5 text-sm font-medium text-destructive">
+          <LifeBuoy className="size-4" />
+          An operator asked for help
+        </p>
+        <p className="text-base font-semibold text-foreground">
+          {caseData.escalation_note ? `“${caseData.escalation_note}”` : "No question given."}
+        </p>
       </div>
       <EngineerNotes
         caseId={caseData.case_id}
         initial={caseData.engineer_notes}
         onSaved={(notes) => onChange({ ...caseData, engineer_notes: notes })}
-        onMarkReviewed={markReviewed}
+        onMarkReviewed={async (notes) => {
+          const updated = await markReviewed(caseData.case_id, notes);
+          if (updated) onChange(updated);
+        }}
         placeholder="Answer the operator — what to check next, what you ruled out. They see this the next time they open the case."
       />
     </section>
+  );
+}
+
+/** The records the verdict rests on, folded away: someone deciding what to
+ * do next rarely needs the valve model, but someone checking the work does. */
+function Details({ caseData, artifacts }: { caseData: Case; artifacts: Artifacts }) {
+  return (
+    <details className="group rounded-xl border">
+      <summary className="flex cursor-pointer list-none items-center gap-2 px-4 py-3 text-sm font-medium select-none [&::-webkit-details-marker]:hidden">
+        <ChevronRight className="size-4 transition-transform group-open:rotate-90" />
+        Details
+        <span className="font-normal text-muted-foreground">
+          — station, material, profile, every check and every measurement
+        </span>
+      </summary>
+      <div className="space-y-5 border-t p-4">
+        <div className="grid gap-4 sm:grid-cols-3">
+          <Card size="sm">
+            <CardHeader>
+              <CardTitle className="text-sm">Station</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2 text-sm">
+              <Field label="Name" value={caseData.station.name} />
+              <Field label="Line" value={caseData.station.line} />
+              <Field label="Dispenser class" value={caseData.station.dispenser_class.replaceAll("_", "-")} />
+              <Field label="Valve model" value={caseData.station.valve_model ?? "—"} />
+              <Field label="Heated reservoir" value={yesNo(caseData.station.heated_reservoir)} />
+              <Field label="Camera available" value={yesNo(caseData.station.camera_available)} />
+            </CardContent>
+          </Card>
+          <Card size="sm">
+            <CardHeader>
+              <CardTitle className="text-sm">Material</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2 text-sm">
+              <Field label="Name" value={caseData.profile.material.name} />
+              <Field label="Family" value={caseData.profile.material.family.replaceAll("_", " ")} />
+              <Field label="Part number" value={caseData.profile.material.part_number ?? "—"} />
+              <Field label="Lot" value={caseData.material_lot ?? "—"} />
+              <Field
+                label="Two-part / thixotropic"
+                value={`${yesNo(caseData.profile.material.two_part)} / ${yesNo(caseData.profile.material.thixotropic)}`}
+              />
+              <Field
+                label="Pot life"
+                value={caseData.profile.material.pot_life_hours != null ? `${caseData.profile.material.pot_life_hours} h` : "—"}
+              />
+            </CardContent>
+          </Card>
+          <Card size="sm">
+            <CardHeader>
+              <CardTitle className="text-sm">Profile</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2 text-sm">
+              <Field label="Name" value={caseData.profile.name} />
+              <Field
+                label="Needle"
+                value={`${caseData.profile.needle_gauge ?? "—"}${caseData.profile.needle_id_um ? ` · ${caseData.profile.needle_id_um} µm` : ""}`}
+              />
+              <Field
+                label="Set pressure / time"
+                value={`${caseData.profile.set_pressure_kpa ?? "—"} kPa / ${caseData.profile.set_time_ms ?? "—"} ms`}
+              />
+              <Field
+                label="Spec"
+                value={
+                  caseData.profile.spec_metric && caseData.profile.spec_limit
+                    ? `${caseData.profile.spec_metric} ${caseData.profile.spec_limit}`
+                    : "—"
+                }
+              />
+              <Field label="Rules version" value={caseData.rules_version} />
+              <Link
+                href={`/profiles/${caseData.profile.profile_id}?caseId=${caseData.case_id}`}
+                className="inline-flex items-center gap-1 text-xs font-medium text-sky-600 hover:underline dark:text-sky-400"
+              >
+                <Compass className="size-3.5" />
+                Pattern geometry
+              </Link>
+            </CardContent>
+          </Card>
+        </div>
+
+        {caseData.complaint_text && (
+          <div className="space-y-1">
+            <h2 className="text-sm font-medium">Complaint, in their words</h2>
+            <p className="text-sm text-muted-foreground">{caseData.complaint_text}</p>
+          </div>
+        )}
+
+        <div className="space-y-2">
+          <div className="flex items-baseline justify-between gap-2">
+            <h2 className="text-sm font-medium">Troubleshooting loop</h2>
+            {/* Changes and observations are counted separately: only
+                changes bear on whether this case could close CONFIRMED. */}
+            <span className="text-xs text-muted-foreground">
+              {caseData.action_count} change{caseData.action_count === 1 ? "" : "s"} &middot;{" "}
+              {caseData.observation_count} looked
+            </span>
+          </div>
+          {caseData.check_results.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No checks logged yet.</p>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-10">#</TableHead>
+                  <TableHead>Check</TableHead>
+                  <TableHead>Kind</TableHead>
+                  <TableHead>Outcome</TableHead>
+                  <TableHead>Detail</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {caseData.check_results.map((check) => (
+                  <TableRow key={check.check_result_id}>
+                    <TableCell>{check.sequence}</TableCell>
+                    <TableCell className="font-medium whitespace-normal">{check.check_name}</TableCell>
+                    <TableCell className="text-muted-foreground">{check.is_change ? "changed" : "looked"}</TableCell>
+                    <TableCell>
+                      {check.outcome ? (
+                        <Badge variant={OUTCOME_VARIANT[check.outcome]}>{check.outcome.replaceAll("_", " ")}</Badge>
+                      ) : (
+                        "—"
+                      )}
+                    </TableCell>
+                    <TableCell className="whitespace-normal text-muted-foreground">{check.result_detail ?? "—"}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </div>
+
+        <div className="space-y-2">
+          <h2 className="text-sm font-medium">Measurements, answers and ranking</h2>
+          <div className="rounded-lg border bg-card">
+            <ArtifactPanel artifacts={artifacts} />
+          </div>
+        </div>
+      </div>
+    </details>
   );
 }
 

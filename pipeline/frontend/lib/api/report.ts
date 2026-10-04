@@ -18,3 +18,9 @@ export async function verifyCase(caseId: number, photo: File, shotsMeasured: num
 export function closeCase(caseId: number) {
   return apiRequest<CloseCaseResponse>(`/cases/${caseId}/close`, { method: "POST" });
 }
+
+/** What closing now would record: the tier and every condition still
+ * unproved. Closes nothing. On a closed case, the gaps behind its tier. */
+export function previewClose(caseId: number) {
+  return apiRequest<CloseCaseResponse>(`/cases/${caseId}/close`);
+}

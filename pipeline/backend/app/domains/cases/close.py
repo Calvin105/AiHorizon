@@ -31,6 +31,14 @@ from app.domains.enums import CaseTier, CheckOutcome
 MIN_SHOTS_HELD = 20
 CONDITION_COUNT = 5
 
+#: The re-measured signals in the words the gaps are read in.
+SIGNAL_WORDS = {
+    "size_cv": "size spread",
+    "missing_count": "missing deposits",
+    "irregular_count": "irregular deposits",
+    "small_then_big_chance_p": "small-then-big pattern",
+}
+
 
 @dataclass
 class CloseResult:
@@ -92,7 +100,7 @@ def close_case(case: Case) -> CloseResult:
 
     # 4. it came back inside spec
     if not verification.get("in_spec"):
-        failed = [c["signal"] for c in verification.get("checks", []) if not c.get("ok")]
+        failed = [SIGNAL_WORDS.get(c["signal"], c["signal"]) for c in verification.get("checks", []) if not c.get("ok")]
         detail = f" ({', '.join(failed)} still out)" if failed and verification.get("after") is not None else ""
         gaps.append(f"re-measurement did not come back in spec{detail}")
 

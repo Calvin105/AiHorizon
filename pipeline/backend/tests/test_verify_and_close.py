@@ -105,3 +105,14 @@ def test_nothing_proved_is_unverified(client, catalog):
     close = client.post(f"/api/cases/{case_id}/close").json()
     assert close["tier"] == "UNVERIFIED"
     assert len(close["gaps"]) == 5
+
+
+def test_the_close_preview_names_the_gaps_and_closes_nothing(client, catalog):
+    case_id = _proved_case(client, catalog)
+    preview = client.get(f"/api/cases/{case_id}/close").json()
+    assert preview["tier"] == "PLAUSIBLE"
+    assert "the deciding signal was never re-measured" in preview["gaps"]
+    assert client.get(f"/api/cases/{case_id}").json()["closed_at"] is None
+
+    post_photo(client, case_id, photo_bytes("good"), "verify", shots_measured=30)
+    assert client.get(f"/api/cases/{case_id}/close").json() == {"tier": "CONFIRMED", "gaps": []}
