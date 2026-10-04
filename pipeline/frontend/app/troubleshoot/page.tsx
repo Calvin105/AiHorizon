@@ -292,6 +292,34 @@ export default function OpenCasePage() {
     }
   }
 
+  /** The browse cards toggle: clicking a selected card clears it. The
+   * whole card is the target, not just its button, so a tap anywhere on
+   * it works on a phone or a projector. Clearing a material clears its
+   * profile too, because a profile only runs on its own material. */
+  function toggleCandidate(kind: "material" | "station" | "profile", id: string) {
+    if (kind === "station") setStationId(stationId === id ? "" : id);
+    else if (kind === "material") handleMaterialChange(materialId === id ? "" : id);
+    else if (profileId === id) setProfileId("");
+    else handleProfileChange(id);
+  }
+
+  /** Props that make a browse card one big toggle button. */
+  function cardToggle(kind: "material" | "station" | "profile", id: string, selected: boolean) {
+    return {
+      role: "button",
+      tabIndex: 0,
+      "aria-pressed": selected,
+      onClick: () => toggleCandidate(kind, id),
+      onKeyDown: (e: React.KeyboardEvent) => {
+        if (e.target !== e.currentTarget) return; // a key on the Specs button is the button's
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          toggleCandidate(kind, id);
+        }
+      },
+    } as const;
+  }
+
   // Inline Creation Submits
   async function handleCreateStationSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -550,7 +578,7 @@ export default function OpenCasePage() {
                 <span>Browse Available Options & Specs</span>
               </CardTitle>
               <CardDescription className="text-xs">
-                Inspect technical details of any candidate item to confirm suitability and select for intake.
+                Tap a card to select it, and tap it again to clear it. Specs shows the details first.
               </CardDescription>
             </div>
 
@@ -678,7 +706,8 @@ export default function OpenCasePage() {
                   return (
                     <div
                       key={`mat-${m.material_id}`}
-                      className={`flex flex-col justify-between rounded-lg border p-2.5 text-xs transition-colors bg-card ${
+                      {...cardToggle("material", String(m.material_id), isSelected)}
+                      className={`flex cursor-pointer select-none flex-col justify-between rounded-lg border p-2.5 text-xs transition-colors bg-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
                         isSelected ? "border-primary ring-1 ring-primary bg-primary/5" : "hover:border-primary/40 hover:bg-muted/30"
                       }`}
                     >
@@ -703,21 +732,25 @@ export default function OpenCasePage() {
                           size="sm"
                           variant="ghost"
                           className="h-6 px-1.5 text-[11px] gap-1 text-muted-foreground hover:text-foreground"
-                          onClick={() => setInspectItem({ type: "material", material: m })}
+                          onClick={(e) => {
+                            e.stopPropagation(); // a look at the specs isn't a pick
+                            setInspectItem({ type: "material", material: m });
+                          }}
                         >
                           <Eye className="size-3" />
                           <span>Specs</span>
                         </Button>
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant={isSelected ? "secondary" : "outline"}
-                          className="h-6 text-[11px] font-medium px-2"
-                          onClick={() => handleMaterialChange(String(m.material_id))}
+                        <span
+                          aria-hidden
+                          className={buttonVariants({
+                            size: "sm",
+                            variant: isSelected ? "secondary" : "outline",
+                            className: "pointer-events-none h-6 px-2 text-[11px] font-medium",
+                          })}
                         >
-                          {isSelected ? <Check className="size-3 text-emerald-600 mr-1" /> : null}
-                          {isSelected ? "Selected" : "Select Material"}
-                        </Button>
+                          {isSelected ? <Check className="mr-1 size-3 text-emerald-600" /> : null}
+                          {isSelected ? "Selected · tap to clear" : "Select Material"}
+                        </span>
                       </div>
                     </div>
                   );
@@ -727,7 +760,8 @@ export default function OpenCasePage() {
                   return (
                     <div
                       key={`stn-${s.station_id}`}
-                      className={`flex flex-col justify-between rounded-lg border p-2.5 text-xs transition-colors bg-card ${
+                      {...cardToggle("station", String(s.station_id), isSelected)}
+                      className={`flex cursor-pointer select-none flex-col justify-between rounded-lg border p-2.5 text-xs transition-colors bg-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
                         isSelected ? "border-primary ring-1 ring-primary bg-primary/5" : "hover:border-primary/40 hover:bg-muted/30"
                       }`}
                     >
@@ -751,21 +785,25 @@ export default function OpenCasePage() {
                           size="sm"
                           variant="ghost"
                           className="h-6 px-1.5 text-[11px] gap-1 text-muted-foreground hover:text-foreground"
-                          onClick={() => setInspectItem({ type: "station", station: s })}
+                          onClick={(e) => {
+                            e.stopPropagation(); // a look at the specs isn't a pick
+                            setInspectItem({ type: "station", station: s });
+                          }}
                         >
                           <Eye className="size-3" />
                           <span>Specs</span>
                         </Button>
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant={isSelected ? "secondary" : "outline"}
-                          className="h-6 text-[11px] font-medium px-2"
-                          onClick={() => setStationId(String(s.station_id))}
+                        <span
+                          aria-hidden
+                          className={buttonVariants({
+                            size: "sm",
+                            variant: isSelected ? "secondary" : "outline",
+                            className: "pointer-events-none h-6 px-2 text-[11px] font-medium",
+                          })}
                         >
-                          {isSelected ? <Check className="size-3 text-emerald-600 mr-1" /> : null}
-                          {isSelected ? "Selected" : "Select Station"}
-                        </Button>
+                          {isSelected ? <Check className="mr-1 size-3 text-emerald-600" /> : null}
+                          {isSelected ? "Selected · tap to clear" : "Select Station"}
+                        </span>
                       </div>
                     </div>
                   );
@@ -775,7 +813,8 @@ export default function OpenCasePage() {
                   return (
                     <div
                       key={`prof-${p.profile_id}`}
-                      className={`flex flex-col justify-between rounded-lg border p-2.5 text-xs transition-colors bg-card ${
+                      {...cardToggle("profile", String(p.profile_id), isSelected)}
+                      className={`flex cursor-pointer select-none flex-col justify-between rounded-lg border p-2.5 text-xs transition-colors bg-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
                         isSelected ? "border-primary ring-1 ring-primary bg-primary/5" : "hover:border-primary/40 hover:bg-muted/30"
                       }`}
                     >
@@ -799,21 +838,25 @@ export default function OpenCasePage() {
                           size="sm"
                           variant="ghost"
                           className="h-6 px-1.5 text-[11px] gap-1 text-muted-foreground hover:text-foreground"
-                          onClick={() => setInspectItem({ type: "profile", profile: p })}
+                          onClick={(e) => {
+                            e.stopPropagation(); // a look at the specs isn't a pick
+                            setInspectItem({ type: "profile", profile: p });
+                          }}
                         >
                           <Eye className="size-3" />
                           <span>Specs</span>
                         </Button>
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant={isSelected ? "secondary" : "outline"}
-                          className="h-6 text-[11px] font-medium px-2"
-                          onClick={() => handleProfileChange(String(p.profile_id))}
+                        <span
+                          aria-hidden
+                          className={buttonVariants({
+                            size: "sm",
+                            variant: isSelected ? "secondary" : "outline",
+                            className: "pointer-events-none h-6 px-2 text-[11px] font-medium",
+                          })}
                         >
-                          {isSelected ? <Check className="size-3 text-emerald-600 mr-1" /> : null}
-                          {isSelected ? "Selected" : "Select Profile"}
-                        </Button>
+                          {isSelected ? <Check className="mr-1 size-3 text-emerald-600" /> : null}
+                          {isSelected ? "Selected · tap to clear" : "Select Profile"}
+                        </span>
                       </div>
                     </div>
                   );
