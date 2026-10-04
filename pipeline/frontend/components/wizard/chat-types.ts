@@ -2,6 +2,14 @@ export interface ChatMessage {
   id: string;
   role: "bot" | "user";
   text: string;
+  /** Links shown under a bot message — where to go next once a step has
+   * finished, so nobody has to hunt for the way out of the wizard. */
+  actions?: ChatAction[];
+}
+
+export interface ChatAction {
+  href: string;
+  label: string;
 }
 
 export interface ChipOption {

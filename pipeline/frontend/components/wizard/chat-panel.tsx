@@ -1,10 +1,11 @@
 "use client";
 
 import * as React from "react";
-import { Bot, ImagePlus, Send, User } from "lucide-react";
+import Link from "next/link";
+import { ArrowRight, Bot, ImagePlus, Send, User } from "lucide-react";
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import type { ChatMessage, ChipOption, PendingPrompt } from "@/components/wizard/chat-types";
@@ -222,12 +223,28 @@ export function ChatPanel({
               <Avatar className="size-7 shrink-0 select-none">
                 <AvatarFallback>{m.role === "bot" ? <Bot className="size-4" /> : <User className="size-4" />}</AvatarFallback>
               </Avatar>
-              <div
-                className={`max-w-[80%] select-text rounded-lg px-3 py-2 text-sm whitespace-pre-wrap ${
-                  m.role === "bot" ? "bg-muted" : "bg-primary text-primary-foreground"
-                }`}
-              >
-                {m.text}
+              <div className={`flex max-w-[80%] flex-col gap-1.5 ${m.role === "user" ? "items-end" : "items-start"}`}>
+                <div
+                  className={`select-text rounded-lg px-3 py-2 text-sm whitespace-pre-wrap ${
+                    m.role === "bot" ? "bg-muted" : "bg-primary text-primary-foreground"
+                  }`}
+                >
+                  {m.text}
+                </div>
+                {m.actions && m.actions.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5">
+                    {m.actions.map((a) => (
+                      <Link
+                        key={a.href}
+                        href={a.href}
+                        className={buttonVariants({ variant: "outline", size: "sm", className: "gap-1.5" })}
+                      >
+                        {a.label}
+                        <ArrowRight className="size-3.5" />
+                      </Link>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           ))}

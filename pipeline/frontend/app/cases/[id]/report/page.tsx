@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import { ArrowLeft, Printer } from "lucide-react";
 
 import { DispensingQualityScore } from "@/components/dispensing-quality";
@@ -100,6 +100,22 @@ function Section({
   );
 }
 
+/** Back to the wizard when the report was opened from it — someone who
+ * looked at the report halfway through a case is going back to finish it —
+ * and to the case's page otherwise. */
+function BackLink({ caseId }: { caseId: number }) {
+  const fromWizard = useSearchParams().get("from") === "wizard";
+  return (
+    <Link
+      href={fromWizard ? `/troubleshoot/${caseId}` : `/cases/${caseId}`}
+      className={buttonVariants({ variant: "ghost", size: "sm", className: "gap-1.5" })}
+    >
+      <ArrowLeft className="size-4" />
+      {fromWizard ? "Back to troubleshooting" : `Back to Case #${caseId}`}
+    </Link>
+  );
+}
+
 export default function CaseReportPage() {
   const params = useParams<{ id: string }>();
   const caseId = Number(params.id);
@@ -151,13 +167,10 @@ export default function CaseReportPage() {
           generator — no PDF library, and the document stays a real page
           that can be linked and re-read. */}
       <div className="mb-6 flex items-center justify-between gap-2 print:hidden">
-        <Link
-          href={`/cases/${caseId}`}
-          className={buttonVariants({ variant: "ghost", size: "sm", className: "gap-1.5" })}
-        >
-          <ArrowLeft className="size-4" />
-          Back to Case #{caseId}
-        </Link>
+        {/* useSearchParams needs a Suspense boundary above it. */}
+        <React.Suspense fallback={<span />}>
+          <BackLink caseId={caseId} />
+        </React.Suspense>
         <Button size="sm" className="gap-1.5" onClick={() => window.print()}>
           <Printer className="size-4" />
           Print / Save as PDF

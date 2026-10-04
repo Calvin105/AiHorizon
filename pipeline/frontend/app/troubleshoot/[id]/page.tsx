@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { ArrowLeft, Home, Hourglass, LifeBuoy } from "lucide-react";
+import { ArrowLeft, FileText, Home, Hourglass, LifeBuoy } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -12,7 +12,7 @@ import { ArtifactPanel, type Artifacts } from "@/components/wizard/artifact-pane
 import { ChatPanel } from "@/components/wizard/chat-panel";
 import {
   DONT_KNOW_VALUE, nextId, OTHER_VALUE, UNMAPPED_VALUE,
-  type ChatMessage, type ChipOption, type PendingPrompt,
+  type ChatAction, type ChatMessage, type ChipOption, type PendingPrompt,
 } from "@/components/wizard/chat-types";
 import { StageBar, type Phase } from "@/components/wizard/stage-bar";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -278,6 +278,8 @@ const STAGE_HINTS: Record<StepId, Phase> = {
 export default function CaseWizardPage() {
   const params = useParams<{ id: string }>();
   const caseId = Number(params.id);
+  /** The printable report, opened from here: its back link returns here. */
+  const reportHref = `/cases/${caseId}/report?from=wizard`;
 
   const [loading, setLoading] = React.useState(true);
   const [messages, setMessages] = React.useState<ChatMessage[]>([]);
@@ -321,8 +323,8 @@ export default function CaseWizardPage() {
     setPhase(STAGE_HINTS[step]);
   }
 
-  function say(text: string) {
-    setMessages((prev) => [...prev, { id: nextId(), role: "bot", text }]);
+  function say(text: string, actions?: ChatAction[]) {
+    setMessages((prev) => [...prev, { id: nextId(), role: "bot", text, actions }]);
   }
   function echo(text: string) {
     setMessages((prev) => [...prev, { id: nextId(), role: "user", text }]);
@@ -708,7 +710,9 @@ export default function CaseWizardPage() {
         try {
           const report = await getReport(caseData.case_id, true);
           patchArtifacts({ report });
-          say(report.explanation ?? "Report ready — see the panel.");
+          say(report.explanation ?? "Report ready — see the panel.", [
+            { href: reportHref, label: "Open the printable report" },
+          ]);
         } catch (err) {
           toast.error(err instanceof ApiError ? err.message : "Could not compile the report.");
         } finally {
@@ -782,6 +786,10 @@ export default function CaseWizardPage() {
                   "This case counts as fixed and proved."
               : `Closed as ${result.tier} — that records what was proved, not that it's fixed. ` +
                   `Still open: ${result.gaps.join("; ")}.`,
+            [
+              { href: reportHref, label: "Open the report" },
+              { href: `/cases/${caseData.case_id}`, label: `Back to case #${caseData.case_id}` },
+            ],
           );
         } catch (err) {
           toast.error(err instanceof ApiError ? err.message : "Could not close the case.");
@@ -1316,6 +1324,15 @@ export default function CaseWizardPage() {
         </div>
 
         <div className="flex shrink-0 items-center gap-1.5">
+          {/* The report at any point, not only after step 5: someone who
+              stops halfway still wants to see what the case has so far. */}
+          <Link
+            href={reportHref}
+            className={buttonVariants({ variant: "outline", size: "sm", className: "h-8 gap-1.5 text-xs" })}
+          >
+            <FileText className="size-3.5" />
+            Report
+          </Link>
           <Link
             href="/"
             className={buttonVariants({
@@ -1360,7 +1377,7 @@ export default function CaseWizardPage() {
           />
         </div>
         <div className="flex h-full min-h-0 flex-col overflow-hidden">
-          <ArtifactPanel artifacts={artifacts} />
+          <ArtifactPanel artifacts={artifacts} reportHref={reportHref} />
         </div>
       </div>
     </div>

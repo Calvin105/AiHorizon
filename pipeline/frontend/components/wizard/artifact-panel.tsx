@@ -127,7 +127,14 @@ function causeLabel(ranking: Ranking, causeId: string): string {
   return ranking.pass1.find((c) => c.cause_id === causeId)?.label ?? causeId;
 }
 
-export function ArtifactPanel({ artifacts }: { artifacts: Artifacts }) {
+export function ArtifactPanel({
+  artifacts, reportHref,
+}: {
+  artifacts: Artifacts;
+  /** Where the printable report opens from this panel. Left out where the
+   * page already links to it. */
+  reportHref?: string;
+}) {
   const { caseData } = artifacts;
   const containerRef = React.useRef<HTMLDivElement>(null);
   const [highlightedCardId, setHighlightedCardId] = React.useState<string | null>(null);
@@ -847,6 +854,13 @@ export function ArtifactPanel({ artifacts }: { artifacts: Artifacts }) {
             cardId="card-report"
             isHighlighted={highlightedCardId === "card-report"}
             title="Report (step 7)"
+            extra={
+              reportHref && (
+                <Link href={reportHref} className="inline-flex items-center gap-1 text-[11px] text-primary hover:underline">
+                  Printable report <ChevronRight className="size-3" />
+                </Link>
+              )
+            }
           >
             <div className="mb-2 flex flex-wrap items-center gap-1.5">
               <Badge>{artifacts.report.defect.magnitude}</Badge>
