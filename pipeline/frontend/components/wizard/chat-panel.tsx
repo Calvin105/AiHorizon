@@ -196,19 +196,24 @@ export function ChatPanel({
   // text state) exactly when the prompt changes — no reset-on-prop effect.
   const turnKey = messages.length;
 
-  // Scrolls the transcript itself, never anything around it. This was
-  // scrollIntoView, which also scrolls every ancestor that can scroll — and
-  // the wizard's fixed frame can, overflow-hidden or not. Whenever the
-  // transcript couldn't scroll far enough to put the newest line at the
-  // top, the frame took up the rest and pushed the header and the step bar
-  // off the top of the screen.
+  // Keeps the newest exchange in view: your latest answer at the top, and
+  // everything said since below it. When that is taller than the
+  // transcript, it shows the end instead, where the question waiting for
+  // an answer is. Scrolls the transcript itself, never anything around it
+  // — scrollIntoView also scrolls every ancestor that can scroll, and the
+  // wizard's fixed frame can, so it used to push the header and the step
+  // bar off the top of the screen.
   React.useEffect(() => {
     const transcript = transcriptRef.current;
     const bottom = bottomRef.current;
     if (!transcript || !bottom) return;
-    const top =
-      bottom.getBoundingClientRect().top - transcript.getBoundingClientRect().top + transcript.scrollTop;
-    transcript.scrollTo({ top, behavior: "smooth" });
+    const offset = (el: Element) =>
+      el.getBoundingClientRect().top - transcript.getBoundingClientRect().top + transcript.scrollTop;
+    const answers = transcript.querySelectorAll('[data-role="user"]');
+    const lastAnswer = answers[answers.length - 1];
+    const answerTop = lastAnswer ? offset(lastAnswer) - 8 : 0;
+    const endTop = offset(bottom) - transcript.clientHeight + 16;
+    transcript.scrollTo({ top: Math.max(0, answerTop, endTop), behavior: "smooth" });
   }, [messages, pending]);
 
   return (
@@ -219,7 +224,7 @@ export function ChatPanel({
       <div ref={transcriptRef} className="min-h-0 flex-1 overflow-y-scroll thin-scrollbar px-4 select-text">
         <div className="flex flex-col gap-4 py-4">
           {messages.map((m) => (
-            <div key={m.id} className={`flex gap-2 ${m.role === "user" ? "flex-row-reverse" : ""}`}>
+            <div key={m.id} data-role={m.role} className={`flex gap-2 ${m.role === "user" ? "flex-row-reverse" : ""}`}>
               <Avatar className="size-7 shrink-0 select-none">
                 <AvatarFallback>{m.role === "bot" ? <Bot className="size-4" /> : <User className="size-4" />}</AvatarFallback>
               </Avatar>
