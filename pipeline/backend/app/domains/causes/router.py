@@ -8,6 +8,8 @@ from app.domains.cases import crud as cases_crud
 from app.domains.causes.compare import compare_causes
 from app.domains.causes.schema import CauseComparisonOut, CauseOut
 from app.domains.causes.vocabulary import load_causes
+from app.domains.checks.schema import SuggestedCheckOut
+from app.domains.checks.suggestions import CHECK_SUGGESTIONS
 
 router = APIRouter(tags=["Causes (step 4)"])
 
@@ -19,6 +21,19 @@ router = APIRouter(tags=["Causes (step 4)"])
 )
 def list_causes() -> list[CauseOut]:
     return [CauseOut(**c) for c in load_causes()]
+
+
+@router.get(
+    "/causes/checks", response_model=dict[str, list[SuggestedCheckOut]],
+    summary="Each cause's troubleshooting plan",
+    description="Per cause, in order: a check that only looks, then one that changes something, each with "
+    "what result confirms the cause and what rules it out. The same plan the report recommends from.",
+)
+def check_plans() -> dict[str, list[SuggestedCheckOut]]:
+    return {
+        cause_id: [SuggestedCheckOut(**asdict(check)) for check in checks]
+        for cause_id, checks in CHECK_SUGGESTIONS.items()
+    }
 
 
 @router.get(

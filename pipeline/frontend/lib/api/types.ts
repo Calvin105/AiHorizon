@@ -339,6 +339,17 @@ export interface Backing {
 
 // ---- Causes (step 4) ----------------------------------------------------------
 
+/** One step of a cause's troubleshooting plan: a look first, then a
+ * change, each saying what result confirms the cause and what rules it
+ * out. GET /causes/checks, keyed by cause id. */
+export interface CheckStep {
+  name: string;
+  is_change: boolean;
+  help: string;
+  confirms_if: string;
+  rules_out_if: string;
+}
+
 export interface CauseVocab {
   id: string;
   label: string;

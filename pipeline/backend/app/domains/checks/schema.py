@@ -37,3 +37,13 @@ class CheckResultRead(ORMModel):
     outcome: CheckOutcome | None = None
     result_detail: str | None = None
     performed_at: datetime | None = None
+
+
+class SuggestedCheckOut(BaseModel):
+    """One step of a cause's troubleshooting plan (checks/suggestions.py)."""
+
+    name: str
+    is_change: bool
+    help: str
+    confirms_if: str
+    rules_out_if: str

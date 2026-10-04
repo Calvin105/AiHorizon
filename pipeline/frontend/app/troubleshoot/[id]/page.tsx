@@ -18,6 +18,7 @@ import {
 import { StageBar, type Phase } from "@/components/wizard/stage-bar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { apiRequest, ApiError } from "@/lib/api/client";
+import { getCheckPlans } from "@/lib/api/causes";
 import { createCheckResult, getCase } from "@/lib/api/cases";
 import { updateCase } from "@/lib/api/cases";
 import { getFollowupBank, getIntakeSpec, getNextFollowup, mapFreeText } from "@/lib/api/intake";
@@ -26,7 +27,8 @@ import { getPrecedents } from "@/lib/api/retrieval";
 import { closeCase, getReport, verifyCase } from "@/lib/api/report";
 import { analysePhoto } from "@/lib/api/vision";
 import type {
-  Case, CoarseMatch, Fingerprint, FingerprintAxes, NextFollowUp, Question, Ranking, Verification, VisionResult,
+  Case, CheckStep, CoarseMatch, Fingerprint, FingerprintAxes, NextFollowUp, Question, Ranking, Verification,
+  VisionResult,
 } from "@/lib/api/types";
 import { becauseClause, shortCause } from "@/lib/sources";
 
@@ -103,65 +105,6 @@ function describeVerification(v: Verification): string {
   return `${counted}${change}. Still out of spec: ${failed.join(", ") || words}.`;
 }
 
-/** Which axis question is still unanswered, in interview order — `null`
- * once all five are in. Used both to resume mid-interview after a reload
- * and (implicitly) to know when the interview is complete. */
-interface SuggestedCheck {
-  name: string;
-  /** Does running this alter the machine, tooling or material? Only
-   * changes count toward `action_count`, and step 8 can only close
-   * CONFIRMED when exactly one thing was changed — so the loop has to
-   * know which of its own suggestions are changes. */
-  isChange: boolean;
-  help: string;
-}
-
-/** Two suggestions per cause: something to *look at*, and something to
- * *change*. The remedies are the "Response: X helps" actions already
- * cited in ranking/rules.py; the observations are the cheap, reversible
- * way to test the same cause without spending the case's one change.
- *
- * Offering only the remedy — which is what this map used to hold — meant
- * the loop's own advice was "change something, then tell us if the
- * symptom went away", which is the post-hoc credit assignment DESIGN.md's
- * step 8 exists to keep out of the database.
- *
- * Per DESIGN.md W4: never invent a parameter number, so pressure/time
- * gets the "small steps, engineer to confirm" phrasing. */
-const CHECK_SUGGESTIONS: Record<string, SuggestedCheck[]> = {
-  volume_too_small_carryover: [
-    { name: "Check the next dot after each small one", isChange: false, help: "is it oversized? that's the carryover signature" },
-    {
-      name: "Increase dispense time in small steps within your process spec", isChange: true,
-      help: "the NPL guide's fix for big dot / small dot — engineer to confirm the figure",
-    },
-  ],
-  pressure_time_instability: [
-    { name: "Watch the pressure gauge across 20 shots", isChange: false, help: "look for it wandering, not just the set value" },
-    { name: "Adjust pressure or shot time in small steps within your process spec", isChange: true, help: "engineer to confirm the figure" },
-  ],
-  air_in_fluid_path: [
-    { name: "Hold the syringe up to the light", isChange: false, help: "look for bubbles or a slug in the barrel" },
-    { name: "Purge the line, or swap in a fresh syringe", isChange: true, help: "changes the material supply" },
-  ],
-  material_rheology_change: [
-    { name: "Check the lot date and out-time against spec", isChange: false, help: "reading the label costs nothing" },
-    { name: "Let the material warm up to spec temperature", isChange: true, help: "changes the material condition" },
-  ],
-  nozzle_blockage: [
-    { name: "Look at the needle tip under a loupe", isChange: false, help: "partial blockage is usually visible" },
-    { name: "Wipe or change the needle", isChange: true, help: "changes the tooling" },
-  ],
-  dispense_height_or_board_bending: [
-    { name: "Measure standoff at the corners and the centre", isChange: false, help: "a bent board reads differently across it" },
-    { name: "Re-check dispense height and board clamping", isChange: true, help: "changes the setup" },
-  ],
-  equipment_condition: [
-    { name: "Inspect the valve and mounting for wear or residue", isChange: false, help: "look before touching" },
-    { name: "Restart or re-home the machine", isChange: true, help: "changes the machine state" },
-  ],
-};
-
 /** The sentinel behind "Something else — I'll describe my own check" at the
  * cause step. Never sent: it drops `cause_id` from the draft, and the check
  * is logged with a null cause.
@@ -213,6 +156,19 @@ function toChips(q: Question, opts: { includeEscapes?: boolean } = {}): ChipOpti
   return chips;
 }
 
+/** The step of a cause's plan with this name, if it is one. Module-level,
+ * like toChips: declared inside the component after runStep, which uses it,
+ * it made the React Compiler reject the mount effect. */
+function plannedStep(
+  plans: Record<string, CheckStep[]>, causeId: string | undefined, name: string | undefined,
+): CheckStep | undefined {
+  if (!causeId || !name) return undefined;
+  return (plans[causeId] ?? []).find((step) => step.name === name);
+}
+
+/** Which axis question is still unanswered, in interview order — `null`
+ * once all five are in. Used both to resume mid-interview after a reload
+ * and (implicitly) to know when the interview is complete. */
 function nextUnansweredAxis(axes: FingerprintAxes | undefined):
   | "ask_signature" | "ask_trajectory" | "ask_footprint" | "ask_inputs" | "ask_response" | null {
   if (!axes || axes.signature.length === 0) return "ask_signature";
@@ -298,6 +254,10 @@ export default function CaseWizardPage() {
   const followupsRef = React.useRef<Record<string, string>>({});
   /** Every follow-up question, for labelling answers on file. */
   const followupBankRef = React.useRef<Question[]>([]);
+  /** Each cause's troubleshooting plan, from the same list the report
+   * recommends from. Empty if it couldn't load: the loop then asks for the
+   * check in the operator's own words. */
+  const checkPlansRef = React.useRef<Record<string, CheckStep[]>>({});
   /** The follow-up currently on screen. */
   const pendingFollowupRef = React.useRef<NextFollowUp | null>(null);
   /** Which axis the pending free-text answer belongs to. */
@@ -604,19 +564,45 @@ export default function CaseWizardPage() {
       }
       case "loop_check_name": {
         const causeId = draftCheckRef.current.cause_id;
-        const suggestions = (causeId ? CHECK_SUGGESTIONS[causeId] : undefined) ?? [];
-        say(
-          suggestions.length > 0
-            ? "Two ways to test that — the first only looks, the second changes something. " +
-                "The case can only close CONFIRMED if exactly one thing was changed, so start " +
-                "with the look if you can. Or describe your own."
-            : causeId
+        const plan = (causeId ? checkPlansRef.current[causeId] : undefined) ?? [];
+        if (plan.length === 0) {
+          say(
+            causeId
               ? "What did you try, or want to try?"
               : "Describe the check in your own words — what did you do, or what do you want to do?",
-        );
+          );
+        } else {
+          // The cause's plan in order, a look before a change, each with
+          // what to look for — so the operator knows what they're checking
+          // before they check it. Steps already on the case say so.
+          const logged = artifactsRef.current?.checks ?? [];
+          const changes = logged.filter((c) => c.is_change).length;
+          const label = artifactsRef.current?.ranking?.pass1.find((c) => c.cause_id === causeId)?.label ?? causeId;
+          const steps = plan.map((step, i) => {
+            const done = logged.find((c) => c.check_name === step.name);
+            const status = done ? ` — done, ${done.outcome?.replaceAll("_", " ") ?? "logged"}` : "";
+            return (
+              `Step ${i + 1} · ${step.is_change ? "Change" : "Look"}: ${step.name}${status}\n` +
+              `Confirms it if ${step.confirms_if}. Rules it out if ${step.rules_out_if}.`
+            );
+          });
+          const changeNote =
+            changes > 0
+              ? `The case already has ${changes === 1 ? "one change" : `${changes} changes`}, so another ` +
+                "change means it can't close CONFIRMED."
+              : "Look first if you can: it costs nothing, and the case can only close CONFIRMED if exactly " +
+                "one thing was changed.";
+          say(
+            `To test ${label?.toLowerCase()}, step by step:\n\n${steps.join("\n\n")}\n\n${changeNote} ` +
+              "Pick the step you ran to log what you saw, or describe your own.",
+          );
+        }
         setPending({
           kind: "text-with-suggestions",
-          suggestions: suggestions.map((s) => ({ value: s.name, label: s.name, helpText: s.help })),
+          suggestions: plan.map((step, i) => ({
+            value: step.name, label: `Step ${i + 1} · ${step.name}`,
+            helpText: step.is_change ? "changes something" : "look only",
+          })),
           placeholder: "e.g. purge and re-prime",
           confirmLabel: "Next",
           skipLabel: "Not sure — skip this check",
@@ -640,13 +626,14 @@ export default function CaseWizardPage() {
         return;
       }
       case "loop_check_outcome": {
-        say("What happened?");
+        const step = plannedStep(checkPlansRef.current, draftCheckRef.current.cause_id, draftCheckRef.current.check_name);
+        say(step ? "What did you see?" : "What happened?");
         setPending({
           kind: "chips-single",
           options: [
-            { value: "confirms", label: "Confirms it" },
-            { value: "rules_out", label: "Rules it out" },
-            { value: "inconclusive", label: "Inconclusive" },
+            { value: "confirms", label: "Confirms it", helpText: step?.confirms_if },
+            { value: "rules_out", label: "Rules it out", helpText: step?.rules_out_if },
+            { value: "inconclusive", label: "Inconclusive", helpText: step ? "neither — it moves nothing" : undefined },
           ],
         });
         return;
@@ -822,11 +809,15 @@ export default function CaseWizardPage() {
 
   React.useEffect(() => {
     let cancelled = false;
-    Promise.all([getCase(caseId), getIntakeSpec(), getFollowupBank().catch(() => [] as Question[])])
-      .then(([caseData, questions, followupBank]) => {
+    Promise.all([
+      getCase(caseId), getIntakeSpec(), getFollowupBank().catch(() => [] as Question[]),
+      getCheckPlans().catch(() => ({}) as Record<string, CheckStep[]>),
+    ])
+      .then(([caseData, questions, followupBank, checkPlans]) => {
         if (cancelled) return;
         questionsRef.current = questions;
         followupBankRef.current = followupBank;
+        checkPlansRef.current = checkPlans;
         followupsRef.current = { ...(caseData.fingerprint?.followups ?? {}) };
 
         const axes = caseData.fingerprint?.axes;
@@ -1238,10 +1229,9 @@ export default function CaseWizardPage() {
       // A tapped suggestion already says whether it changes anything;
       // anything typed has to be asked, because guessing it wrong either
       // fabricates a change or hides one, and step 8 rests on the count.
-      const suggested = (CHECK_SUGGESTIONS[draftCheckRef.current.cause_id ?? ""] ?? [])
-        .find((s) => s.name === value);
+      const suggested = plannedStep(checkPlansRef.current, draftCheckRef.current.cause_id, value);
       if (suggested) {
-        draftCheckRef.current.is_change = suggested.isChange;
+        draftCheckRef.current.is_change = suggested.is_change;
         void runStep("loop_check_outcome", caseData);
       } else {
         void runStep("loop_check_kind", caseData);

@@ -68,8 +68,8 @@ Start on the pre-opened case at the photo step. Talk while it works; don't wait 
 | 0:35 | The follow-up appears — point at "Asked because…" → *Steady at the set value* | "Air and pressure-time were tied at 59%. It simulated every answer and asked the one that could break the tie." |
 | 0:42 | A second follow-up, "Where on the board…" → *Everywhere, about the same* | Keep talking; this answer leaves air at 59%. |
 | 0:45 | Ranking appears — point at the chat line, then **Why 59%?** on the right | "Air leads because the problem comes and goes and purging helps — each reason with its weight and its page in the NPL guide." |
-| 1:05 | *Log a check* → **Air trapped…** → *Hold the syringe up to the light* → *Confirms it* → *Log it* | "Look first — it costs nothing. It re-ranks instantly." |
-| 1:20 | *Log a check* → **Air trapped…** → *Purge the line, or swap in a fresh syringe* → *Confirms it* → *Log it* | "Now exactly one change — that's what lets it claim the fix." |
+| 1:05 | *Log a check* → **Air trapped…** — point at the two steps it lays out → *Step 1 · Hold the syringe up to the light* → *Confirms it* → *Log it* | "Pick a cause and it lays out how to test it: look first, then change — and what each result means. A confirming check is a test, not a reading, so the tier goes to T1." |
+| 1:20 | *Log a check* → **Air trapped…** → *Step 2 · Purge the line, or swap in a fresh syringe* → *Confirms it* → *Log it* | "Now exactly one change — that's what lets it claim the fix." |
 | 1:30 | *Continue to report* → attach `good.png` → *50 or more* | "A fresh photo: back in spec on everything it can check." |
 | 1:40 | *Close the case* | "CONFIRMED — and only cases like this teach the next one." |
 | 1:50 | Switch to the `/cases/1/report` tab | "And a printable report with the sources and the verification." |
@@ -83,7 +83,7 @@ screen.
 | Symptom | Do |
 |---|---|
 | Photo refused ("couldn't measure") | Say "it refuses rather than guess" — then attach the sample file instead. Refusing is the designed safe failure. |
-| With the LLM on, the critic disagrees and the tier drops to T3/T4 | Rehearse this case with the LLM on so it isn't a surprise. If it happens: "a second, independent read disagrees — so instead of guessing it names the check that separates them." That *is* the design; carry on with the checks. |
+| With the LLM on, the critic disagrees and the tier drops to T3/T4 | Rehearse this case with the LLM on so it isn't a surprise. If it happens: "a second, independent read disagrees — so instead of guessing it names the check that separates them." That *is* the design; carry on with the checks. The first confirming check settles it at T1: a test on the machine outweighs a reading of the words. |
 | Venue Wi-Fi dies mid-demo | Nothing to do: one failed LLM call turns it off for two minutes and the code-written explanation shows. Next slot: `LLM_ENABLED=false`. |
 | The page shows "Could not reach the API" | The backend stopped: Ctrl+C the launcher and run `scripts/start-demo.sh` again (~5 s). |
 | The laptop is unusable | Backup video + the PDF deck from the USB stick. The rules require a *live* demo, so say what failed and show the video only as a last resort. |
