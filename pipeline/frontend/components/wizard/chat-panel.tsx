@@ -233,16 +233,22 @@ export function ChatPanel({
                 </div>
                 {m.actions && m.actions.length > 0 && (
                   <div className="flex flex-wrap gap-1.5">
-                    {m.actions.map((a) => (
-                      <Link
-                        key={a.href}
-                        href={a.href}
-                        className={buttonVariants({ variant: "outline", size: "sm", className: "gap-1.5" })}
-                      >
-                        {a.label}
-                        <ArrowRight className="size-3.5" />
-                      </Link>
-                    ))}
+                    {m.actions.map((a) =>
+                      "href" in a ? (
+                        <Link
+                          key={a.label}
+                          href={a.href}
+                          className={buttonVariants({ variant: "outline", size: "sm", className: "gap-1.5" })}
+                        >
+                          {a.label}
+                          <ArrowRight className="size-3.5" />
+                        </Link>
+                      ) : (
+                        <Button key={a.label} variant="outline" size="sm" onClick={a.onClick}>
+                          {a.label}
+                        </Button>
+                      ),
+                    )}
                   </div>
                 )}
               </div>

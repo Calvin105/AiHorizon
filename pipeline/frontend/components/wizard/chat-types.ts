@@ -7,10 +7,8 @@ export interface ChatMessage {
   actions?: ChatAction[];
 }
 
-export interface ChatAction {
-  href: string;
-  label: string;
-}
+/** A link to another page, or a button for something on this one. */
+export type ChatAction = { label: string } & ({ href: string } | { onClick: () => void });
 
 export interface ChipOption {
   value: string;

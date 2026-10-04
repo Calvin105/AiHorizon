@@ -3,13 +3,14 @@
 import * as React from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { ArrowLeft, FileText, Home, Hourglass, LifeBuoy } from "lucide-react";
+import { ArrowLeft, FileText, Home, Hourglass, LifeBuoy, NotebookPen } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button, buttonVariants } from "@/components/ui/button";
 
 import { ArtifactPanel, type Artifacts } from "@/components/wizard/artifact-panel";
 import { ChatPanel } from "@/components/wizard/chat-panel";
+import { NotesDrawer } from "@/components/wizard/notes-drawer";
 import {
   DONT_KNOW_VALUE, nextId, OTHER_VALUE, UNMAPPED_VALUE,
   type ChatAction, type ChatMessage, type ChipOption, type PendingPrompt,
@@ -317,6 +318,10 @@ export default function CaseWizardPage() {
   } | null>(null);
   /** Mirrors escalationRef for rendering: the step bar's button reads it. */
   const [escalating, setEscalating] = React.useState(false);
+  /** The engineer-notes drawer: open from the header at any step, and
+   * from "Answer & mark reviewed" while a question is waiting. */
+  const [notesOpen, setNotesOpen] = React.useState(false);
+  const closeNotes = React.useCallback(() => setNotesOpen(false), []);
 
   function setStage(step: StepId) {
     currentStepRef.current = step;
@@ -798,6 +803,15 @@ export default function CaseWizardPage() {
         }
         setStage("done");
         setPending({ kind: "none" });
+        // Closing doesn't answer the operator: a reviewer who has just
+        // settled the case is asked for the reply while they're here.
+        if (artifactsRef.current?.caseData.escalate) {
+          say(
+            `The operator's question is still waiting: "${caseData.escalation_note ?? "no question given"}". ` +
+              "Answer it in the notes and mark the case reviewed.",
+            [{ label: "Answer & mark reviewed", onClick: () => setNotesOpen(true) }],
+          );
+        }
         return;
       }
 
@@ -1324,6 +1338,17 @@ export default function CaseWizardPage() {
         </div>
 
         <div className="flex shrink-0 items-center gap-1.5">
+          <Button
+            variant="ghost" size="sm" className="h-8 gap-1.5 px-2 text-xs"
+            onClick={() => setNotesOpen(true)}
+            title={artifacts.caseData.engineer_notes ? "Engineer notes are written — read or edit" : "No engineer notes yet"}
+          >
+            <NotebookPen className="size-3.5" />
+            <span className="hidden sm:inline">Notes</span>
+            {artifacts.caseData.engineer_notes && (
+              <span className="size-1.5 rounded-full bg-primary" aria-label="written" />
+            )}
+          </Button>
           {/* The report at any point, not only after step 5: someone who
               stops halfway still wants to see what the case has so far. */}
           <Link
@@ -1352,9 +1377,15 @@ export default function CaseWizardPage() {
         phase={phase}
         action={
           artifacts.caseData.escalate ? (
-            <span className="inline-flex items-center gap-1.5 rounded-md border border-destructive/30 bg-destructive/5 px-2.5 py-1 text-xs font-medium text-destructive">
-              <Hourglass className="size-3.5" />
-              Waiting for an engineer
+            <span className="flex items-center gap-2">
+              <span className="hidden items-center gap-1.5 rounded-md border border-destructive/30 bg-destructive/5 px-2.5 py-1 text-xs font-medium text-destructive lg:inline-flex">
+                <Hourglass className="size-3.5" />
+                Waiting for an engineer
+              </span>
+              <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setNotesOpen(true)}>
+                <LifeBuoy className="size-3.5" />
+                Answer &amp; mark reviewed
+              </Button>
             </span>
           ) : (
             <Button
@@ -1380,6 +1411,18 @@ export default function CaseWizardPage() {
           <ArtifactPanel artifacts={artifacts} reportHref={reportHref} />
         </div>
       </div>
+      <NotesDrawer
+        caseData={artifacts.caseData}
+        open={notesOpen}
+        onClose={closeNotes}
+        onCaseChange={(updated) => {
+          const wasWaiting = artifactsRef.current?.caseData.escalate;
+          patchArtifacts({ caseData: updated });
+          if (wasWaiting && !updated.escalate) {
+            say("Marked reviewed. The operator sees your notes the next time they open this case.");
+          }
+        }}
+      />
     </div>
   );
 }
