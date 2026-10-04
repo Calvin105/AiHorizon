@@ -126,12 +126,13 @@ export default function HomePage() {
       </section>
 
       {/* What is waiting on someone. Each line names the oldest case so the
-          reader knows what they're walking into before they click. */}
+          reader knows what they're walking into before they click, and when
+          there is only one, the click goes straight to it. */}
       {stats && (
         <section className="space-y-2">
           {stats.escalated.length > 0 && (
             <Notice
-              href="/cases?view=review"
+              href={stats.escalated.length === 1 ? `/cases/${stats.escalated[0].case_id}#review` : "/cases?view=review"}
               tone="urgent"
               text={
                 `${plural(stats.escalated.length, "case")} waiting for a senior engineer. ` +
@@ -142,7 +143,7 @@ export default function HomePage() {
           )}
           {stats.stale.length > 0 && (
             <Notice
-              href="/cases?view=open"
+              href={stats.stale.length === 1 ? `/cases/${stats.stale[0].case_id}` : "/cases?view=open"}
               tone="info"
               text={staleText(stats.stale)}
             />

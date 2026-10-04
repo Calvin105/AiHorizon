@@ -187,6 +187,7 @@ export function ChatPanel({
   onPhoto: (file: File) => void;
   onSkip: () => void;
 }) {
+  const transcriptRef = React.useRef<HTMLDivElement>(null);
   const bottomRef = React.useRef<HTMLDivElement>(null);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   // Every new prompt follows at least one new message, so keying the input
@@ -194,8 +195,19 @@ export function ChatPanel({
   // text state) exactly when the prompt changes — no reset-on-prop effect.
   const turnKey = messages.length;
 
+  // Scrolls the transcript itself, never anything around it. This was
+  // scrollIntoView, which also scrolls every ancestor that can scroll — and
+  // the wizard's fixed frame can, overflow-hidden or not. Whenever the
+  // transcript couldn't scroll far enough to put the newest line at the
+  // top, the frame took up the rest and pushed the header and the step bar
+  // off the top of the screen.
   React.useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    const transcript = transcriptRef.current;
+    const bottom = bottomRef.current;
+    if (!transcript || !bottom) return;
+    const top =
+      bottom.getBoundingClientRect().top - transcript.getBoundingClientRect().top + transcript.scrollTop;
+    transcript.scrollTo({ top, behavior: "smooth" });
   }, [messages, pending]);
 
   return (
@@ -203,7 +215,7 @@ export function ChatPanel({
       {/* select-text on the transcript: the whole conversation is meant to
           be highlightable and copyable out, including a long pasted
           observation echoed back into it. */}
-      <div className="min-h-0 flex-1 overflow-y-scroll thin-scrollbar px-4 select-text">
+      <div ref={transcriptRef} className="min-h-0 flex-1 overflow-y-scroll thin-scrollbar px-4 select-text">
         <div className="flex flex-col gap-4 py-4">
           {messages.map((m) => (
             <div key={m.id} className={`flex gap-2 ${m.role === "user" ? "flex-row-reverse" : ""}`}>

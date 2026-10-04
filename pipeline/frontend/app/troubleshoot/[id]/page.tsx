@@ -1281,11 +1281,11 @@ export default function CaseWizardPage() {
     return (
       <div className="mx-auto max-w-5xl flex-1 space-y-3 px-6 py-10">
         <Link
-          href="/cases"
+          href={`/cases/${caseId}`}
           className={buttonVariants({ variant: "ghost", size: "sm", className: "mb-4 gap-1.5" })}
         >
           <ArrowLeft className="size-4" />
-          Back to Cases
+          Case #{caseId}
         </Link>
         <Skeleton className="h-8 w-1/3" />
         <Skeleton className="h-96 w-full" />
@@ -1295,11 +1295,13 @@ export default function CaseWizardPage() {
 
   return (
     <div className="fixed inset-0 flex flex-col overflow-hidden bg-background">
-      {/* Top Navigation Header Bar */}
-      <header className="flex h-11 shrink-0 items-center justify-between border-b bg-card/80 px-4 backdrop-blur">
-        <div className="flex items-center gap-2.5">
+      {/* One way back, to the case this wizard is working on: every flow on
+          a case returns to its page. The trail through "Past Cases" and the
+          second "All Cases" button sent people somewhere else each time. */}
+      <header className="flex h-11 shrink-0 items-center justify-between gap-2 border-b bg-card/80 px-4 backdrop-blur">
+        <div className="flex min-w-0 items-center gap-2">
           <Link
-            href="/cases"
+            href={`/cases/${caseId}`}
             className={buttonVariants({
               variant: "ghost",
               size: "sm",
@@ -1307,24 +1309,13 @@ export default function CaseWizardPage() {
             })}
           >
             <ArrowLeft className="size-3.5" />
-            <span>Past Cases</span>
-          </Link>
-          {/* The middle crumb wraps onto three lines on a phone; the case
-              number is on the panel's first card anyway. */}
-          <span className="hidden text-muted-foreground/30 sm:inline">/</span>
-          <Link
-            href={`/cases/${caseId}`}
-            className="hidden text-xs text-muted-foreground hover:text-foreground hover:underline sm:inline"
-          >
-            Case #{caseId} Details
+            <span>Case #{caseId}</span>
           </Link>
           <span className="text-muted-foreground/30">/</span>
-          <span className="text-xs font-semibold text-foreground">
-            Troubleshooting Wizard
-          </span>
+          <span className="truncate text-xs font-semibold text-foreground">Troubleshooting</span>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex shrink-0 items-center gap-1.5">
           <Link
             href="/"
             className={buttonVariants({
@@ -1332,19 +1323,10 @@ export default function CaseWizardPage() {
               size: "sm",
               className: "h-8 gap-1.5 px-2 text-xs text-muted-foreground hover:text-foreground",
             })}
+            aria-label="Home"
           >
             <Home className="size-3.5" />
-            <span>Home</span>
-          </Link>
-          <Link
-            href="/cases"
-            className={buttonVariants({
-              variant: "outline",
-              size: "sm",
-              className: "h-8 text-xs",
-            })}
-          >
-            All Cases
+            <span className="hidden sm:inline">Home</span>
           </Link>
         </div>
       </header>

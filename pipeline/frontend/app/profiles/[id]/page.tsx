@@ -65,11 +65,11 @@ export default function ProfileShowcasePage() {
     return (
       <div className="w-full px-4 py-8 md:px-8 lg:px-12">
         <Link
-          href={backCaseId ? `/cases/${backCaseId}` : "/cases"}
+          href={backCaseId ? `/cases/${backCaseId}` : "/profiles"}
           className={buttonVariants({ variant: "ghost", size: "sm", className: "mb-6 gap-1.5" })}
         >
           <ArrowLeft className="size-4" />
-          {backCaseId ? `Back to Case #${backCaseId}` : "Back to Cases"}
+          {backCaseId ? `Back to Case #${backCaseId}` : "All profiles"}
         </Link>
         <p className="text-sm text-destructive">{error}</p>
       </div>
@@ -97,11 +97,11 @@ export default function ProfileShowcasePage() {
       {/* Top back navigation and Actions */}
       <div className="flex items-center justify-between">
         <Link
-          href={backCaseId ? `/cases/${backCaseId}` : "/cases"}
+          href={backCaseId ? `/cases/${backCaseId}` : "/profiles"}
           className={buttonVariants({ variant: "ghost", size: "sm", className: "gap-1.5" })}
         >
           <ArrowLeft className="size-4" />
-          {backCaseId ? `Back to Case #${backCaseId}` : "Back to Cases"}
+          {backCaseId ? `Back to Case #${backCaseId}` : "All profiles"}
         </Link>
 
         {profile.geometry && (

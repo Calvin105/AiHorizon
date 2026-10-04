@@ -9,14 +9,12 @@ import {
   Check,
   Compass,
   Cpu,
-  Database,
   Droplets,
   ExternalLink,
   Eye,
   FilePlus2,
   FlaskConical,
   Gauge,
-  History,
   Info,
   Layers,
   Plus,
@@ -486,68 +484,24 @@ export default function OpenCasePage() {
 
   return (
     <div className="mx-auto w-full max-w-[1520px] space-y-6 px-4 py-8 sm:px-6 lg:px-8 xl:px-12">
-      {/* Top Header & Navigation */}
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b pb-4">
-        <div className="flex items-center gap-3">
-          <Link
-            href="/"
-            className={buttonVariants({
-              variant: "ghost",
-              size: "sm",
-              className: "gap-1.5 text-muted-foreground hover:text-foreground",
-            })}
-          >
-            <ArrowLeft className="size-4" />
-            <span>Home</span>
-          </Link>
-          <span className="text-muted-foreground/30">/</span>
-          <Link
-            href="/cases"
-            className="text-xs text-muted-foreground hover:text-foreground hover:underline"
-          >
-            Past Cases
-          </Link>
-          <span className="text-muted-foreground/30">/</span>
-          <span className="text-xs font-semibold text-foreground">
-            Start Troubleshooting
-          </span>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <Link
-            href="/catalog"
-            className={buttonVariants({
-              variant: "outline",
-              size: "sm",
-              className: "gap-1.5 text-xs font-medium border-primary/30 text-primary hover:bg-primary/10",
-            })}
-          >
-            <Database className="size-3.5" />
-            <span>Equipment & Material Catalog</span>
-          </Link>
-          <Link
-            href="/profiles"
-            className={buttonVariants({
-              variant: "ghost",
-              size: "sm",
-              className: "gap-1.5 text-xs text-muted-foreground hover:text-foreground",
-            })}
-          >
-            <Compass className="size-3.5" />
-            <span>Profile Blueprints</span>
-          </Link>
-          <Link
-            href="/cases"
-            className={buttonVariants({
-              variant: "ghost",
-              size: "sm",
-              className: "gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground",
-            })}
-          >
-            <History className="size-3.5" />
-            <span>Past Cases</span>
-          </Link>
-        </div>
+      {/* One way back. This page used to offer Home, Past Cases twice, the
+          catalog twice and the profile list — six exits from a page whose
+          only job is opening a case. The catalog stays one click away in
+          the browser card below, next to the buttons that add to it. */}
+      <div className="flex items-center gap-3 border-b pb-4">
+        <Link
+          href="/"
+          className={buttonVariants({
+            variant: "ghost",
+            size: "sm",
+            className: "gap-1.5 text-muted-foreground hover:text-foreground",
+          })}
+        >
+          <ArrowLeft className="size-4" />
+          <span>Home</span>
+        </Link>
+        <span className="text-muted-foreground/30">/</span>
+        <span className="text-xs font-semibold text-foreground">New case</span>
       </div>
 
       {/* Hero Title with Wide Subtitle */}

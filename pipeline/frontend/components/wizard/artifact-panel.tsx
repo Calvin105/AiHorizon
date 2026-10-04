@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { ArrowDown, ArrowUp, ChevronDown, ChevronRight, ExternalLink, Sparkles } from "lucide-react";
+import { ArrowDown, ArrowUp, ChevronDown, ChevronRight, Sparkles } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -359,15 +359,6 @@ export function ArtifactPanel({ artifacts }: { artifacts: Artifacts }) {
           cardId="card-setup"
           isHighlighted={highlightedCardId === "card-setup"}
           title="Case & Profile Setup"
-          extra={
-            <Link
-              href={`/cases/${caseData.case_id}`}
-              target="_blank"
-              className="inline-flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground"
-            >
-              Full Details <ExternalLink className="size-3" />
-            </Link>
-          }
         >
           <div className="space-y-3">
             <div>
@@ -411,11 +402,10 @@ export function ArtifactPanel({ artifacts }: { artifacts: Artifacts }) {
                 <div className="mb-1 flex items-center justify-between text-xs font-medium text-muted-foreground">
                   <span>Dispense Pattern Geometry</span>
                   <Link
-                    href={`/profiles/${caseData.profile.profile_id}`}
-                    target="_blank"
+                    href={`/profiles/${caseData.profile.profile_id}?caseId=${caseData.case_id}`}
                     className="inline-flex items-center gap-1 text-[11px] text-sky-500 hover:underline"
                   >
-                    View Blueprint <ExternalLink className="size-3" />
+                    View Blueprint <ChevronRight className="size-3" />
                   </Link>
                 </div>
                 <ProfileGeometryPattern
