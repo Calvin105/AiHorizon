@@ -1,0 +1,23 @@
+PROJECT IMPROVEMENTS
+1. streamline ticketing & feedback features for other engineers
+2. iron out the details and UI
+3. explore & improve upon the limitations to improve the robustness of the project by discovering new methods separately from the project and asking for proposals
+Honestly it is not limited to AI, 2b (1) states robotics, data analytics and integrated solution is allowed.
+Try exploring different paradigms and avenues.
+
+
+PRESENTATION
+1. Clearly declare tech stacks & third parties toolings disclaimers if any per 2c (2)
+2. Iron out & rehearse functional prototype demo
+3. Show limitations
+
+Actions:
+1. explore limitations
+2. understand the process and the result
+
+
+Q&A PREPARATION
+[list questions and model answers]
+
+
+BANNER

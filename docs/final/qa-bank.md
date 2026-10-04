@@ -6,6 +6,33 @@ people from NSW Automation, so lead with what it does on a line, then how.
 
 ---
 
+
+```mermaid
+flowchart TD
+    A["Open case: complaint + profile"] --> B["Upload defect photo"]
+    B --> C["Vision measures signals: size_cv, missing, carryover"]
+    C --> D{"Quality gate ok?"}
+    D -- No --> D1["Reject: retake photo"]
+    D -- Yes --> E["Save 5 fixed interview answers"]
+    E --> F["Pass 1: rule engine ranks 7 causes"]
+    F --> G["Pass 2: critic LLM votes or abstains"]
+    G --> H["Gate B: check precedent"]
+    H --> I["Gate A: check chance"]
+    I --> J["Compute tier T1-T4"]
+    J --> K["Ask up to 2 follow-ups if useful"]
+    K --> L["Log observation check: confirms cause"]
+    L --> M["Log the one allowed change"]
+    M --> N["Re-rank after change"]
+    N --> O["Upload verify photo, hold N shots"]
+    O --> P{"Back in spec?"}
+    P -- No --> P1["Cannot close CONFIRMED"]
+    P -- Yes --> Q["Add engineer notes"]
+    Q --> R["Close case"]
+    R --> S{"Tier == CONFIRMED?"}
+    S -- Yes --> T["CONFIRMED: report + evidence"]
+    S -- No --> P1
+```
+
 **1. Why not just ask ChatGPT, or a vision model, what's wrong?**
 Because an engineer can't argue with a number nobody can trace. Every percentage here is
 built from cited rules (*Why 59%?*). We also benchmarked small local vision-language
@@ -29,8 +56,7 @@ Validating on 50–100 real NSW photos is step one of the pilot.
 
 **4. What if the cause isn't one of your seven?**
 It says "no cause is ahead" instead of guessing, and the operator can escalate to an
-engineer; the home page lists cases waiting for one. Stringing and smearing (up height,
-NPL §3.3) is the next cause we'd add (slide 13).
+engineer; the home page lists cases waiting for one. Stringing and smearing (up height, NPL §3.3) is the next cause we'd add (slide 13).
 
 **5. Isn't the "learning database" just counting?**
 The count is descriptive on purpose. What makes it trustworthy is what gets *in*: only
@@ -96,21 +122,13 @@ start/end defects on a single row are a known gap. The causes come from the NPL 
 dot-dispensing sections.
 
 **16. What would you do with another month?**
-Real photos from NSW, a bare-board reference to remove clutter false alarms, rules as
-data that engineers approve, and the up-height cause.
+Real photos from NSW, a bare-board reference to remove clutter false alarms, rules as data that engineers approve, and the up-height cause.
 
 **17. Who did what? / Is this your own work?**
-Slide 12 separates our work from what we used, as rule c.2 asks. Have each team member
-name the part they can explain in depth — the briefing asks that every member understands
-the solution.
+Slide 12 separates our work from what we used, as rule c.2 asks. Have each team member name the part they can explain in depth — the briefing asks that every member understands the solution.
 
 **18. Every rule belongs to one cause — isn't that rigid?**
-Less than it looks. One answer can move several causes up or down: "it has always been like
-this" raises board bending and lowers blockage and wear. A rule can also read combinations,
-such as missing dots *without* the carryover pattern. The real limit is that we set the
-weights from the manual. Next, the rules become a table NSW engineers can edit. Once there
-are enough proved cases, the weights get fitted from them in the same structure, so every %
-still shows its reasons.
+Less than it looks. One answer can move several causes up or down: "it has always been like this" raises board bending and lowers blockage and wear. A rule can also read combinations,such as missing dots *without* the carryover pattern. The real limit is that we set the weights from the manual. Next, the rules become a table NSW engineers can edit. Once there are enough proved cases, the weights get fitted from them in the same structure, so every % still shows its reasons.
 
 **19. Air is confirmed — why does pressure-time still show a high %?**
 Each % is per cause, as in the brief's own table, because two faults can happen together.
