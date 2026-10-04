@@ -58,6 +58,7 @@ async def analyse_photo(
         "suggested_signature": result.suggested_signature,
         "cv_output": result.cv_output,
         "annotated_image": result.annotated_image,
+        "dispensing_quality": result.dispensing_quality,
     }
     db.commit()
 

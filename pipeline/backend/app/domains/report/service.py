@@ -12,6 +12,7 @@ from app.domains.checks.suggestions import recommended_actions
 from app.domains.report.explain import write_explanation
 from app.domains.report.stars import compute_stars
 from app.domains.retrieval.precedents import precedent_stats
+from app.domains.vision.dispensing_quality import rate_dispensing
 
 DISCLAIMER = "Preliminary triage aid, not a replacement for an engineer."
 
@@ -80,6 +81,11 @@ def compile_report(
             "signature": fingerprint.get("axes", {}).get("signature", []),
             "magnitude": vision.get("magnitude", "unknown"),
             "stars": stars,
+            # Rated from the stored measurement rather than read back, so a
+            # case measured before the score existed has one too.
+            "dispensing_quality": (
+                rate_dispensing(vision["cv_output"]) if vision.get("quality_ok") and vision.get("cv_output") else None
+            ),
         },
         "quality": {
             "ok": vision.get("quality_ok"),

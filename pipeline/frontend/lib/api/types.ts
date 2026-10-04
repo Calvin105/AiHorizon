@@ -231,6 +231,31 @@ export interface VisionResult {
   annotated_image?: string | null;
   /** The size-spread limit the photo was judged against. */
   size_cv_limit?: number | null;
+  /** Bonus 2's quality score. Null when the photo couldn't be measured;
+   * missing on photos measured before it existed. */
+  dispensing_quality?: DispensingQuality | null;
+}
+
+/** One aspect of the dispensing quality score: a count of deposits that
+ * passed, rated floor(5 x share) stars so any failure costs a star. */
+export interface QualityAspect {
+  key: "completeness" | "size" | "shape" | "position";
+  label: string;
+  stars: number;
+  passed: number;
+  total: number;
+  detail: string;
+}
+
+/** Bonus 2: how good the deposits in the photo are — the dispensing, not
+ * the diagnosis. Overall is the share of positions whose deposit passed
+ * every aspect, out of 100. */
+export interface DispensingQuality {
+  aspects: QualityAspect[];
+  overall: number;
+  passed: number;
+  total: number;
+  detail: string;
 }
 
 // ---- Ranking (step 5) --------------------------------------------------------
@@ -442,6 +467,7 @@ export interface Defect {
   signature: string[];
   magnitude: string;
   stars: number;
+  dispensing_quality?: DispensingQuality | null;
 }
 
 export interface CheckLogRow {

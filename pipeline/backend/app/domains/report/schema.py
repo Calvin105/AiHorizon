@@ -1,10 +1,31 @@
 from pydantic import BaseModel
 
 
+class QualityAspectOut(BaseModel):
+    key: str
+    label: str
+    stars: int
+    passed: int
+    total: int
+    detail: str
+
+
+class DispensingQualityOut(BaseModel):
+    """Bonus 2: how good the deposits in the photo are. Rates the
+    dispensing, not the diagnosis."""
+
+    aspects: list[QualityAspectOut]
+    overall: int
+    passed: int
+    total: int
+    detail: str
+
+
 class DefectOut(BaseModel):
     signature: list[str]
     magnitude: str
     stars: int
+    dispensing_quality: DispensingQualityOut | None = None
 
 
 class QualityOut(BaseModel):

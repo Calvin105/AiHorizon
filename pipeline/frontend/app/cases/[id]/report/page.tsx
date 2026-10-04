@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { ArrowLeft, Printer } from "lucide-react";
 
+import { DispensingQualityScore } from "@/components/dispensing-quality";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ApiError } from "@/lib/api/client";
@@ -234,6 +235,11 @@ export default function CaseReportPage() {
                   : (report.quality.reason ?? "could not measure reliably")}
             </dd>
           </dl>
+          {report.defect.dispensing_quality && (
+            <div className="mt-3 max-w-md break-inside-avoid">
+              <DispensingQualityScore quality={report.defect.dispensing_quality} />
+            </div>
+          )}
           {(() => {
             const img = typeof caseData.vision_result?.annotated_image === "string"
               ? caseData.vision_result.annotated_image

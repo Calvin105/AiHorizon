@@ -6,6 +6,7 @@ import { ArrowDown, ArrowUp, ChevronDown, ChevronRight, ExternalLink, Sparkles }
 
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { DispensingQualityScore } from "@/components/dispensing-quality";
 import { ProfileGeometryPattern } from "@/components/profile-geometry-pattern";
 import { TierInfo } from "@/components/tier-info";
 import type {
@@ -539,6 +540,12 @@ export function ArtifactPanel({ artifacts }: { artifacts: Artifacts }) {
                     View full size
                   </button>
                 </div>
+              </div>
+            )}
+
+            {artifacts.vision.quality_ok && artifacts.vision.dispensing_quality && (
+              <div className="mb-3 rounded-md border bg-muted/25 p-2.5">
+                <DispensingQualityScore quality={artifacts.vision.dispensing_quality} />
               </div>
             )}
 

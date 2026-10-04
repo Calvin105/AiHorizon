@@ -16,3 +16,5 @@ class VisionResultOut(BaseModel):
     """Base64 Data URL (data:image/png;base64,...) of the annotated image."""
     size_cv_limit: float | None = None
     """The size-spread limit the photo was judged against."""
+    dispensing_quality: dict | None = None
+    """Bonus 2's quality score, or null when the photo couldn't be measured."""

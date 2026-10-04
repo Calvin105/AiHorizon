@@ -8,6 +8,7 @@ from dataclasses import dataclass
 
 from detect import annotate_image, detect
 
+from app.domains.vision.dispensing_quality import rate_dispensing
 from app.domains.vision.magnitude import DEFAULT_SPEC_LIMIT, bucket_magnitude
 from app.domains.vision.quality import quality_gate
 from app.domains.vision.signals import derive_signals
@@ -39,6 +40,9 @@ class VisionResult:
     size_cv_limit: float = DEFAULT_SPEC_LIMIT
     """The size-spread limit this photo was judged against, so a reader can
     see which spec "marginal" or "gross" was measured from."""
+    dispensing_quality: dict | None = None
+    """Bonus 2's quality score: stars per aspect and an overall out of 100,
+    each a count of deposits (see vision/dispensing_quality.py)."""
 
 
 def run_vision(
@@ -99,5 +103,6 @@ def run_vision(
         signals=signals, magnitude=magnitude, small_then_big_above_chance=bool(above_chance),
         suggested_signature=derive_signature(signals, size_cv_limit),
         annotated_image=annotated_image, size_cv_limit=size_cv_limit,
+        dispensing_quality=rate_dispensing(cv_output),
     )
 
