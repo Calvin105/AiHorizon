@@ -107,7 +107,7 @@ the poster do the talking while you demo:
 2. **One line:** "A phone photo and five questions → the likely cause, why, and what to
    check first."
 3. **The six steps** from slide 3: Photograph → Interview → Rank → Check → Verify → Learn.
-4. **One number with its chart:** "When it says ★★★, it's right 95% of the time"
+4. **One number with its chart:** "With three or more reasons behind it, it's right 96% of the time"
    (slide 5).
 5. **The trust idea:** CONFIRMED / PLAUSIBLE / UNVERIFIED — closing isn't fixing.
 6. **Credit line:** knowledge from the NPL Best Practice Guide MATC(A)82

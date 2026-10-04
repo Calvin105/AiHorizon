@@ -52,7 +52,7 @@ def _title(fig, title: str, subtitle: str) -> None:
 
 
 def calibration(res: dict) -> None:
-    rows = [r for r in res["diagnosis"]["calibration"]["by_stars"] if r["n"] >= 10]
+    rows = [r for r in res["diagnosis"]["calibration"]["by_reasons"] if r["n"] >= 10]
     fig, ax = plt.subplots(figsize=(8, 5))
     fig.subplots_adjust(top=0.78, bottom=0.14, left=0.1, right=0.96)
     xs = range(len(rows))
@@ -60,12 +60,16 @@ def calibration(res: dict) -> None:
     for x, r in zip(xs, rows, strict=True):
         ax.text(x, r["accuracy"] * 100 + 2, f"{r['accuracy'] * 100:.0f}%", ha="center", color=INK, fontsize=13,
                 fontweight="bold")
-    ax.set_xticks(list(xs), [f"{'★' * r['stars'] or '0 ★'}\n{r['n']} cases" for r in rows])
+    ax.set_xticks(
+        list(xs),
+        [f"{r['reasons']}{'+' if r['reasons'] == 4 else ''} reason{'' if r['reasons'] == 1 else 's'}\n{r['n']} cases"
+         for r in rows],
+    )
     ax.set_ylim(0, 110)
     ax.set_yticks([0, 25, 50, 75, 100], ["0%", "25%", "50%", "75%", "100%"])
     ax.set_ylabel("Top cause was correct")
-    _title(fig, "More stars, more often right",
-           "Accuracy of the top-ranked cause at each confidence level shown to the operator\n"
+    _title(fig, "More reasons behind it, more often right",
+           "Accuracy of the top-ranked cause by how many reasons back it, as listed for the operator\n"
            "(photo + questions, simulated cases, all operator-reliability levels)")
     fig.savefig(RESULTS / "calibration.png", dpi=200)
     plt.close(fig)

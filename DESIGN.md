@@ -15,7 +15,7 @@ Everything below follows from that. The fault tree already produces a percentage
 | 1 Define problem | A picked defect, or free text mapped onto the same list — this fills axis 1. Plus a photo, optional |
 | 2 Ask questions | The four remaining axes, always asked, plus follow-ups chosen by code |
 | 2b **Coarse case retrieval** | Key: the five axes + material + dispenser class. Orders the questions and pre-loads likely checks. Changes no ranking — not at this depth of evidence, which is what lets it degrade gracefully |
-| 3 Analyse symptoms | Measurements and answers produce an identified defect with a star rating. Quality gate first: an unmeasurable image says so and the run continues on questions alone |
+| 3 Analyse symptoms | Measurements and answers produce an identified defect, and the photo a dispensing quality score. Quality gate first: an unmeasurable image says so and the run continues on questions alone |
 | 4 Compare causes | Every cause shows evidence for and against, with manual passages for each |
 | 5 Rank | Two passes, then three gates (below) |
 | 5b **Fine case retrieval** | Key: the full signal vector. Confirmed cases only. Can demote, never promote |
@@ -109,7 +109,7 @@ Status: **[done]** shipped · **[next]** blocking · **[later]** wanted · **[pa
 - **[done]** `golden/causes.json` — the shared cause vocabulary both cases grade against, and the id space the case database uses.
 - **[done]** `check_golden.py` re-derives every signal, rejects a lookup that states a conclusion, enforces cause coverage.
 - **[done]** Generate the validation set. `evaluation/` composes about 6,600 labelled photos and 420 simulated cases per run from `vision/synth/` (built 2026-09-29; framing and desk-photo damage added 2026-10-02). NSW provided no real photos, so it is synthetic throughout.
-- **[done]** Scoring rule: Brier score per mode, reported next to top-1 accuracy, plus accuracy per star level and per displayed percentage (`evaluation/results/summary.md`).
+- **[done]** Scoring rule: Brier score per mode, reported next to top-1 accuracy, plus accuracy by the number of reasons backing the top cause and per displayed percentage (`evaluation/results/summary.md`).
 - **[later]** Tag each scenario's source of truth: generator label, the brief's example, a manual passage, or team judgement. Team-judgement scenarios only test consistency, not correctness.
 
 Do not hand-tune rule weights against two golden cases. Only structural changes generalise at this sample size.
@@ -123,7 +123,7 @@ Do not hand-tune rule weights against two golden cases. Only structural changes 
 - **[done]** 2026-10-03: the ranking rules page (`/rules`, `GET /api/rules`, `ranking/rule_map.py`). Every rule is listed with what fires it, read off the engine by putting each answer and measurement through every rule, so it can't drift from ranking; the map view adds ticked rows up exactly as ranking does.
 - **[done]** 2026-10-03: an engineer can change a rule's weight from that page, with a required reason, and restore it (`rule_overrides` table, `ranking/weights.py`). The manual's weight stays in the code and on screen next to the edit, an edited rule is tagged in every *Why X%?*, and the evaluation always measures the manual's weights. **[later]** Conditions are still code: adding a rule or changing what fires one needs a developer.
 - **[done]** Every question gets a "Don't know" option. It adds no evidence.
-- **[done]** Stars come from how much evidence is known and how far #1 leads #2 (`report/stars.py`); the evaluation measures ★★★ right 95% of the time, ★ 52%.
+- **[done]** 2026-10-05: no star rating on the diagnosis. Stars mixed how much evidence was in with how far #1 led #2, read as certainty, and could show one star next to a T1. The tier is the confidence, stated with its reason; what backs the top cause is a count of reasons the operator can check against *Why X%?* (`ranking/backing.py`). The evaluation measures it: one reason, right 48% of the time; three or more, 96%.
 - Keep cause percentages independent (not summing to 100), matching the brief's table, and say so on screen.
 
 ### W3. Questions: a fixed spine, then adaptive follow-ups (pipeline/backend/app/domains/intake/)
@@ -266,13 +266,13 @@ This is also why the manual side (W8) needs no vector store: 41 pages, and the p
 
 ### W9. Report (existing Report in Assessment.tsx)
 
-- **[done]** Add the original description, identified defect with stars, and quality score; causes with evidence and sources; the check log and confirmed fix (with the full re-measurement); an editable engineer notes field; rules version, whether the LLM was used, and "preliminary triage aid, not a replacement for an engineer" (brief 1.2).
+- **[done]** Add the original description, identified defect with its dispensing quality score (Bonus 2: completeness, size, shape and position in stars, overall out of 100), the tier with its reason and the reasons backing the top cause; causes with evidence and sources; the check log and confirmed fix (with the full re-measurement); an editable engineer notes field; rules version, whether the LLM was used, and "preliminary triage aid, not a replacement for an engineer" (brief 1.2).
 - Show the confidence tier and, at T3 and T4, why the two passes disagreed.
 - Keep print-to-PDF.
 
 ### W10. Evaluation runner (this is the video's Testing section)
 
-- **[partly]** `evaluation/run_eval.py` reports top-1 and top-3 accuracy, the Brier score, stars vs correctness and a photo stress test. Not yet: citation validity, invented numbers, questions asked, rerun stability — none of which can be measured without the LLM in the loop.
+- **[partly]** `evaluation/run_eval.py` reports top-1 and top-3 accuracy, the Brier score, correctness by the reasons backing the top cause, and a photo stress test. Not yet: citation validity, invented numbers, questions asked, rerun stability — none of which can be measured without the LLM in the loop.
 - Report agreement rate between the two passes, and the error rate within each branch. Until that is measured, every threshold in the ranking gate is a placeholder.
 - Compare the brief's three levels: questions only, then with ranking, then with image, manual, and case history.
 - Run LLM-dependent checks on a small fixed subset.

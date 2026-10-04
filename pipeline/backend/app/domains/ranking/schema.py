@@ -40,6 +40,16 @@ class GateBOut(BaseModel):
     note: str
 
 
+class BackingOut(BaseModel):
+    """What backs the top cause (ranking/backing.py)."""
+
+    reasons: int
+    measured: int
+    answers: int
+    checks: int
+    against: int
+
+
 class RankingOut(BaseModel):
     pass1: list[Pass1CauseOut]
     pass2: list[Pass2CauseOut] | None
@@ -56,6 +66,9 @@ class RankingOut(BaseModel):
     tier_reason: str = ""
     """Why the ranking sits at this tier. Empty on rankings stored before it
     was recorded; they gain one the next time the case is ranked."""
+    backing: BackingOut | None = None
+    """What backs the top cause. Null on rankings stored before it was
+    recorded, until the case is ranked again."""
     top_cause_id: str
     runners_up: list[str]
 

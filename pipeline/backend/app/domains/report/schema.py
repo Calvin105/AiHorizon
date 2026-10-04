@@ -1,5 +1,7 @@
 from pydantic import BaseModel
 
+from app.domains.ranking.schema import BackingOut
+
 
 class QualityAspectOut(BaseModel):
     key: str
@@ -24,7 +26,6 @@ class DispensingQualityOut(BaseModel):
 class DefectOut(BaseModel):
     signature: list[str]
     magnitude: str
-    stars: int
     dispensing_quality: DispensingQualityOut | None = None
 
 
@@ -77,6 +78,9 @@ class ReportOut(BaseModel):
     defect: DefectOut
     quality: QualityOut
     tier: str | None
+    tier_reason: str | None = None
+    backing: BackingOut | None = None
+    """What backs the top cause, counted from its evidence."""
     disagreement_note: str | None
     causes: list[dict]
     explanation: str | None

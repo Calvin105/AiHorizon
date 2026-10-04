@@ -6,6 +6,7 @@ import { useParams } from "next/navigation";
 import { ArrowLeft, Printer } from "lucide-react";
 
 import { DispensingQualityScore } from "@/components/dispensing-quality";
+import { describeBacking } from "@/components/reasons-backing";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ApiError } from "@/lib/api/client";
@@ -96,15 +97,6 @@ function Section({
       </h2>
       <div className="text-[15px] leading-relaxed">{children}</div>
     </section>
-  );
-}
-
-function Stars({ n }: { n: number }) {
-  return (
-    <span aria-label={`${n} of 5`}>
-      {"★".repeat(n)}
-      {"☆".repeat(Math.max(0, 5 - n))}
-    </span>
   );
 }
 
@@ -221,11 +213,6 @@ export default function CaseReportPage() {
             <dd>{report.defect.signature.length > 0 ? report.defect.signature.join(", ").replaceAll("_", " ") : "not classified"}</dd>
             <dt className="text-muted-foreground">Deviation</dt>
             <dd>{report.defect.magnitude}</dd>
-            <dt className="text-muted-foreground">Confidence</dt>
-            <dd>
-              <Stars n={report.defect.stars} /> ({report.defect.stars}/5)
-              {report.tier && <> &middot; ranking tier {report.tier}</>}
-            </dd>
             <dt className="text-muted-foreground">Photo quality</dt>
             <dd>
               {report.quality.ok === null
@@ -284,6 +271,21 @@ export default function CaseReportPage() {
         </Section>
 
         <Section n={4} title="Possible Causes & Confidence Score">
+          {/* The confidence is the tier, with what it rests on; the reasons
+              are counted from the evidence listed under the top cause. */}
+          {report.tier && top && (
+            <div className="mb-3 space-y-0.5">
+              <p>
+                <span className="font-semibold">Confidence: tier {report.tier}.</span>{" "}
+                {report.tier_reason}
+              </p>
+              {report.backing && (
+                <p className="text-[13px] text-muted-foreground">
+                  {top.label}: {describeBacking(report.backing)}
+                </p>
+              )}
+            </div>
+          )}
           <ol className="space-y-2">
             {report.causes.map((cause, i) => (
               <li key={cause.cause_id} className="break-inside-avoid">

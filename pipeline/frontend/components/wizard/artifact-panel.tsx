@@ -7,6 +7,7 @@ import { ArrowDown, ArrowUp, ChevronDown, ChevronRight, ExternalLink, Sparkles }
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DispensingQualityScore } from "@/components/dispensing-quality";
+import { ReasonsBacking } from "@/components/reasons-backing";
 import { ProfileGeometryPattern } from "@/components/profile-geometry-pattern";
 import { TierInfo } from "@/components/tier-info";
 import type {
@@ -669,6 +670,7 @@ export function ArtifactPanel({ artifacts }: { artifacts: Artifacts }) {
               {artifacts.ranking.tier_reason && (
                 <p className="text-xs text-muted-foreground">{artifacts.ranking.tier_reason}</p>
               )}
+              {artifacts.ranking.backing && <ReasonsBacking backing={artifacts.ranking.backing} />}
             </div>
 
             {/* Shown whenever the critic ran, not only on disagreement:
@@ -881,9 +883,10 @@ export function ArtifactPanel({ artifacts }: { artifacts: Artifacts }) {
             isHighlighted={highlightedCardId === "card-report"}
             title="Report (step 7)"
           >
-            <div className="mb-2 flex flex-wrap gap-1.5">
+            <div className="mb-2 flex flex-wrap items-center gap-1.5">
               <Badge>{artifacts.report.defect.magnitude}</Badge>
-              <Badge variant="outline">{"★".repeat(artifacts.report.defect.stars)}{"☆".repeat(5 - artifacts.report.defect.stars)}</Badge>
+              {artifacts.report.tier && <Badge variant="outline">{artifacts.report.tier}</Badge>}
+              {artifacts.report.backing && <ReasonsBacking backing={artifacts.report.backing} />}
             </div>
             {artifacts.report.explanation && (
               <p className="whitespace-pre-wrap text-xs">{formatCitations(artifacts.report.explanation)}</p>

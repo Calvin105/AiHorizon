@@ -3,12 +3,13 @@
   A. Measurement — put a known defect in the photo; does the vision step
      raise the signal the ranking relies on, and stay quiet on a good one?
   B. Diagnosis — photo + a simulated operator's answers; is the top cause
-     right, and does the confidence shown (stars, %) track how often it is?
+     right, and do what's shown with it (the reasons backing it, the %)
+     track how often it is?
   C. Stress — damage the photo the way a real camera does; does the system
      stay right or refuse the image, rather than silently measure it wrong?
 
 Everything runs through the real pipeline functions (run_vision,
-rank_causes, compute_stars) — no API, no database, no LLM. Deterministic:
+rank_causes, backing) — no API, no database, no LLM. Deterministic:
 the same seeds give the same numbers.
 
     uv run python evaluation/run_eval.py            # full run, ~1-2 min
@@ -32,8 +33,8 @@ from degrade import DEGRADATIONS
 from scenarios import PATTERNS, SCENARIOS, pick_image, simulate_answers
 
 from app.domains.causes.vocabulary import load_causes
+from app.domains.ranking.backing import backing
 from app.domains.ranking.pass1 import rank_causes
-from app.domains.report.stars import compute_stars
 
 RESULTS = ROOT / "evaluation" / "results"
 SPEC_CV = 0.15
@@ -151,7 +152,7 @@ def _diagnosis_job(job: tuple) -> list[dict]:
                 "tied_top": abs(top.likelihood - second.likelihood) < 1e-9,
                 "abstain": fired == 0,
                 "true_rank": ids.index(scenario.cause_id) + 1,
-                "stars": compute_stars(top.likelihood, second.likelihood, len(top.evidence)),
+                "reasons": backing(top.evidence)["reasons"],
                 "brier": sum((r.likelihood - (r.cause_id == scenario.cause_id)) ** 2 for r in ranked) / len(ranked),
             })
     return out
@@ -168,18 +169,20 @@ def summarise_diagnosis(rows: list[dict]) -> dict:
         "top1_when_answered": round(sum(r["true_rank"] == 1 for r in answered) / len(answered), 4) if answered else None,
         "tied_top": round(sum(r["tied_top"] and not r["abstain"] for r in rows) / n, 4),
         "brier": round(statistics.mean(r["brier"] for r in rows), 4),
-        "mean_stars": round(statistics.mean(r["stars"] for r in rows), 2),
+        "mean_reasons": round(statistics.mean(r["reasons"] for r in rows), 2),
     }
 
 
 def calibration(rows: list[dict]) -> dict:
-    """Accuracy at each confidence level the operator is shown: by stars,
-    and by the displayed top-cause percentage. Abstentions are excluded —
-    'no cause is ahead' makes no claim to be right or wrong."""
+    """Accuracy at each level the operator is shown: by how many reasons
+    back the top cause, and by its displayed percentage. Abstentions are
+    excluded — 'no cause is ahead' makes no claim to be right or wrong.
+    Four or more reasons are one bucket: few cases get there."""
     answered = [r for r in rows if not r["abstain"]]
-    by_stars = defaultdict(list)
+    by_reasons = defaultdict(list)
     for r in answered:
-        by_stars[r["stars"]].append(r["true_rank"] == 1)
+        by_reasons[min(r["reasons"], 4)].append(r["true_rank"] == 1)
+    three_plus = [r["true_rank"] == 1 for r in answered if r["reasons"] >= 3]
     bins = [(0.0, 0.4), (0.4, 0.55), (0.55, 0.7), (0.7, 0.85), (0.85, 1.01)]
     by_pct = []
     for lo, hi in bins:
@@ -192,9 +195,13 @@ def calibration(rows: list[dict]) -> dict:
             "accuracy": round(sum(hits) / len(hits), 4) if hits else None,
         })
     return {
-        "by_stars": [
-            {"stars": s, "n": len(v), "accuracy": round(sum(v) / len(v), 4)} for s, v in sorted(by_stars.items())
+        "by_reasons": [
+            {"reasons": k, "n": len(v), "accuracy": round(sum(v) / len(v), 4)} for k, v in sorted(by_reasons.items())
         ],
+        "three_plus_reasons": {
+            "n": len(three_plus),
+            "accuracy": round(sum(three_plus) / len(three_plus), 4) if three_plus else None,
+        },
         "by_percent": by_pct,
     }
 
@@ -332,10 +339,13 @@ def render_summary(res: dict) -> str:
     for cause, picks in d["confusion"].items():
         ranked = ", ".join(f"{k} {v}" for k, v in sorted(picks.items(), key=lambda kv: -kv[1]))
         L.append(f"- **{cause}** → {ranked}")
-    L += ["", "### Calibration — when it is confident, is it right? (photo + questions, all reliabilities)", "",
-          "| Stars shown | Cases | Top-1 accuracy |", "|---|---|---|"]
-    for row in d["calibration"]["by_stars"]:
-        L.append(f"| {'★' * row['stars'] or '0'} | {row['n']} | {pct(row['accuracy'])} |")
+    three = d["calibration"]["three_plus_reasons"]
+    L += ["", "### Calibration — does what it shows track how often it is right? (photo + questions, all reliabilities)",
+          "", "Reasons = the rules that fired for the top cause with a positive weight, as listed under its *Why?*.", "",
+          "| Reasons backing the top cause | Cases | Top-1 accuracy |", "|---|---|---|"]
+    for row in d["calibration"]["by_reasons"]:
+        L.append(f"| {row['reasons']}{'+' if row['reasons'] == 4 else ''} | {row['n']} | {pct(row['accuracy'])} |")
+    L += ["", f"Three or more reasons: right {pct(three['accuracy'])} of the time ({three['n']} cases)."]
     L += ["", "| Top cause shown at | Cases | Mean shown | Actually right |", "|---|---|---|---|"]
     for row in d["calibration"]["by_percent"]:
         L.append(f"| {row['bin']} | {row['n']} | {pct(row['mean_shown'])} | {pct(row['accuracy'])} |")

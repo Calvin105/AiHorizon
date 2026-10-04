@@ -1,7 +1,7 @@
 # Evaluation
 
 Measures the real pipeline — the same `run_vision`, `rank_causes` and
-`compute_stars` the API calls — on thousands of synthetic cases where the
+`backing` the API calls — on thousands of synthetic cases where the
 right answer is known. No API, database or LLM; deterministic seeds.
 
 ```bash
@@ -29,7 +29,7 @@ changes have their own tables, each against the run just before it:
 | Part | Question | Truth comes from | Circular? |
 |---|---|---|---|
 | **A. Measurement** | Put a known defect in the photo: does the right signal fire? Does a good photo stay quiet? | The generator (`vision/synth`) | No |
-| **B. Diagnosis** | Photo + a simulated operator's answers: is the top cause right, and do the stars track how often? | Scenario cards (`scenarios.py`) | Partly — see below |
+| **B. Diagnosis** | Photo + a simulated operator's answers: is the top cause right, and does the number of reasons backing it track how often? | Scenario cards (`scenarios.py`) | Partly — see below |
 | **C. Stress** | Damage the photo like a real camera would — blur, noise, light, glare, JPEG, clutter, and since 2026-10-02 framing: zoom, off-centre, handheld, a part on a desk with the camera tilted. Does it stay right, or refuse, rather than silently mis-measure? | The generator | No |
 
 Outcome words used throughout:
@@ -52,8 +52,9 @@ Outcome words used throughout:
   reading matches NSW's floor. An engineer's review of the cards is the
   cheapest way to make Part B stronger.
 - **Gate B, Pass 2, the follow-up questions and the troubleshooting loop
-  are not exercised.** Part B scores the first ranking only (Pass 1 +
-  stars), from the five spine answers, before any check is run. So these
+  are not exercised.** Part B scores the first ranking only (Pass 1 and
+  the reasons behind its top cause), from the five spine answers, before
+  any check is run. So these
   numbers are a floor for the full workflow, not its accuracy.
 - **Chance is 14%** (one cause in seven).
 

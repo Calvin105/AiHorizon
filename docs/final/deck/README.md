@@ -10,7 +10,7 @@ npm install pptxgenjs react-icons react react-dom sharp   # once
 node build_deck.js                                        # writes AI-Dispensing-Defect-Detective.pptx here
 ```
 
-Numbers on the slides come from `evaluation/results/latest.json` (2026-10-02).
+Numbers on the slides come from `evaluation/results/latest.json` (2026-10-05).
 `assets/` holds the UI crops and the phone-photo pair; the annotated phone
 photo is drawn from `detect()`'s own output on a simulated phone photo of a
 printed sample card (the evaluation's `on_desk` condition).

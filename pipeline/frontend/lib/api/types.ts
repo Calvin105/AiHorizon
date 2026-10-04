@@ -316,8 +316,25 @@ export interface Ranking {
   /** Why the ranking sits at this tier. Missing on rankings stored before
    * it was recorded; they gain one the next time the case is ranked. */
   tier_reason?: string;
+  /** What backs the top cause. Missing on rankings stored before it was
+   * recorded, until the case is ranked again. */
+  backing?: Backing | null;
   top_cause_id: string;
   runners_up: string[];
+}
+
+/** What backs the top cause, shown in place of a star rating: a reason is
+ * one rule that fired for it with a positive weight, or one check that
+ * confirmed it — each listed under "Why X%?", so the count can be checked.
+ * See ranking/backing.py. */
+export interface Backing {
+  reasons: number;
+  /** Of the reasons: measured in the photo, from the answers, from checks. */
+  measured: number;
+  answers: number;
+  checks: number;
+  /** Rules that fired against it. */
+  against: number;
 }
 
 // ---- Causes (step 4) ----------------------------------------------------------
@@ -466,7 +483,6 @@ export interface Case {
 export interface Defect {
   signature: string[];
   magnitude: string;
-  stars: number;
   dispensing_quality?: DispensingQuality | null;
 }
 
@@ -516,6 +532,8 @@ export interface Report {
   defect: Defect;
   quality: { ok: boolean | null; reason: string | null };
   tier: Tier | null;
+  tier_reason?: string | null;
+  backing?: Backing | null;
   disagreement_note: string | null;
   causes: Pass1Cause[];
   explanation: string | null;

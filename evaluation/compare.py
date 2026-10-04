@@ -47,8 +47,9 @@ ROWS = [
      lambda r: r["diagnosis"]["overall"]["photo_and_questions@0.75"]["top1"], True),
     ("Top cause correct — photo + questions, 50% reliable operator",
      lambda r: r["diagnosis"]["overall"]["photo_and_questions@0.5"]["top1"], True),
-    ("Right when showing ★★★", lambda r: next(
-        (s["accuracy"] for s in r["diagnosis"]["calibration"]["by_stars"] if s["stars"] == 3), 0.0), True),
+    # Runs from before 2026-10-05 showed stars, not reasons: shown as "—".
+    ("Right with 3+ reasons behind the top cause",
+     lambda r: r["diagnosis"]["calibration"].get("three_plus_reasons", {}).get("accuracy"), True),
     ("Worst false-alarm rate — glare / uneven light",
      lambda r: _max_false_alarm(r, ["glare", "uneven_light"]), False),
     ("Worst false-alarm rate — phone-photo mix", lambda r: _max_false_alarm(r, ["phone_photo"]), False),

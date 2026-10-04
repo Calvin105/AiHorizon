@@ -25,8 +25,9 @@ def _get_case_or_404(db: Session, case_id: int):
 
 @router.get(
     "/report", response_model=ReportOut, summary="Compile the step-7 report",
-    description="Original description, defect + stars, quality, causes with evidence, check log, "
-    "confirmed fix, rules version, whether the LLM was used, and the fixed disclaimer.",
+    description="Original description, defect + dispensing quality score, the tier and what backs it, "
+    "causes with evidence, check log, confirmed fix, rules version, whether the LLM was used, and the "
+    "fixed disclaimer.",
 )
 def get_report(case_id: int, use_llm_explanation: bool = True, db: Session = Depends(get_db)) -> ReportOut:
     case = _get_case_or_404(db, case_id)

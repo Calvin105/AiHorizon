@@ -12,6 +12,7 @@ from sqlalchemy.orm import Session
 from app.domains.cases.close import confirmed_cause
 from app.domains.cases.model import Case
 from app.domains.ranking import pass2
+from app.domains.ranking.backing import backing
 from app.domains.ranking.gates import gate_a, gate_b
 from app.domains.ranking.pass1 import RuleHit, rank_causes, sigmoid, to_logit
 from app.domains.ranking.tier import compute_tier, passes_agree, tier_reason
@@ -105,6 +106,7 @@ def run_ranking(db: Session, case: Case) -> dict:
         "gate_b": asdict(gate_b_result),
         "tier": tier,
         "tier_reason": reason,
+        "backing": backing(ranked[0].evidence),
         "top_cause_id": ranked[0].cause_id,
         "runners_up": [r.cause_id for r in ranked[1:3]],
     }

@@ -71,6 +71,15 @@ export function TierInfo() {
           </p>
         </div>
         <div>
+          <p className="mb-1 font-medium text-foreground">Reasons</p>
+          <p className="text-muted-foreground">
+            How many reasons back the top cause: every rule that fired for it, and every check
+            that confirmed it, each listed under <span className="text-foreground">Why X%?</span>.
+            In testing, with one reason the top cause was right 48% of the time; with three or
+            more, 96%.
+          </p>
+        </div>
+        <div>
           <p className="mb-1 font-medium text-foreground">Diagnosed</p>
           <ul className="space-y-0.5 text-muted-foreground">
             <li><span className="text-foreground">never tested</span> — nothing tried yet</li>

@@ -250,11 +250,11 @@ async function build() {
     const s = pres.addSlide();
     s.background = { color: C.white };
     kicker(s, "THE EVIDENCE");
-    title(s, "When it says it's confident, it's right");
+    title(s, "The more reasons behind it, the more often it's right");
     s.addChart(pres.charts.BAR, [{
       name: "Top cause correct",
-      labels: ["★", "★★", "★★★", "★★★★"],
-      values: [52, 75, 95, 97],
+      labels: ["1 reason", "2", "3", "4+"],
+      values: [48, 72, 95, 100],
     }], {
       x: MX, y: 1.8, w: 6.7, h: 4.55, barDir: "col", chartColors: [C.green], barGapWidthPct: 85,
       showValue: true, dataLabelPosition: "outEnd", dataLabelFormatCode: '0"%"', dataLabelFontSize: 16,
@@ -262,7 +262,7 @@ async function build() {
       valAxisHidden: true, valAxisMinVal: 0, valAxisMaxVal: 110, valGridLine: { style: "none" },
       catAxisLabelFontSize: 20, catAxisLabelColor: C.ink2, catAxisLabelFontFace: BODY, catAxisLineShow: true,
       catAxisLineColor: "C3C2B7", catGridLine: { style: "none" }, showLegend: false,
-      showTitle: true, title: "Top cause correct, by stars shown to the operator", titleFontSize: 14,
+      showTitle: true, title: "Top cause correct, by the reasons shown behind it", titleFontSize: 14,
       titleColor: C.ink2, titleFontFace: BODY,
     });
     s.addText("Photo + answers · 420 simulated cases at three answer-reliability levels · chance = 14%", {
@@ -285,8 +285,8 @@ async function build() {
     }
     footnote(s, "All test images are synthetic — NSW provided no production photos. Method, limits and every table: evaluation/README.md.");
     s.addNotes(
-      "~25 s. We measured confidence instead of asserting it. When the system shows three stars, the top cause is right 95 percent of the time; " +
-      "at one star, 52 — so the stars mean something an operator can act on. From one photo and five answers it gets the cause right 66 percent " +
+      "~25 s. We measured confidence instead of asserting it. When three or more reasons back the top cause, it's right 96 percent of the time; " +
+      "with one reason, 48 — a coin flip. The operator sees every reason under 'Why', so they can count them. From one photo and five answers it gets the cause right 66 percent " +
       "of the time even when a quarter of the answers are wrong; chance is 14. Every number comes from 6,600 synthetic photos run through the real code — " +
       "synthetic, because no production photos were available.",
     );

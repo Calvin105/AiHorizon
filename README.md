@@ -84,7 +84,7 @@ The brief's five steps, its dynamic-questions bonus, and all four bonus challeng
 |---|---|
 | Step 1 — ~5 smart questions | Five-axis interview, with "Don't know" and "Other (describe)" on every axis |
 | Step 1 bonus — dynamic follow-ups | Up to two more questions per case. Each one is chosen because its answer would change the ranking most, and the reason is shown ("would put pressure-time variability at 84%, now 59%") |
-| Step 2 — identify the defect | Defect signature + deviation magnitude + ★ confidence |
+| Step 2 — identify the defect | Defect signature + deviation magnitude. Confidence is the tier (T1–T4), stated with its reason and the number of reasons backing the top cause |
 | Step 3 — cause analysis | 7 causes from the manual, each reason citing its page |
 | Step 4 — troubleshooting score | Likelihood per cause, derived in log-odds, never asserted. "Why 59%?" opens every rule that fired; the *Ranking rules* page lists all 42, and an engineer can change a weight there, with a reason |
 | Step 5 — action plan | Ordered checks, observations before changes |
@@ -179,7 +179,8 @@ uv run --with matplotlib python evaluation/plot.py    # → evaluation/results/*
 The evaluation ([evaluation/README.md](evaluation/README.md)) is where the
 confidence claims are measured rather than asserted:
 
-- **Calibration:** at ★★★ the top cause was right 95% of the time, at ★ 52%.
+- **Calibration:** with three or more reasons behind it, the top cause was right 96% of the time;
+  with one, 48%. Every reason is listed under *Why X%?*, so an operator can count them.
 - **Accuracy:** the top cause was right 66% of the time with photo and questions and an
   operator whose answers are 75% reliable. That rises to 81% at 100% reliability; chance
   is 14%.

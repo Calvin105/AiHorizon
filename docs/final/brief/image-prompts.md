@@ -40,7 +40,7 @@ Layout, top to bottom:
 3. Subtitle: "From a phone photo to the likely cause, the reasons behind it, and proof the fix worked."
 4. Hero image, about a third of the page: a phone photo of a white card lying slightly tilted on a grey desk, with 15 dark round glue dots in 3 rows of 5. Thin rings are drawn over the dots: green on normal dots; red rings labelled "MISSING" on three empty positions, each followed by a much bigger dot with an orange ring labelled "OVERSIZED". Caption beneath: "Carryover pattern found · p = 0.010"
 5. Six numbered steps in a row, each with a simple line icon: "1 Photograph", "2 Interview", "3 Rank", "4 Check", "5 Verify", "6 Learn"
-6. Four big-number tiles: "95%" — "right when it shows ★★★"; "89%" — "phone photos measured correctly"; "66%" — "right even when a quarter of answers are guesses"; "0" — "training data · runs offline"
+6. Four big-number tiles: "96%" — "right when 3+ reasons back it"; "89%" — "phone photos measured correctly"; "66%" — "right even when a quarter of answers are guesses"; "0" — "training data · runs offline"
 7. Three small boxes previewing the inside: "① Dual-brain ranking", "② Feedback loop", "③ Knowledge system"
 8. Footer in small type: "Knowledge source: NPL Best Practice Guide MATC(A)82 · All test images are synthetic"
 
@@ -60,7 +60,7 @@ Layout, top to bottom:
 3. Subtitle: "From a phone photo to the likely cause, the reasons behind it, and proof the fix worked."
 4. Hero image, about a third of the page: a phone photo of a white card lying slightly tilted on a grey desk, with 15 dark round glue dots in 3 rows of 5. Thin rings are drawn over the dots: green on normal dots; red rings labelled "MISSING" on three empty positions, each followed by a much bigger dot with an orange ring labelled "OVERSIZED". Caption beneath: "Carryover pattern found · p = 0.010"
 5. Six numbered steps in a row, each with a simple line icon: "1 Photograph", "2 Interview", "3 Rank", "4 Check", "5 Verify", "6 Learn"
-6. Four big-number tiles: "95%" — "right when it shows ★★★"; "89%" — "phone photos measured correctly"; "66%" — "right even when a quarter of answers are guesses"; "0" — "training data · runs offline"
+6. Four big-number tiles: "96%" — "right when 3+ reasons back it"; "89%" — "phone photos measured correctly"; "66%" — "right even when a quarter of answers are guesses"; "0" — "training data · runs offline"
 7. Three small boxes previewing the inside: "① Dual-brain ranking", "② Feedback loop", "③ Knowledge system"
 8. Footer in small type: "Knowledge source: NPL Best Practice Guide MATC(A)82 · All test images are synthetic"
 
@@ -80,7 +80,7 @@ Layout, top to bottom:
 3. Subtitle: "From a phone photo to the likely cause, the reasons behind it, and proof the fix worked."
 4. Hero image, about a third of the page: a phone photo of a white card lying slightly tilted on a grey desk, with 15 dark round glue dots in 3 rows of 5. Thin rings are drawn over the dots: green on normal dots; red rings labelled "MISSING" on three empty positions, each followed by a much bigger dot with an orange ring labelled "OVERSIZED". Caption beneath: "Carryover pattern found · p = 0.010"
 5. Six numbered steps in a row, each with a simple line icon: "1 Photograph", "2 Interview", "3 Rank", "4 Check", "5 Verify", "6 Learn"
-6. Four big-number tiles: "95%" — "right when it shows ★★★"; "89%" — "phone photos measured correctly"; "66%" — "right even when a quarter of answers are guesses"; "0" — "training data · runs offline"
+6. Four big-number tiles: "96%" — "right when 3+ reasons back it"; "89%" — "phone photos measured correctly"; "66%" — "right even when a quarter of answers are guesses"; "0" — "training data · runs offline"
 7. Three small boxes previewing the inside: "① Dual-brain ranking", "② Feedback loop", "③ Knowledge system"
 8. Footer in small type: "Knowledge source: NPL Best Practice Guide MATC(A)82 · All test images are synthetic"
 
@@ -100,7 +100,7 @@ Layout, top to bottom:
 3. Subtitle: "From a phone photo to the likely cause, the reasons behind it, and proof the fix worked."
 4. Hero image, about a third of the page: a phone photo of a white card lying slightly tilted on a grey desk, with 15 dark round glue dots in 3 rows of 5. Thin rings are drawn over the dots: green on normal dots; red rings labelled "MISSING" on three empty positions, each followed by a much bigger dot with an orange ring labelled "OVERSIZED". Caption beneath: "Carryover pattern found · p = 0.010"
 5. Six numbered steps in a row, each with a simple line icon: "1 Photograph", "2 Interview", "3 Rank", "4 Check", "5 Verify", "6 Learn"
-6. Four big-number tiles: "95%" — "right when it shows ★★★"; "89%" — "phone photos measured correctly"; "66%" — "right even when a quarter of answers are guesses"; "0" — "training data · runs offline"
+6. Four big-number tiles: "96%" — "right when 3+ reasons back it"; "89%" — "phone photos measured correctly"; "66%" — "right even when a quarter of answers are guesses"; "0" — "training data · runs offline"
 7. Three small boxes previewing the inside: "① Dual-brain ranking", "② Feedback loop", "③ Knowledge system"
 8. Footer in small type: "Knowledge source: NPL Best Practice Guide MATC(A)82 · All test images are synthetic"
 
@@ -199,7 +199,7 @@ PANEL 4, right half, titled "Checks settle it":
 - One line: "A check that confirms a cause adds +3.0; one that rules it out adds −3.0."
 - A sequence with arrows: "Air 59%" → "Syringe held to the light: air slug seen · confirms" → "97%" → "Line purged, dots even again · confirms" → "99.8%".
 
-FOOTER LINE: "Stars (0–5) combine how far #1 leads #2 with how much evidence is in. On screen, 'Why 59%?' lists every rule, weight and page."
+FOOTER LINE: "On screen, 'Why 59%?' lists every reason behind a cause, with its weight and page, and the tier says how many back the lead."
 
 Render every quoted text exactly as written, spelled correctly. Add no other words, numbers, logos or watermarks. If space is tight, shrink the notes rather than dropping them.
 
@@ -240,13 +240,13 @@ PANEL 3, left column, titled "Gate B · Precedent":
 - Pull quote: "If history could promote a cause, the system would grow more certain of whatever it diagnosed first."
 
 PANEL 4, right column, titled "Setting the tier": a decision tree.
-- Start: "Do the brains agree?"
+- Start: "Did a check on this case confirm the lead?" → Yes: "T1 · one lead cause". No → "Do the brains agree?"
 - Yes → "Measurement beats chance, and at least 3 proved cases, none contradicting?" → Yes: "T1 · one lead cause"; No: "T2 · lead cause, provisional".
 - No → "Measurement beats chance?" → Yes: "T3 · both candidates, measurement on top"; No: "T4 · no lead: run the check that separates them".
 
 BOTTOM BAND, titled "Is the confidence honest?":
-- A bar chart of four bars labelled "★", "★★", "★★★", "★★★★" with values "52%", "75%", "95%", "97%"; axis caption "top cause correct, by stars shown".
-- Beside it: "In every confidence band it is right at least as often as the % it shows." And in small grey type: "Simulated cases, photo + answers · chance 14% · measured on Brain 1 and the stars; the critic and gates were not part of this test."
+- A bar chart of four bars labelled "1 reason", "2", "3", "4+" with values "48%", "72%", "95%", "100%"; axis caption "top cause correct, by reasons backing it".
+- Beside it: "In every confidence band it is right at least as often as the % it shows." And in small grey type: "Simulated cases, photo + answers · chance 14% · measured on Brain 1 and the reasons behind its lead; the critic and gates were not part of this test."
 
 Render every quoted text exactly as written, spelled correctly. Add no other words, numbers, logos or watermarks. If space is tight, shrink the notes rather than dropping them.
 
@@ -286,7 +286,7 @@ Layout, top to bottom:
    • Right, titled "FROM PAST CASES": a database icon labelled "Case history", splitting into two arrows. One leads to a speech-bubble card: "Similar problems occurred 12 times previously. In 8 cases, the main cause was air trapped in the syringe or material supply." tagged "shown to people · never moves the ranking". The other leads to a shield icon: "Precedent gate · CONFIRMED cases only · can only lower confidence".
    • Only the manual card and the shield send arrows down into a box labelled "Ranking"; the speech bubble has no arrow onward.
 4. A band titled "No embeddings, no model training — every match can be explained", with short placeholder text.
-5. A bottom strip titled "Evidence" with three stat tiles: "66% vs 54%" — "top cause right: photo + answers vs answers alone"; "95%" — "right when it shows ★★★"; "0%" — "false alarms on phone photos". Under it, in small grey type: "All test images are synthetic · next step: validate on real NSW photos".
+5. A bottom strip titled "Evidence" with three stat tiles: "66% vs 54%" — "top cause right: photo + answers vs answers alone"; "96%" — "right when 3+ reasons back it"; "0%" — "false alarms on phone photos". Under it, in small grey type: "All test images are synthetic · next step: validate on real NSW photos".
 6. Short paragraphs of body text drawn as neat grey placeholder lines.
 
 Render every quoted text exactly as written. Add no other words, numbers, logos or watermarks.
@@ -342,8 +342,8 @@ Every figure below comes from the code or `evaluation/results/summary.md`
 - **Honesty claim**: in every band of shown percentage (0–40, 40–55, 55–70,
   70–85, 85–100), the share actually right is at least the mean shown: 46 vs
   35, 60 vs 49, 63 vs 62, 76 vs 76, 98 vs 91.
-- **★ 52% · ★★ 75% · ★★★ 95% · ★★★★ 97%**: how often the top cause is right,
-  by stars shown.
+- **1 reason 48% · 2 reasons 72% · 3 reasons 95% · 4+ reasons 100%** (three or
+  more together: 96%): how often the top cause is right, by the reasons backing it.
 - **66% vs 54%**: photo + answers vs answers alone, when a quarter of the
   answers are guesses. With perfect answers it is 80.5% vs 71.4%. Chance is
   14% (1 in 7).

@@ -79,3 +79,18 @@ def test_t4_names_the_split():
         gate_a=AT_CHANCE, gate_b=NO_PRECEDENT, check_confirmed=False,
     )
     assert reason.startswith("The second read picked nozzle blockage, and nothing measured separates the two.")
+
+
+def test_the_ranking_and_the_report_count_what_backs_the_top_cause(client, catalog):
+    case_id = _ranked_case(client, catalog)
+    ranking = _check(client, case_id, "air_in_fluid_path", "confirms")
+    backing = ranking["backing"]
+    top = ranking["pass1"][0]["evidence"]
+    assert backing["reasons"] == sum(e["weight"] > 0 for e in top)
+    assert backing["checks"] == 1
+    assert backing["measured"] + backing["answers"] + backing["checks"] == backing["reasons"]
+
+    report = client.get(f"/api/cases/{case_id}/report", params={"use_llm_explanation": False}).json()
+    assert report["backing"] == backing
+    assert report["tier_reason"] == ranking["tier_reason"]
+    assert "stars" not in report["defect"]

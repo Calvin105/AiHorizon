@@ -1,16 +1,17 @@
 """Step 7: report and verify. Compiles what's already on the case — no
-new computation except stars and the optional LLM explanation — into the
-one view DESIGN.md W9 specifies: description, identified defect with
-stars, quality score, causes with evidence and sources, the check log,
-confirmed fix, engineer notes, rules version, whether the LLM was used,
-and the fixed disclaimer."""
+new computation except the counts it reads off the measurement and the
+evidence, and the optional LLM explanation — into the one view DESIGN.md
+W9 specifies: description, identified defect with its dispensing quality
+score, the tier and what backs it, causes with evidence and sources, the
+check log, confirmed fix, engineer notes, rules version, whether the LLM
+was used, and the fixed disclaimer."""
 
 from sqlalchemy.orm import Session
 
 from app.domains.cases.model import Case
 from app.domains.checks.suggestions import recommended_actions
+from app.domains.ranking.backing import backing
 from app.domains.report.explain import write_explanation
-from app.domains.report.stars import compute_stars
 from app.domains.retrieval.precedents import precedent_stats
 from app.domains.vision.dispensing_quality import rate_dispensing
 
@@ -23,14 +24,6 @@ def compile_report(
     ranking = case.ranking or {}
     pass1 = ranking.get("pass1", [])
     top3 = pass1[:3]
-
-    stars = 0
-    if pass1:
-        stars = compute_stars(
-            pass1[0]["likelihood"],
-            pass1[1]["likelihood"] if len(pass1) > 1 else None,
-            len(pass1[0]["evidence"]),
-        )
 
     # Whatever was written for this case before wins: the budget allows one
     # call, so a re-read has to show the stored analysis rather than an
@@ -80,7 +73,6 @@ def compile_report(
         "defect": {
             "signature": fingerprint.get("axes", {}).get("signature", []),
             "magnitude": vision.get("magnitude", "unknown"),
-            "stars": stars,
             # Rated from the stored measurement rather than read back, so a
             # case measured before the score existed has one too.
             "dispensing_quality": (
@@ -92,6 +84,10 @@ def compile_report(
             "reason": vision.get("quality_reason"),
         },
         "tier": ranking.get("tier"),
+        "tier_reason": ranking.get("tier_reason") or None,
+        # Counted from the stored evidence, so a ranking from before the
+        # count existed reads the same as a fresh one.
+        "backing": backing(pass1[0]["evidence"]) if pass1 else None,
         "disagreement_note": disagreement_note,
         "causes": top3,
         "explanation": explanation,

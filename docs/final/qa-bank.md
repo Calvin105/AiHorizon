@@ -43,8 +43,8 @@ likelihood.
 **2. Where do the weights come from? Did you fit them?**
 From the NPL Best Practice Guide's sections and the NSW brief, with team judgement on
 size. They were deliberately *not* fitted, because fitting to synthetic data would just
-learn the generator. We measure calibration instead: at ★★★ it's right 95% of the time,
-at ★ 52% (slide 5).
+learn the generator. We measure calibration instead: with three or more reasons behind the top cause it's
+right 96% of the time, with one reason 48% (slide 5).
 
 **3. You have no real photos. How do you know the vision works?**
 We don't claim real-photo accuracy, and say so on the slides. What we measured:

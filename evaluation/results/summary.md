@@ -1,6 +1,6 @@
-# Evaluation — 2026-10-02 03:59
+# Evaluation — 2026-10-05 00:15
 
-Ran in 65.3s. All images synthetic (vision/synth), all operator answers simulated (evaluation/scenarios.py, team judgement). No API, no database, no LLM.
+Ran in 68.8s. All images synthetic (vision/synth), all operator answers simulated (evaluation/scenarios.py, team judgement). No API, no database, no LLM.
 
 ## A. Measurement — does the photo raise the right signal?
 
@@ -64,15 +64,18 @@ Chance level for top-1 is 14% (1 in 7).
 - **dispense_height_or_board_bending** → pressure_time_instability 28, dispense_height_or_board_bending 22, equipment_condition 4, (no cause ahead) 3, air_in_fluid_path 2, nozzle_blockage 1
 - **equipment_condition** → equipment_condition 20, pressure_time_instability 17, material_rheology_change 10, air_in_fluid_path 5, dispense_height_or_board_bending 3, nozzle_blockage 2, (no cause ahead) 2, volume_too_small_carryover 1
 
-### Calibration — when it is confident, is it right? (photo + questions, all reliabilities)
+### Calibration — does what it shows track how often it is right? (photo + questions, all reliabilities)
 
-| Stars shown | Cases | Top-1 accuracy |
+Reasons = the rules that fired for the top cause with a positive weight, as listed under its *Why?*.
+
+| Reasons backing the top cause | Cases | Top-1 accuracy |
 |---|---|---|
-| 0 | 23 | 26% |
-| ★ | 522 | 52% |
-| ★★ | 429 | 75% |
-| ★★★ | 210 | 95% |
-| ★★★★ | 58 | 97% |
+| 1 | 412 | 48% |
+| 2 | 580 | 72% |
+| 3 | 196 | 95% |
+| 4+ | 54 | 100% |
+
+Three or more reasons: right 96% of the time (250 cases).
 
 | Top cause shown at | Cases | Mean shown | Actually right |
 |---|---|---|---|
