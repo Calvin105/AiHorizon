@@ -18,7 +18,7 @@ import pathlib
 from collections import Counter
 
 from . import detect
-from .expected import is_plausible
+from .expected import effective_gt_tags, is_plausible
 
 SAMPLES = pathlib.Path(__file__).resolve().parents[1] / "samples"
 
@@ -48,10 +48,11 @@ def main() -> None:
         extra_blobs_total += len(result.get("extra", []))
 
         predicted_by_index = {d["index"]: d["tags"] for d in result["dots"]}
+        nominal_r = {p["index"]: p["r"] for p in sidecar["profile"]}
         n_profile = len(sidecar["profile"])
         for gt_dot in sidecar["dots"][:n_profile]:
             idx = gt_dot["index"]
-            raw_gt_tags = gt_dot["tags"]
+            raw_gt_tags = effective_gt_tags(gt_dot, nominal_r.get(idx))
             gt_tags = raw_gt_tags or ["good"]
             predicted = predicted_by_index.get(idx, [])
             verdict = is_plausible(raw_gt_tags, predicted)

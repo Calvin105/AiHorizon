@@ -5,9 +5,11 @@ stay indistinguishable from a clean deposit. Those gaps are asserted
 explicitly rather than skipped, so a future change to main.py that silently
 breaks or silently fixes one shows up here instead of going unnoticed.
 """
-import sys, pathlib
+import json, sys, pathlib
 sys.path.insert(0, "/home/calvinkhoo/Documents/GitHub/AiHorizon/vision")
 from main import measure_image
+from detect import detect
+from detect.classify import SIZE_TOLERANCE
 
 base = pathlib.Path("/home/calvinkhoo/Documents/GitHub/AiHorizon/vision/samples")
 names = [
@@ -23,6 +25,14 @@ for name in names:
     print(f"{name:20} n={s['blob_count']:2} cv={s['size_cv']:.3f} circ={s['mean_circularity']:.3f} "
           f"pos={s['position_deviation_px']:.1f} spread={s['spread_index']:.2f} miss={s['missing_count']} "
           f"over={s['oversized_count']} under={s['undersized_count']} irreg={s['irregular_count']}")
+
+# Per-deposit tags from detect(), which draws the app's annotated photo.
+# Inside a scattered batch, a deposit that landed on nominal is the right
+# size and must be drawn as one.
+scatter = detect((base / "inconsistent.png").read_bytes(), json.loads((base / "inconsistent.json").read_text()))
+scatter_dots = [d for d in scatter["dots"] if "area_ratio" in d]
+on_nominal = [d for d in scatter_dots if abs(d["area_ratio"] - 1) <= SIZE_TOLERANCE]
+off_nominal = [d for d in scatter_dots if abs(d["area_ratio"] - 1) > SIZE_TOLERANCE]
 
 print("\n--- oracle assertions ---")
 checks = [
@@ -52,6 +62,8 @@ checks = [
     ("bridging_dots flags shape",       rows["bridging_dots"]["irregular_count"] >= 1),
 
     ("inconsistent is dispersed",       rows["inconsistent"]["size_cv"] > 0.25),
+    ("inconsistent leaves deposits at nominal size unflagged", bool(on_nominal) and not any(d["tags"] for d in on_nominal)),
+    ("inconsistent flags every deposit off nominal size", bool(off_nominal) and all(d["tags"] for d in off_nominal)),
 
     ("line_end_defect flags oversized", rows["line_end_defect"]["oversized_count"] >= 1),
     # Not asserting irregular_count here: with adequate dot spacing (see

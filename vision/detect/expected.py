@@ -14,6 +14,8 @@ judged" rather than right or wrong.
 
 from __future__ import annotations
 
+from .classify import SIZE_TOLERANCE
+
 EXPECTED_SYMPTOMS: dict[str, set[str]] = {
     "missing": {"missing", "possibly_fused"},
     "carryover_big": {"oversized"},
@@ -36,6 +38,20 @@ EXPECTED_SYMPTOMS: dict[str, set[str]] = {
 
 # Tags this pipeline is known not to be able to detect yet -- not scored.
 NOT_YET_JUDGED = {"air_bubble", "satellite", "contamination_speck"}
+
+
+def effective_gt_tags(gt_dot: dict, nominal_r: float | None) -> list[str]:
+    """The generator stamps "inconsistent" on every dot it rescaled,
+    including the ones whose random scale landed on nominal. Those dots are
+    the right size, so they're scored as good: the detector is right not to
+    flag them. Measured from the radius the generator actually drew."""
+    tags = list(gt_dot.get("tags", []))
+    r = gt_dot.get("r")
+    if "inconsistent" not in tags or not r or not nominal_r:
+        return tags
+    if abs((r / nominal_r) ** 2 - 1) <= SIZE_TOLERANCE:
+        return [t for t in tags if t != "inconsistent"]
+    return tags
 
 
 def is_plausible(gt_tags: list[str], predicted_tags: list[str]) -> bool | None:

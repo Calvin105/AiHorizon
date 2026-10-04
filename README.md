@@ -157,7 +157,7 @@ rather than guessed at. That is the intended failure mode, but it is a real limi
 cd pipeline/backend && uv run pytest
 
 # Vision metrology oracle — each synthetic sample encodes a known defect
-cd vision && uv run python test_metrology.py          # 25/25 passed
+cd vision && uv run python test_metrology.py          # 27/27 passed
 
 # End-to-end golden cases — fingerprint in, expected cause ranking out
 uv run python golden/check_golden.py                  # 2 of 2 passed

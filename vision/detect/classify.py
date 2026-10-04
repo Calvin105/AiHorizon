@@ -26,6 +26,9 @@ CIRCULARITY_IRREGULAR = 0.80
 UNDERSIZED_LIMIT = 0.70
 OVERSIZED_LIMIT = 1.40
 MISALIGN_FACTOR = 0.6  # deviation beyond this * nominal radius is flagged misaligned
+#: How far a deposit's area can sit from nominal and still be the right
+#: size. The same 15% as the demo profiles' size-spread spec (size_cv < 0.15).
+SIZE_TOLERANCE = 0.15
 
 
 def classify_point(match: Match) -> dict:
@@ -64,11 +67,9 @@ def classify_extra(blob: dict) -> dict:
 
 
 def classify_array(dots: list[dict]) -> None:
-    """Inconsistent volume is a property of the *array*, not any one dot --
-    a dot whose size happens to land near nominal by chance is genuinely
-    size-consistent for that one instance, even inside a scattered batch.
-    classify_point can only ever judge one dot at a time, so it can never
-    catch this; this pass runs after, over every matched dot in one image.
+    """Inconsistent volume is a property of the *array*, not any one dot,
+    so classify_point, which judges one dot at a time, can never catch it.
+    This pass runs after, over every matched dot in one image.
 
     Rule: if the same image already has at least one dot flagged oversized
     AND at least one flagged undersized, that's the actual fingerprint of
@@ -80,6 +81,14 @@ def classify_array(dots: list[dict]) -> None:
     outlier (e.g. a single overrun dot) could inflate it enough to
     wrongly re-flag every genuinely clean dot in that image, which is
     exactly the false-positive problem the 2026-09-14 fixes just removed.
+
+    Inside a scattered batch, a dot is marked inconsistent only if its own
+    size is off nominal, beyond SIZE_TOLERANCE. A dot whose size happens to
+    land on nominal is the right size, even in a scattered batch. This pass
+    used to mark every unflagged dot, because the synthetic ground truth
+    stamps the tag on every dot it rescaled, so a dot at 1.01x nominal was
+    drawn as a defect. The array-level verdict doesn't rest on these tags:
+    ranking reads size_cv, which is computed from every dot's area.
     Mutates `dots` in place.
     """
     has_oversized = any("oversized" in d["tags"] for d in dots)
@@ -87,5 +96,5 @@ def classify_array(dots: list[dict]) -> None:
     if not (has_oversized and has_undersized):
         return
     for d in dots:
-        if "area_ratio" in d and not d["tags"]:
+        if "area_ratio" in d and not d["tags"] and abs(d["area_ratio"] - 1) > SIZE_TOLERANCE:
             d["tags"].append("inconsistent")

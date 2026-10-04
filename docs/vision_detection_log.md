@@ -243,3 +243,49 @@ Extra (unmatched) blobs across all images: 1
 ```
 
 </details>
+
+### 2026-10-05 — A deposit at nominal size is not `inconsistent`
+
+* **The fault:** `classify_array` marked *every* unflagged deposit in a scattered array as `inconsistent`, including one measured at 1.008× nominal area. The annotated photo then drew a perfectly sized deposit as a defect (reported on `golden/nsw_inconsistent_size`).
+* **Why it was built that way:** the generator stamps `inconsistent` on every dot it rescales, including the ones whose random draw landed on nominal, and `evaluate.py` scored "nothing flagged" on those as wrong. The 2026-09-14 entry above reclaimed exactly those dots, which matched the label instead of the photo.
+* **The fix:** inside a scattered array, only deposits off nominal by more than `SIZE_TOLERANCE` (15% of area, the demo profiles' size-spread spec) are marked `inconsistent`. Ground truth is judged the same way: `expected.effective_gt_tags` reads the radius the generator actually drew, so a rescaled dot that landed within tolerance is scored as `good`.
+* **What it does not change:** ranking reads `size_cv`, computed from every deposit's area, and never these tags, so the diagnosis and `evaluation/` numbers are untouched.
+* **In the app:** with no ground truth, rings used to be green on every deposit. They are now green for a deposit that measured fine and red for a flagged one.
+* **The numbers:**
+  * **`inconsistent`: 98.4% → 100%** (the 10 dots drawn within tolerance now count as `good`).
+  * **`good`: 99.0% → 98.8%** (509 dots now, one of the 10 reads `possibly_fused`).
+  * **`air_bubble`:** no longer picks up a spurious `inconsistent` inside a scattered array.
+  * **OVERALL: unchanged at 96.6%** (648 correct / 23 wrong / 6 unjudged).
+
+<details>
+<summary>Full breakdown</summary>
+
+```
+Ran detect() with a profile against 57 images (687 labelled dot-instances).
+
+generator tag          n     accuracy   predicted symptom breakdown
+------------------------------------------------------------------------------------------
+abnormal_shape         3     100.0%                   irregular=3
+air_bubble             6      n/a  (6 not yet judged) (nothing flagged)=6
+bridging               16    100.0%                   possibly_fused=8, oversized=2, irregular=2, misaligned=2, missing=2
+carryover_big          7     100.0%                   oversized=7
+double_dispense        4      75.0%                   oversized=3, (nothing flagged)=1
+dragged                8     100.0%                   possibly_fused=4, missing=1, oversized=1, irregular=1, misaligned=1
+ghost                  1     100.0%                   missing=1
+good                   509    98.8%                   (nothing flagged)=503, possibly_fused=4, missing=2
+inconsistent           53    100.0%                   oversized=22, undersized=16, inconsistent=15
+line_end_defect        2     100.0%                   oversized=2
+line_start_defect      1     100.0%                   missing=1
+misaligned             48     70.8%                   misaligned=34, (nothing flagged)=14
+missing                7     100.0%                   missing=7
+overrun                5     100.0%                   oversized=4, irregular=1
+smearing               9      83.3%                   irregular=5, oversized=3, (nothing flagged)=1
+stringing              8      87.5%                   irregular=7, (nothing flagged)=1
+------------------------------------------------------------------------------------------
+OVERALL                687    96.6% (648 correct / 23 wrong / 6 not yet judged)
+
+Extra (unmatched) blobs across all images: 1
+(covers contamination specks and satellites that cleared the area-noise floor)
+```
+
+</details>

@@ -9,11 +9,13 @@ too.
 
 Writes annotated PNGs to vision/detect/annotated/.
 
-Colour key: green ring = matches expected.py's known-correct behaviour,
-red ring = doesn't, teal ring = a class this pipeline can't judge yet
-(air_bubble, satellite, contamination_speck -- see expected.py), yellow
-dashed-looking ring = a detected blob with no matching profile position at
-all (stray material).
+Colour key, against a sample's ground truth: green ring = matches
+expected.py's known-correct behaviour, red ring = doesn't, teal ring = a
+class this pipeline can't judge yet (air_bubble, satellite,
+contamination_speck -- see expected.py). Without ground truth -- every
+photo the app measures -- green ring = the deposit measured fine, red ring
+= it was flagged. Either way, yellow ring = a detected blob with no
+matching profile position at all (stray material).
 """
 
 from __future__ import annotations
@@ -25,13 +27,14 @@ import pathlib
 import cv2
 
 from . import detect
-from .expected import is_plausible
+from .expected import effective_gt_tags, is_plausible
 
 SAMPLES = pathlib.Path(__file__).resolve().parents[1] / "samples"
 OUT = pathlib.Path(__file__).resolve().parent / "annotated"
 
 CORRECT = (90, 200, 90)  # BGR: green
 WRONG = (60, 60, 230)  # red
+FLAGGED = (60, 60, 230)  # red: no ground truth, so the colour is the verdict itself
 UNJUDGED = (180, 170, 60)  # teal
 EXTRA = (0, 200, 230)  # yellow
 
@@ -74,9 +77,14 @@ def annotate_image(
     elif profile_data and "profile" in profile_data:
         prof_points = {p["index"]: p for p in profile_data["profile"]}
 
+    # Ground truth as the dot was actually drawn: a dot the generator
+    # rescaled onto nominal is a good dot, whatever its tag says.
     gt_by_index = {}
     if profile_data and "dots" in profile_data:
-        gt_by_index = {d["index"]: d for d in profile_data["dots"]}
+        recipe_r = {p["index"]: p.get("r") for p in profile_data.get("profile", [])}
+        gt_by_index = {
+            d["index"]: effective_gt_tags(d, recipe_r.get(d["index"])) for d in profile_data["dots"]
+        }
 
     predicted_by_index = {d["index"]: d for d in result.get("dots", [])}
 
@@ -97,8 +105,7 @@ def annotate_image(
         cy = int(round(pred.get("cy", p.get("cy", 0))))
 
         if idx in gt_by_index:
-            gt_tags = gt_by_index[idx].get("tags", [])
-            verdict = is_plausible(gt_tags, pred_tags)
+            verdict = is_plausible(gt_by_index[idx], pred_tags)
             if verdict is None:
                 colour = UNJUDGED
             elif verdict:
@@ -106,13 +113,13 @@ def annotate_image(
             else:
                 colour = WRONG
         else:
-            colour = CORRECT
+            colour = FLAGGED if pred_tags else CORRECT
 
         cv2.circle(img, (cx, cy), radius, colour, 2)
 
         label = _abbr(pred_tags)
-        if idx in gt_by_index and is_plausible(gt_by_index[idx].get("tags", []), pred_tags) is False:
-            label += f"  (gt:{_abbr(gt_by_index[idx].get('tags', []))})"
+        if idx in gt_by_index and is_plausible(gt_by_index[idx], pred_tags) is False:
+            label += f"  (gt:{_abbr(gt_by_index[idx])})"
 
         cv2.putText(
             img, label, (cx - radius, cy - radius - 6),
@@ -159,11 +166,12 @@ def annotate(name: str) -> pathlib.Path | None:
 
     predicted_by_index = {d["index"]: d for d in result.get("dots", [])}
     n_profile = len(sidecar.get("profile", []))
+    nominal_r = {p["index"]: p["r"] for p in sidecar.get("profile", [])}
     counts = {"correct": 0, "wrong": 0, "unjudged": 0}
 
     for gt_dot in sidecar.get("dots", [])[:n_profile]:
         idx = gt_dot["index"]
-        gt_tags = gt_dot["tags"]
+        gt_tags = effective_gt_tags(gt_dot, nominal_r.get(idx))
         pred = predicted_by_index.get(idx, {"tags": []})
         verdict = is_plausible(gt_tags, pred.get("tags", []))
 
