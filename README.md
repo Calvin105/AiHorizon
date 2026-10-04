@@ -87,7 +87,7 @@ The brief's five steps, its dynamic-questions bonus, and all four bonus challeng
 | Step 2 — identify the defect | Defect signature + deviation magnitude. Confidence is the tier (T1–T4), stated with its reason and the number of reasons backing the top cause |
 | Step 3 — cause analysis | 7 causes from the manual, each reason citing its page |
 | Step 4 — troubleshooting score | Likelihood per cause, derived in log-odds, never asserted. "Why 59%?" opens every rule that fired; the *Ranking rules* page lists all 42, and an engineer can change a weight there, with a reason |
-| Step 5 — action plan | Ordered checks, observations before changes |
+| Step 5 — action plan | Ordered checks per cause, a look before a change, each saying what result confirms the cause and what rules it out — laid out step by step when a check is logged, and in the report |
 | **Bonus 1** — image recognition | OpenCV metrology: size dispersion, shape, position, missing deposits. The photo is lined up with the recipe first, so a phone photo of the part — zoomed, off-centre, tilted, on a desk — measures |
 | **Bonus 2** — quality score | The brief's layout, from the photo: completeness, size consistency, shape consistency and dispensing position, each ★ from a count of deposits ("3 of 15 within 15% of the nominal size"), and an overall score out of 100. It rates the deposits, not the diagnosis |
 | **Bonus 3** — learning database | *"Similar problems occurred 12 times previously. In 8 cases, the main cause was air trapped in the syringe or material supply."* — what case 1 shows |
@@ -153,7 +153,7 @@ rather than guessed at. That is the intended failure mode, but it is a real limi
 
 ```bash
 # Backend: close conditions, gates, photo persistence, follow-ups, spec parsing,
-# LLM fail-fast — 52 tests, offline, each on a throwaway database
+# LLM fail-fast, tiers, the demo reset — 79 tests, offline, each on a throwaway database
 cd pipeline/backend && uv run pytest
 
 # Vision metrology oracle — each synthetic sample encodes a known defect

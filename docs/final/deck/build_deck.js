@@ -271,7 +271,7 @@ async function build() {
     const stats = [
       ["66%", "top cause right from one photo and five answers, with an operator whose answers are only 75% reliable — chance is 14%"],
       ["6,600", "synthetic photos and 420 simulated cases through the real code, in every evaluation run (about a minute)"],
-      ["79", "automated checks — 52 backend tests, 25 measurement oracles, 2 golden cases — plus a browser run of the whole wizard"],
+      ["108", "automated checks — 79 backend tests, 27 measurement oracles, 2 golden cases — plus a browser run of the whole wizard"],
     ];
     const sx = 7.75, sw = 4.95;
     for (let i = 0; i < stats.length; i++) {
