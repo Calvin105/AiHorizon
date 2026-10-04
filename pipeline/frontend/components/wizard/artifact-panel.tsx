@@ -46,6 +46,10 @@ const TIER_VARIANT: Record<string, "default" | "secondary" | "destructive"> = {
   T1: "default", T2: "secondary", T3: "secondary", T4: "destructive",
 };
 
+/** On the case page the panel sits in a plain section, so each artifact is a
+ * titled block under a rule rather than a card inside a card. */
+const FlatContext = React.createContext(false);
+
 function ArtifactCard({
   title, extra, children, cardId, isHighlighted,
 }: {
@@ -55,6 +59,21 @@ function ArtifactCard({
   cardId?: string;
   isHighlighted?: boolean;
 }) {
+  const flat = React.useContext(FlatContext);
+  if (flat) {
+    return (
+      <section
+        data-card-id={cardId}
+        className="space-y-2 border-t pt-4 text-sm first:border-t-0 first:pt-0"
+      >
+        <div className="flex items-center justify-between gap-2">
+          <h3 className="text-sm font-medium">{title}</h3>
+          {extra}
+        </div>
+        {children}
+      </section>
+    );
+  }
   return (
     <div
       data-card-id={cardId}
@@ -128,9 +147,11 @@ function causeLabel(ranking: Ranking, causeId: string): string {
 }
 
 export function ArtifactPanel({
-  artifacts, reportHref,
+  artifacts, reportHref, flat = false,
 }: {
   artifacts: Artifacts;
+  /** No card around each artifact — for use inside a section of its own. */
+  flat?: boolean;
   /** Where the printable report opens from this panel. Left out where the
    * page already links to it. */
   reportHref?: string;
@@ -358,9 +379,14 @@ export function ArtifactPanel({
   ]);
 
   return (
+    <FlatContext.Provider value={flat}>
     <div
       ref={containerRef}
-      className="h-full min-h-0 flex-1 overflow-y-scroll thin-scrollbar p-4 space-y-4 scroll-smooth"
+      className={
+        flat
+          ? "space-y-4"
+          : "h-full min-h-0 flex-1 overflow-y-scroll thin-scrollbar p-4 space-y-4 scroll-smooth"
+      }
     >
         <ArtifactCard
           cardId="card-setup"
@@ -379,7 +405,7 @@ export function ArtifactPanel({
             </div>
 
             {/* Quick Reference Specs Grid */}
-            <div className="rounded-md border bg-muted/25 p-2.5 text-xs space-y-1.5">
+            <div className="rounded-md bg-muted/40 p-2.5 text-xs space-y-1.5">
               <div className="flex items-center justify-between">
                 <span className="font-semibold text-foreground">
                   Material: {caseData.profile.material.name}
@@ -517,7 +543,7 @@ export function ArtifactPanel({
             )}
 
             {artifacts.vision.quality_ok && artifacts.vision.dispensing_quality && (
-              <div className="mb-3 rounded-md border bg-muted/25 p-2.5">
+              <div className="mb-3 rounded-md bg-muted/40 p-2.5">
                 <DispensingQualityScore quality={artifacts.vision.dispensing_quality} />
               </div>
             )}
@@ -616,7 +642,7 @@ export function ArtifactPanel({
             title="Ranking (step 5)"
             extra={<TierInfo />}
           >
-            <div className="mb-3 rounded-md border bg-muted/40 p-2 text-xs">
+            <div className="mb-3 rounded-md bg-muted/40 p-2 text-xs">
               <div className="text-muted-foreground">Recognized defect — what&apos;s wrong</div>
               <div className="font-medium">
                 {artifacts.axes.signature && artifacts.axes.signature.length > 0
@@ -650,7 +676,7 @@ export function ArtifactPanel({
                 "it abstained" is a fact about the evidence, and hiding it
                 made an abstention look like agreement. */}
             {artifacts.ranking.pass2 !== null || artifacts.ranking.critic_note ? (
-              <div className="mb-3 grid grid-cols-2 gap-2 rounded-md border bg-muted/40 p-2 text-xs">
+              <div className="mb-3 grid grid-cols-2 gap-2 rounded-md bg-muted/40 p-2 text-xs">
                 <div>
                   <div className="text-muted-foreground">Pass 1 &middot; rule engine</div>
                   <div className="font-medium">{artifacts.ranking.pass1[0]?.label ?? "—"}</div>
@@ -714,7 +740,7 @@ export function ArtifactPanel({
                 return (
                   <div
                     key={c.cause_id}
-                    className="rounded-lg border border-border/60 bg-background/60 p-2.5 text-xs space-y-1.5 transition-all shadow-2xs"
+                    className="border-b border-border/60 py-2.5 text-xs space-y-1.5 last:border-b-0"
                   >
                     <div className="flex items-start justify-between gap-2">
                       <span className="font-medium text-foreground leading-snug">{c.label}</span>
@@ -902,7 +928,7 @@ export function ArtifactPanel({
         )}
 
         {/* Extra bottom space allowing scrolling with content on top */}
-        <div className="h-[50vh] shrink-0 pointer-events-none" aria-hidden="true" />
+        {!flat && <div className="h-[50vh] shrink-0 pointer-events-none" aria-hidden="true" />}
 
         {expandedImage && (
           <div
@@ -939,6 +965,7 @@ export function ArtifactPanel({
             </div>
           </div>
         )}
-      </div>
+    </div>
+    </FlatContext.Provider>
   );
 }

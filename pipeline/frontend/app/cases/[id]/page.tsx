@@ -476,9 +476,7 @@ function Details({ caseData, artifacts }: { caseData: Case; artifacts: Artifacts
         </TabsContent>
 
         <TabsContent value="artifacts">
-          <div className="rounded-lg border bg-card">
-            <ArtifactPanel artifacts={artifacts} />
-          </div>
+          <ArtifactPanel artifacts={artifacts} flat />
         </TabsContent>
       </Tabs>
     </details>
