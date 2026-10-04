@@ -542,10 +542,11 @@ export function ArtifactPanel({
           <ArtifactCard
             cardId="card-coarse"
             isHighlighted={highlightedCardId === "card-coarse"}
-            title="Coarse retrieval (step 2b)"
+            title="Similar past cases"
+            extra={<span className="text-[11px] text-muted-foreground">coarse retrieval · step 2b</span>}
           >
             {artifacts.coarse.length === 0 ? (
-              <p className="text-muted-foreground">No similar past cases yet — nothing to pre-load.</p>
+              <p className="text-muted-foreground">None on file yet.</p>
             ) : (
               <ul className="space-y-1">
                 {artifacts.coarse.map((m) => (
