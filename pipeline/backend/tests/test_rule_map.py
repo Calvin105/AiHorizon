@@ -135,3 +135,21 @@ def test_saved_edits_come_back_after_a_restart(client):
     with SessionLocal() as db:
         overrides.load(db)
     assert weights.edited_weight(AIR_PURGE) == 2.0
+
+
+def test_reload_follows_the_table_after_an_outside_reset(client):
+    """The demo reset empties rule_overrides from another process; the
+    running server only drops the edit it holds once it is told to reload."""
+    from app.core.database import SessionLocal
+    from app.domains.ranking import weights
+    from app.domains.ranking.model import RuleOverride
+
+    client.put(f"/api/rules/{AIR_PURGE}", json={"weight": 2.0, "note": "Seen on our line"})
+    with SessionLocal() as db:
+        db.query(RuleOverride).delete()
+        db.commit()
+    assert weights.edited_weight(AIR_PURGE) == 2.0  # still held in memory
+
+    body = client.post("/api/rules/reload").json()
+    assert weights.edited_weight(AIR_PURGE) is None
+    assert _rule(body, AIR_PURGE)["weight"] == 1.1

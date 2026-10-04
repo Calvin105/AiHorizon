@@ -20,7 +20,7 @@ to it is the offline backup.
 3. Run the browser check: `uv run --with playwright python scripts/e2e_wizard.py`
    (set `CHROMIUM_PATH` if Playwright's own browser isn't installed). It should end
    `OK — case #N driven through the UI to CONFIRMED`. Then reset again so the
-   database is clean: `scripts/start-demo.sh --reset`.
+   database is clean: `scripts/reset-demo.sh` (no need to stop the demo).
 4. **Phone test.** Turn on your phone's hotspot and join it with the laptop, start
    the demo, and scan the QR code the launcher prints. Take a photo of a printed sample
    card (step 6) and check it measures.
@@ -37,8 +37,9 @@ to it is the offline backup.
 
 ## At the booth (8:00–9:00)
 
-- Power in, launcher running in a terminal: `scripts/start-demo.sh` (no `--reset` on
-  the day unless the database got messy — a reset takes ~10 s).
+- Power in, launcher running in a terminal: `scripts/start-demo.sh`. If the database
+  gets messy, run `scripts/reset-demo.sh` in a second terminal. It takes a few seconds,
+  the demo keeps running, and the next page load shows cases 1–4 fresh.
 - Browser tabs, in this order: **home** (`/`), a **new case already opened at the photo
   step** (open `/troubleshoot`, pick *Line 3 Dispenser* and *Standard Dot · 15-point
   grid*, Open case), **`/cases/1/report`**, **`/cases/2`**.
@@ -52,7 +53,7 @@ to it is the offline backup.
   tie at 59%. Hover the two answers under *Follow-up · Pressure gauge* to show how each
   would break the tie, then click the *Air in syringe* column to show how its 59% is built.
 - If a judge edits a weight to try it, *Restore all* on the List tab puts every rule
-  back to the manual's (so does `--reset`). An edited weight changes the live demo's
+  back to the manual's (so does `scripts/reset-demo.sh`). An edited weight changes the live demo's
   numbers, so check for the "edited" count before the next slot.
 
 ## The 2-minute demo — clicks and lines

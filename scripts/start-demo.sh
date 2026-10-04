@@ -3,6 +3,7 @@
 #
 #   scripts/start-demo.sh             backend + production frontend
 #   scripts/start-demo.sh --reset     rebuild the demo database first
+#                                    (scripts/reset-demo.sh does it while running)
 #   LLM_ENABLED=false scripts/start-demo.sh    no network needed at all
 #
 # The backend stays on localhost. The frontend listens on every interface
@@ -16,7 +17,7 @@ BACKEND="$ROOT/pipeline/backend"
 FRONTEND="$ROOT/pipeline/frontend"
 
 if [[ "${1:-}" == "--reset" ]]; then
-  echo "Rebuilding the demo database (the old one goes to pipeline/backend/backups/)..."
+  echo "Rebuilding the demo database (a copy of the old one goes to pipeline/backend/backups/)..."
   (cd "$BACKEND" && uv run python -m app.reset_demo)
 fi
 

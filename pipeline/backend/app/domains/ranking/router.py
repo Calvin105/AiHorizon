@@ -53,6 +53,21 @@ def rules(db: Session = Depends(get_db)) -> RuleMapOut:
     return RuleMapOut(**asdict(rule_map(edits=overrides.saved(db))))
 
 
+@rules_router.post(
+    "/rules/reload",
+    response_model=RuleMapOut,
+    summary="Re-read saved rule edits",
+    description=(
+        "The edits in force are held in memory and loaded at startup. Anything that changes the "
+        "rule_overrides table from outside this server, like the demo reset, calls this so "
+        "ranking follows the table instead of what it held before."
+    ),
+)
+def reload_rules(db: Session = Depends(get_db)) -> RuleMapOut:
+    overrides.load(db)
+    return rules(db)
+
+
 def _rule_or_404(rule_key: str):
     rule = overrides.find_rule(rule_key)
     if rule is None:

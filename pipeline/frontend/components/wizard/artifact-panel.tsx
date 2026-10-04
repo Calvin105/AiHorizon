@@ -216,6 +216,11 @@ export function ArtifactPanel({ artifacts }: { artifacts: Artifacts }) {
     };
   });
 
+  // Case numbers restart at 1 after a demo reset, so the baseline is keyed
+  // by when the case was opened too: otherwise a new case #1 would show
+  // differences against the old case #1's ranking.
+  const baselineKey = `aihorizon_prev_ranking_${caseData.case_id}_${caseData.opened_at}`;
+
   // Track and update candidate cause likelihood changes
   React.useEffect(() => {
     if (!artifacts.ranking?.pass1) return;
@@ -234,7 +239,7 @@ export function ArtifactPanel({ artifacts }: { artifacts: Artifacts }) {
     } else {
       // Check session storage for a saved baseline if available
       try {
-        const stored = sessionStorage.getItem(`aihorizon_prev_ranking_${caseData.case_id}`);
+        const stored = sessionStorage.getItem(baselineKey);
         if (stored) {
           const parsed = JSON.parse(stored);
           setPrevLikelihoods(parsed);
@@ -246,11 +251,11 @@ export function ArtifactPanel({ artifacts }: { artifacts: Artifacts }) {
 
     lastPass1Ref.current = currentMap;
     try {
-      sessionStorage.setItem(`aihorizon_prev_ranking_${caseData.case_id}`, JSON.stringify(currentMap));
+      sessionStorage.setItem(baselineKey, JSON.stringify(currentMap));
     } catch {
       // ignore
     }
-  }, [artifacts.ranking, caseData.case_id]);
+  }, [artifacts.ranking, baselineKey]);
 
   // Smoothly scroll the panel to the target card
   const scrollToCard = React.useCallback((cardId: string) => {

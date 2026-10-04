@@ -15,7 +15,7 @@ its router, schemas and logic:
 | `cases` | 8 | The case record, who writes which half of the fingerprint, the close rule (`close.py`) |
 
 ```bash
-uv run python -m app.reset_demo               # rebuild the demo database, offline
+uv run python -m app.reset_demo               # rebuild the demo database, offline (safe while running)
 uv run uvicorn app.main:app --port 8001       # API docs at http://localhost:8001/docs
 uv run pytest                                 # 52 tests, offline
 uv run python -m app.seed_demo_case           # integration test against the running API

@@ -31,17 +31,15 @@ uv sync
 
 # 2. The demo database, in one offline command: schema, catalog, four showcase
 #    cases driven through the real API, and 29 closed history cases.
-#    Any existing pipeline.db is moved to pipeline/backend/backups/ first.
-cd pipeline/backend
-uv run python -m app.reset_demo
-cp .env.example .env                 # optional: add a GROQ_API_KEY
+#    A copy of any existing pipeline.db goes to pipeline/backend/backups/ first.
+#    Run it again at any time to start over, with the demo running or not.
+scripts/reset-demo.sh
+cp pipeline/backend/.env.example pipeline/backend/.env   # optional: add a GROQ_API_KEY
 
 # 3. Frontend dependencies, once
-cd ../frontend
-pnpm install --frozen-lockfile
+(cd pipeline/frontend && pnpm install --frozen-lockfile)
 
 # 4. Run everything: backend on localhost:8001, frontend on :3001
-cd ../..
 scripts/start-demo.sh                # LLM_ENABLED=false for a fully offline run
 ```
 
