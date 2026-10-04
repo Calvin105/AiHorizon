@@ -288,6 +288,9 @@ export interface Ranking {
   gate_a: GateA;
   gate_b: GateB;
   tier: Tier;
+  /** Why the ranking sits at this tier. Missing on rankings stored before
+   * it was recorded; they gain one the next time the case is ranked. */
+  tier_reason?: string;
   top_cause_id: string;
   runners_up: string[];
 }

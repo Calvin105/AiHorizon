@@ -68,7 +68,7 @@ cd pipeline/frontend && pnpm build && pnpm exec next start -H 0.0.0.0 -p 3001
 | `/troubleshoot` | Open a case — this is the main flow |
 | `/troubleshoot/[id]` | The wizard: photo → interview → follow-up → ranking with reasons → troubleshooting loop → report → close |
 | `/cases/1` | **CONFIRMED**: size varies → air in the syringe; one purge, re-measured back in spec |
-| `/cases/2` | A **T1** diagnosis (carryover, p = 0.010, three agreeing precedents) that still closed **PLAUSIBLE** — the fix wasn't proved, one deposit still missing |
+| `/cases/2` | A **T1** diagnosis (a check confirmed carryover; the photo's pattern, p = 0.010, and four agreeing precedents back it too) that still closed **PLAUSIBLE** — the fix wasn't proved, one deposit still missing |
 | `/cases/3` | **UNVERIFIED**: closed with nothing proved, and the gap list says so |
 | `/cases/4` | Escalated: the operator said the checks don't match what they see |
 | `/cases/1/report` | The printable report (Print → Save as PDF) |

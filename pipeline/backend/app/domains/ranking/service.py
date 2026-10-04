@@ -9,11 +9,12 @@ from dataclasses import asdict
 
 from sqlalchemy.orm import Session
 
+from app.domains.cases.close import confirmed_cause
 from app.domains.cases.model import Case
 from app.domains.ranking import pass2
 from app.domains.ranking.gates import gate_a, gate_b
 from app.domains.ranking.pass1 import RuleHit, rank_causes, sigmoid, to_logit
-from app.domains.ranking.tier import compute_tier, passes_agree
+from app.domains.ranking.tier import compute_tier, passes_agree, tier_reason
 from app.domains.retrieval.fine import fine_match
 
 # A confirmed/ruled-out check is closer to ground truth than any inferred
@@ -76,7 +77,17 @@ def run_ranking(db: Session, case: Case) -> dict:
     agree = passes_agree(ranked[0].cause_id, pass2_top_id)
     gate_a_result = gate_a(ranked[0], fingerprint)
 
-    tier = compute_tier(agree, gate_a_result, gate_b_result)
+    # The same reading of the check log that close uses: one cause
+    # confirmed, by any number of checks, and none ruling it out.
+    checked_cause, _gap = confirmed_cause(case)
+    check_confirmed = checked_cause is not None and checked_cause == ranked[0].cause_id
+    tier = compute_tier(agree, gate_a_result, gate_b_result, check_confirmed=check_confirmed)
+    labels = {r.cause_id: r.label for r in ranked}
+    reason = tier_reason(
+        tier, top_label=ranked[0].label,
+        critic_label=labels.get(pass2_top_id) if pass2_top_id and not agree else None,
+        gate_a=gate_a_result, gate_b=gate_b_result, check_confirmed=check_confirmed,
+    )
 
     return {
         "pass1": [
@@ -93,6 +104,7 @@ def run_ranking(db: Session, case: Case) -> dict:
         "gate_a": asdict(gate_a_result),
         "gate_b": asdict(gate_b_result),
         "tier": tier,
+        "tier_reason": reason,
         "top_cause_id": ranked[0].cause_id,
         "runners_up": [r.cause_id for r in ranked[1:3]],
     }

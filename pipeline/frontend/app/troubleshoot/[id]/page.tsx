@@ -48,47 +48,28 @@ function describeRanking(ranking: Ranking): string {
 function describeTier(ranking: Ranking): string {
   const top = ranking.pass1[0];
   const pct = Math.round(top.likelihood * 100);
-  switch (ranking.tier) {
-    case "T1":
-      return (
-        `Tier T1 — a clear lead: ${top.label} at ${pct}%. The rule engine and a second, ` +
-        "independent read agree, the evidence beats chance, and past confirmed cases back it up."
-      );
-    case "T2": {
-      // Nothing fired at all: every cause sits on the shared prior, and
-      // the "lead" would just be whichever one the vocabulary lists
-      // first. Saying so is the honest output — DESIGN.md's own argument
-      // for T4 applies here too.
-      const fired = ranking.pass1.filter((c) => c.evidence.length > 0).length;
-      if (fired === 0) {
-        return (
-          "No cause is ahead: nothing you told me, and nothing in the photo, matches any of " +
-          "the rules in the tree — so all seven candidates are sitting on the same starting " +
-          "odds. That usually means the defect is real but outside what this tree models. A " +
-          "troubleshooting check is the fastest way forward, and it's worth telling an " +
-          "engineer the list came up empty."
-        );
-      }
-      return (
-        `Tier T2 — a likely lead: ${top.label} at ${pct}%, but it isn't backed by a strong ` +
-        "measurement or precedent yet — see the panel on the right for why."
-      );
-    }
-    case "T3":
-      return (
-        `Tier T3 — the rule engine and a second, independent read disagree, but the ` +
-        `measurement still points to ${top.label} at ${pct}%. See the panel on the right for ` +
-        "the breakdown of what each one said."
-      );
-    default:
-      return (
-        `No lead cause yet — the rule engine says ${top.label} at ${pct}%, but a second, ` +
-        "independent read of your complaint picked a different one, and the measurement that " +
-        "would break the tie isn't strong enough to trust on its own. See the panel on the " +
-        "right for what each one said. A troubleshooting check will settle it faster than more " +
-        "questions would."
-      );
+  // Nothing fired at all: every cause sits on the shared prior, and the
+  // "lead" would just be whichever one the vocabulary lists first. Saying
+  // so is the honest output — DESIGN.md's own argument for T4 applies
+  // here too.
+  if (ranking.tier === "T2" && ranking.pass1.every((c) => c.evidence.length === 0)) {
+    return (
+      "No cause is ahead: nothing you told me, and nothing in the photo, matches any of " +
+      "the rules in the tree — so all seven candidates are sitting on the same starting " +
+      "odds. That usually means the defect is real but outside what this tree models. A " +
+      "troubleshooting check is the fastest way forward, and it's worth telling an " +
+      "engineer the list came up empty."
+    );
   }
+  const headline: Record<Ranking["tier"], string> = {
+    T1: `Tier T1 — a clear lead: ${top.label} at ${pct}%.`,
+    T2: `Tier T2 — a likely lead: ${top.label} at ${pct}%.`,
+    T3: `Tier T3 — ${top.label} at ${pct}%, but a second, independent read disagrees.`,
+    T4: `No lead cause yet — the rule engine says ${top.label} at ${pct}%, but a second, independent read disagrees.`,
+  };
+  // Rankings stored before the reason was recorded fall back to the
+  // panel, which shows the gates it rests on.
+  return `${headline[ranking.tier]} ${ranking.tier_reason ?? "See the panel on the right for why."}`;
 }
 
 /** The measured signals in the words an operator uses. */
@@ -687,7 +668,14 @@ export default function CaseWizardPage() {
             result_detail: detail || null,
           });
           const refreshed = await getCase(caseData.case_id);
+          const tierBefore = artifactsRef.current?.ranking?.tier;
           patchArtifacts({ ranking: updated, checks: refreshed.check_results, caseData: refreshed });
+          // A check is the one thing that can settle the tier on its own,
+          // so a change of tier is said out loud rather than left to the panel.
+          const tierNote =
+            tierBefore && tierBefore !== updated.tier && updated.tier_reason
+              ? ` Now ${updated.tier}: ${updated.tier_reason}`
+              : "";
           const actionNote =
             refreshed.action_count === 1
               ? "One change on the case so far, which is what CONFIRMED needs."
@@ -697,7 +685,7 @@ export default function CaseWizardPage() {
           say(
             causeId
               ? `Logged — re-ranked. Top candidate now: ${updated.pass1[0].label} at ` +
-                  `${Math.round(updated.pass1[0].likelihood * 100)}%. ${actionNote}`
+                  `${Math.round(updated.pass1[0].likelihood * 100)}%.${tierNote} ${actionNote}`
               : // No cause to fold the outcome into, so the ranking is
                 // untouched. Saying "re-ranked" here would claim an update
                 // the operator can see didn't happen.

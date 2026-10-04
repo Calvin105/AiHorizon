@@ -53,6 +53,9 @@ class RankingOut(BaseModel):
     gate_a: GateAOut
     gate_b: GateBOut
     tier: str
+    tier_reason: str = ""
+    """Why the ranking sits at this tier. Empty on rankings stored before it
+    was recorded; they gain one the next time the case is ranked."""
     top_cause_id: str
     runners_up: list[str]
 

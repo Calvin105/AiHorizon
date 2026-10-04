@@ -648,15 +648,20 @@ export function ArtifactPanel({ artifacts }: { artifacts: Artifacts }) {
                 defect might be happening, not other defects.
               </div>
             </div>
-            <div className="mb-3 flex flex-wrap gap-2">
-              <Badge variant={TIER_VARIANT[artifacts.ranking.tier]}>{artifacts.ranking.tier}</Badge>
-              <Badge variant="outline">
-                {artifacts.ranking.critic_top_cause_id
-                  ? artifacts.ranking.agree
-                    ? "critic agrees"
-                    : "critic disagrees"
-                  : "critic abstained"}
-              </Badge>
+            <div className="mb-3 space-y-1.5">
+              <div className="flex flex-wrap gap-2">
+                <Badge variant={TIER_VARIANT[artifacts.ranking.tier]}>{artifacts.ranking.tier}</Badge>
+                <Badge variant="outline">
+                  {artifacts.ranking.critic_top_cause_id
+                    ? artifacts.ranking.agree
+                      ? "critic agrees"
+                      : "critic disagrees"
+                    : "critic abstained"}
+                </Badge>
+              </div>
+              {artifacts.ranking.tier_reason && (
+                <p className="text-xs text-muted-foreground">{artifacts.ranking.tier_reason}</p>
+              )}
             </div>
 
             {/* Shown whenever the critic ran, not only on disagreement:

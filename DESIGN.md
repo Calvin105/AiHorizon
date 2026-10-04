@@ -39,12 +39,14 @@ Agreement never raises confidence. Two readers sharing a bad measurement agree j
 
 | Tier | Reached when | Shown |
 | :--- | :--- | :--- |
-| T1 | Passes agree, signal beats chance, confirmed precedent | One lead cause, with evidence and matching past cases |
+| T1 | A check on this case confirmed the top cause — or: passes agree, signal beats chance, confirmed precedent | One lead cause, with evidence and matching past cases |
 | T2 | Passes agree, no precedent or signal at chance | One lead cause, marked provisional, with what would confirm it |
 | T3 | Passes disagree, signal beats chance | Both candidates, measurement holds the top slot, disagreement stated |
 | T4 | Passes disagree, signal at chance | **No lead cause.** The output is the check that separates them |
 
 T4 refusing to name a cause is a feature. `golden/nsw_inconsistent_size` is a T4: `size_cv` 0.486 says the volume is unstable and nothing in the image says why.
+
+The gates judge how far a *reading* of the evidence can be trusted. A check is not a reading: it tests the cause on the machine. So a check that confirms the top cause, with no check confirming a different one, reaches T1 on its own — whatever the critic read in the complaint, and without waiting for three past cases. Before this, a cause a check had confirmed sat at 99% with the tier still at T2, or at T4 when the critic had read the complaint differently. Every ranking states the reason for its tier in words (`tier_reason`), so the tier can always be traced back to what it rests on.
 
 ## Step 8: the case database
 

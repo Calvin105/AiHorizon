@@ -61,11 +61,14 @@ export function TierInfo() {
             actually right.
           </p>
           <ul className="mt-1 space-y-0.5 text-muted-foreground">
-            <li><span className="text-foreground">T1</span> — two independent passes agree, the evidence beats chance, and past confirmed cases back it up</li>
+            <li><span className="text-foreground">T1</span> — a check on this case confirmed the top cause; or two independent passes agree, the evidence beats chance, and past confirmed cases back it up</li>
             <li><span className="text-foreground">T2</span> — the two passes agree, but without that extra backing</li>
             <li><span className="text-foreground">T3</span> — the passes disagree, but the evidence still beats chance</li>
             <li><span className="text-foreground">T4</span> — no lead cause; nothing beats chance yet</li>
           </ul>
+          <p className="mt-1 text-muted-foreground">
+            Every ranking says which of these it rests on, next to its tier.
+          </p>
         </div>
         <div>
           <p className="mb-1 font-medium text-foreground">Diagnosed</p>
