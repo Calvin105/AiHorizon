@@ -59,7 +59,12 @@ def _backup(db_path: Path) -> Path | None:
     if not db_path.exists():
         return None
     BACKUPS.mkdir(exist_ok=True)
-    target = BACKUPS / f"{db_path.stem}-{datetime.now(UTC):%Y%m%d-%H%M%S}Z.db"
+    stamp = f"{db_path.stem}-{datetime.now(UTC):%Y%m%d-%H%M%S}Z"
+    target = BACKUPS / f"{stamp}.db"
+    n = 1
+    while target.exists():  # two resets inside one second keep both copies
+        n += 1
+        target = BACKUPS / f"{stamp}-{n}.db"
     with closing(sqlite3.connect(db_path)) as src, closing(sqlite3.connect(target)) as dst:
         src.backup(dst)
     return target
