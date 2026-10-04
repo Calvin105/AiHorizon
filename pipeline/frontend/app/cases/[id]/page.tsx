@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { TierInfo } from "@/components/tier-info";
 import { ApiError } from "@/lib/api/client";
@@ -344,10 +345,16 @@ function Details({ caseData, artifacts }: { caseData: Case; artifacts: Artifacts
         <ChevronRight className="size-4 transition-transform group-open:rotate-90" />
         Details
         <span className="font-normal text-muted-foreground">
-          — station, material, profile, every check and every measurement
+          — station, material, profile, checks and diagnostic artifacts
         </span>
       </summary>
-      <div className="space-y-5 border-t p-4">
+      <Tabs defaultValue="context" className="border-t p-4">
+        <TabsList className="mb-4">
+          <TabsTrigger value="context">Links & Context</TabsTrigger>
+          <TabsTrigger value="artifacts">Diagnostic Artifacts</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="context" className="space-y-5">
         <div className="grid gap-4 sm:grid-cols-3">
           <Card size="sm">
             <CardHeader>
@@ -466,13 +473,14 @@ function Details({ caseData, artifacts }: { caseData: Case; artifacts: Artifacts
           )}
         </div>
 
-        <div className="space-y-2">
-          <h2 className="text-sm font-medium">Measurements, answers and ranking</h2>
+        </TabsContent>
+
+        <TabsContent value="artifacts">
           <div className="rounded-lg border bg-card">
             <ArtifactPanel artifacts={artifacts} />
           </div>
-        </div>
-      </div>
+        </TabsContent>
+      </Tabs>
     </details>
   );
 }
