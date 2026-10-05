@@ -136,25 +136,40 @@ Confirming air doesn't prove the pressure is stable. The fresh photo does: size 
 from 0.49 to 0.05.
 
 **20. Junior and senior use the same app and workflow — what does the senior add?**
-No logins, on purpose — a line tool with accounts gets one shared login by Friday. The
-difference is in what each person gets out of it:
-- **Junior:** the knowledge they don't have yet — a ranked cause, the reasons for it, what
-  to check first.
-- **Senior:** a clean handover. "Ask an engineer" sends the question straight to them with
-  the photo, the answers and the ranking already attached — not "line 3's acting weird
-  again." They reply with notes the operator sees next time, instead of a hallway
-  conversation nobody writes down.
-- **Senior only:** editing a rule's weight. That requires a written reason, and it then
-  applies to every future case — the one place a senior's judgement becomes permanent
-  instead of staying in their head.
+The app gives a junior the manual's knowledge. It can't give them experience, and that's
+what the senior brings:
+- **The fastest check.** The senior knows which check settles it — hold the syringe up to
+  the light before stripping the valve — and logs it. One confirming check takes the case
+  to T1.
+- **Knowing when the app is wrong.** A senior can tell when the real cause is something the
+  ranking doesn't have, or that this machine has a history (an old valve, a bad material
+  lot). They overrule the ranking by logging the check that proves the other cause.
+- **Answering the junior.** When a junior presses "Ask an engineer", the senior gets the
+  photo, the answers, the ranking and the checks already done. Their reply goes into the
+  case as engineer notes, which the junior sees and the report prints.
+- **Fixing the rules.** Only the senior should change a rule's weight. The app makes them
+  write down why, and the change then applies to every future case. Their experience ends
+  up in the system instead of only in their head.
 
-**21. Only 7 causes, 42 rules — what about an 8th cause, or a mix the rules don't cover?**
-- **An 8th cause:** nothing fires, so no cause gets ranked — the app says so directly
-  ("nothing matches any rule in the tree") instead of guessing, and offers to escalate.
-- **An unusual mix:** this isn't actually a gap. The 42 rules aren't a lookup table of fixed
-  combinations — each one is independent and just adds its weight, so any combination of
-  them adds up fine. A rare mix just means fewer rules fire, which shows up as a lower
-  tier and fewer listed reasons — not a crash or a wrong guess.
-- **Adding a real 8th cause** is a code change today — that's a known limitation. The
-  rules are already one editable table with reasons attached, so making new causes
-  addable the same way is the natural next step.
+**21. Only 7 causes and 42 rules. What if the real cause isn't one of them?**
+**Why there's no ranking:** every percentage comes from rules. A cause outside the seven has
+no rules, so nothing fires, and there's no evidence to rank anything on. The app says
+"nothing matches any rule in the tree" and suggests asking an engineer. It doesn't guess.
+The LLM critic can't save it either, because it also only picks from the same seven.
+
+**Yes, that's inflexible.** It's the trade-off we chose: every number is traceable to a rule
+and a manual page, and the price is that the system only knows what's been written into
+it. A chatbot would answer anyway. It would also answer confidently when it's wrong, and an
+engineer couldn't check why.
+
+**How we solve it:**
+1. **Today:** the case is escalated, the senior finds the real cause, and their notes record
+   it. Nothing is lost; the case just isn't ranked.
+2. **Next:** turn the rules into data. The senior adds the new cause and its rules on the
+   rules page, with a source, with no code change. We already do this for weights.
+3. **After that:** the LLM reads escalated cases and proposes the new rule; a senior approves
+   it. The LLM drafts the rule, a human signs it off, and the ranking stays traceable.
+
+A different combination of the existing causes is not a problem. Each rule adds its own
+weight, so any mix of answers adds up. A rare mix only means fewer rules fire, which shows
+as a lower tier and fewer reasons.
