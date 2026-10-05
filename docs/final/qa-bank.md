@@ -135,52 +135,26 @@ Each % is per cause, as in the brief's own table, because two faults can happen 
 Confirming air doesn't prove the pressure is stable. The fresh photo does: size spread back
 from 0.49 to 0.05.
 
-**20. Junior and senior use the same app and the same workflow — so what does the senior actually add?**
-There are no logins or roles, on purpose: a line tool that gates screens behind accounts
-gets one shared login by Friday. What differs is what the case asks of each person.
-- **The tool solves a different problem for each.** For the junior it supplies the
-  knowledge they don't have yet — ranked causes, the reasons behind each, and the check to
-  run first. For the senior it supplies the record-keeping they'd otherwise skip: the
-  measurement, the one-change rule, the verification photo.
-- **Handover without losing the trail.** *Ask an engineer* captures the operator's question
-  in their own words and puts the case on the home page under *Needs review*, oldest first.
-  The senior arrives with the photo, the measurements, the five answers, the ranking and
-  every check already logged — instead of "it's doing something weird on line 3".
-- **The senior's judgement becomes part of the record.** Engineer notes and *Mark reviewed*
-  are written in the case, shown to the operator next time they open it, and printed in the
-  report. Today that knowledge is spoken and lost.
-- **Only the senior changes the system.** On the *Ranking rules* page they can change any of
-  the 42 weights, and the change **requires a written reason**, is stored with a timestamp,
-  and applies to every future case. That is the one path where a senior's experience gets
-  into the tree instead of staying in their head.
+**20. Junior and senior use the same app and workflow — what does the senior add?**
+No logins, on purpose — a line tool with accounts gets one shared login by Friday. The
+difference is in what each person gets out of it:
+- **Junior:** the knowledge they don't have yet — a ranked cause, the reasons for it, what
+  to check first.
+- **Senior:** a clean handover. "Ask an engineer" sends the question straight to them with
+  the photo, the answers and the ranking already attached — not "line 3's acting weird
+  again." They reply with notes the operator sees next time, instead of a hallway
+  conversation nobody writes down.
+- **Senior only:** editing a rule's weight. That requires a written reason, and it then
+  applies to every future case — the one place a senior's judgement becomes permanent
+  instead of staying in their head.
 
-A senior also reaches a confident answer faster through the same screens: a check that
-confirms the top cause takes the case to T1 in one step. The junior gets the same plan laid
-out — *Step 1, look; Step 2, change* — and takes longer. That is the intended difference.
-
-**21. Only 7 causes and 42 rules. What about an 8th cause, or a combination no rule covers?**
-Two different questions, and the honest answers differ.
-
-**A cause outside the seven.** Nothing fires, so all seven stay on the same starting odds —
-and the system detects exactly that rather than ranking whichever cause the list happens to
-show first. It says so in words: *"nothing you told me, and nothing in the photo, matches
-any of the rules in the tree… that usually means the defect is real but outside what this
-tree models"*, then suggests a check and says it's worth telling an engineer. It never
-invents a cause. The evaluation excludes these from accuracy, because "no cause is ahead"
-makes no claim to be right or wrong. The LLM critic is the second net: it reads the same
-evidence without the tree's vocabulary and can disagree, which drops the tier.
-
-**A combination outside the 42 rules.** This one is a misunderstanding worth correcting
-politely: the 42 are not a lookup table of combinations. Each rule is **independent and
-additive** — one answer can move several causes at once, and the log-odds sum handles any
-combination of the rules that fire. So there is no "unmatched combination"; there is only
-*fewer reasons fired*, which shows on screen as a lower tier and a smaller reason count.
-That is precisely what the calibration measures: one reason behind the top cause means 48%
-right, three or more means 96%. A thin combination is visible as thin, not disguised as
-confident.
-
-**Adding the 8th cause today is a code change** — rules are code, not data, and we list that
-as a limitation (slide 6). The structure to fix it is already there: the 42 rules are one
-table, each with a weight and a manual citation, and an engineer can already edit a weight
-with a reason. Making the rows themselves editable, with an LLM *proposing* and an engineer
-approving, is the next step — the runtime stays deterministic either way.
+**21. Only 7 causes, 42 rules — what about an 8th cause, or a mix the rules don't cover?**
+- **An 8th cause:** nothing fires, so no cause gets ranked — the app says so directly
+  ("nothing matches any rule in the tree") instead of guessing, and offers to escalate.
+- **An unusual mix:** this isn't actually a gap. The 42 rules aren't a lookup table of fixed
+  combinations — each one is independent and just adds its weight, so any combination of
+  them adds up fine. A rare mix just means fewer rules fire, which shows up as a lower
+  tier and fewer listed reasons — not a crash or a wrong guess.
+- **Adding a real 8th cause** is a code change today — that's a known limitation. The
+  rules are already one editable table with reasons attached, so making new causes
+  addable the same way is the natural next step.
