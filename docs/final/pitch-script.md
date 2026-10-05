@@ -13,11 +13,7 @@ safest cuts are marked `[CUT IF LONG]`.
 ## 1 · Title — Team Lithium (~18 s)
 
 > Good morning. We're **Team Lithium**, three of us from **Universiti Sains
-> Malaysia**, and we took NSW Automation's challenge for advanced level and all 4 bonus challenges
->
-> [gesture to the image] That's a phone photo of a part lying on a desk. The
-> system lines the recipe up with it and reads the pattern: three missing
-> deposits, each one followed by an oversized one. That's **carryover**.
+> Malaysia**, and we took NSW Automation's challenge for advanced level and all 4 bonus challenges.
 
 ---
 
@@ -38,18 +34,21 @@ safest cuts are marked `[CUT IF LONG]`.
 
 ## 3 · The solution (~42 s)
 
-> One guided session does the whole thing.
+> So here's what actually happens. The operator just takes a photo of the
+> deposits — doesn't matter how it's framed — answers five questions, and maybe
+> one or two follow-ups. And here's the thing: **we don't ask random follow-ups**.
+> The system only asks the question that would actually change its mind.
 >
-> The operator photographs the deposits — any framing, phone in hand. Five
-> questions. Then up to two follow-ups, and **each follow-up is chosen because its
-> answer would move the ranking most**. Seven causes come back ranked, every
-> percentage built from reasons you can read. The operator looks first, changes
-> one thing, and the ranking updates live. A fresh photo verifies the fix.
+> From that, it ranks seven possible causes, and — this is important — **every
+> percentage comes with a reason you can actually read**. Not a black box. The
+> operator checks the top one first, changes one thing, and watches the ranking
+> update live. Then a fresh photo proves whether it actually worked.
 >
-> What that enables: a new technician's **first check is ranked, with reasons**,
-> instead of a hunch. Every case leaves an **audit-ready PDF**. Only fixes that
-> were actually proved become precedent for the next case. And it runs **offline
-> on a line PC** — a phone camera is enough.
+> So what does that mean in practice? A new technician's first move is already
+> **ranked and explained** — not a guess. Every case ends with a report you could
+> hand to an auditor. And the history only remembers fixes that were **actually
+> proven** — not ones someone just assumed worked. All of this, by the way, runs
+> **offline**, on a line PC. A phone camera is all you need.
 
 ---
 
