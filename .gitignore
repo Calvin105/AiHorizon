@@ -17,3 +17,6 @@ pipeline/backend/backups/
 # same way every time — tracking a binary that changes on every click only
 # bloated history.
 pipeline/backend/pipeline.db
+
+# Deck build output — the published copy lives in docs/final/
+docs/final/deck/AI-Dispensing-Defect-Detective.pptx
