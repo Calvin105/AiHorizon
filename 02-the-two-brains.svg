@@ -1,0 +1,86 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="2200" viewBox="0 0 1400 2200" role="img" aria-labelledby="title desc">
+  <title id="title">Page 2 — The Two Brains</title>
+  <desc id="desc">Illustrated comparison of Brain 1's auditable deterministic ranking and Brain 2's independent text-only LLM critique, including score calculation, evidence boundaries, and abstention criteria.</desc>
+  <defs>
+    <marker id="a" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto"><path d="M1 1L11 6L1 11Z" fill="#64748b"/></marker>
+    <style>
+      text{font-family:"Segoe UI",Arial,sans-serif;fill:#172033}.bg{fill:#f1f5f9}.title{font-size:40px;font-weight:750;fill:#fff}.sub{font-size:19px;fill:#dbeafe}.head{font-size:24px;font-weight:700}.body{font-size:19px}.small{font-size:16px}.tiny{font-size:14px}.center{text-anchor:middle}.muted{fill:#64748b}.white{fill:#fff}.card{fill:#fff;stroke:#cbd5e1;stroke-width:2}.blue{fill:#eff6ff;stroke:#3b82f6;stroke-width:3}.purple{fill:#f5f3ff;stroke:#8b5cf6;stroke-width:3}.amber{fill:#fffbeb;stroke:#d97706;stroke-width:3}.green{fill:#dcfce7;stroke:#16a34a;stroke-width:3}.arrow{fill:none;stroke:#64748b;stroke-width:3;marker-end:url(#a)}
+    </style>
+  </defs>
+  <rect width="1400" height="2200" class="bg"/>
+  <rect width="1400" height="150" fill="#312e81"/>
+  <circle cx="82" cy="75" r="34" fill="#a78bfa"/><text x="82" y="85" class="head center white">2</text>
+  <text x="140" y="68" class="title">Two brains, two different views of the case</text>
+  <text x="142" y="108" class="sub">PAGE 2 · BRAIN 1 BUILDS THE RANKING · BRAIN 2 CAN CHALLENGE IT</text>
+
+  <rect x="150" y="190" width="1100" height="140" rx="22" class="card"/>
+  <text x="700" y="232" class="head center">WHY USE TWO BRAINS?</text>
+  <text x="700" y="272" class="body center">Not to average two guesses. The program keeps an auditable evidence-based ranking</text>
+  <text x="700" y="304" class="body center">separate from a limited, independent LLM opinion.</text>
+  <path d="M700 330V370" class="arrow"/>
+
+  <!-- Brain 1 -->
+  <rect x="90" y="370" width="1220" height="700" rx="26" class="blue"/>
+  <rect x="90" y="370" width="1220" height="72" rx="24" fill="#2563eb"/>
+  <path d="M90 418H1310V442H90Z" fill="#2563eb"/>
+  <text x="700" y="416" class="head center white">BRAIN 1 · THE DETERMINISTIC RULE ENGINE</text>
+  <!-- gear illustration -->
+  <circle cx="220" cy="522" r="48" fill="#2563eb"/><circle cx="220" cy="522" r="18" fill="#eff6ff"/>
+  <path d="M220 458V477M220 567V586M156 522H175M265 522H284M175 477L189 491M251 553L265 567M265 477L251 491M189 553L175 567" stroke="#2563eb" stroke-width="11" stroke-linecap="round"/>
+  <text x="335" y="496" class="head">Purpose</text>
+  <text x="335" y="531" class="body">Calculate a traceable ranking from explicit evidence.</text>
+  <text x="170" y="620" class="head">Brain 1 receives</text>
+  <text x="205" y="660" class="body">• Structured interview answers and adaptive follow-up answers</text>
+  <text x="205" y="695" class="body">• Numeric measurements extracted from an accepted photo</text>
+  <text x="205" y="730" class="body">• Troubleshooting check results already logged on this case</text>
+  <line x1="170" y1="758" x2="1230" y2="758" stroke="#bfdbfe" stroke-width="3"/>
+  <text x="170" y="804" class="head">How the scores are built</text>
+  <text x="205" y="844" class="body">1. Score each candidate cause independently; each starts at prior 0.15.</text>
+  <text x="205" y="879" class="body">2. Add the log-odds contributions of rules that match the case.</text>
+  <text x="205" y="914" class="body">3. Scale photo-signal contributions by distance from the normal baseline</text>
+  <text x="232" y="944" class="body">when the rule calls for it; do not automatically give full weight at a threshold.</text>
+  <text x="205" y="979" class="body">4. Convert each result with sigmoid, sort causes, and retain the evidence trail.</text>
+  <rect x="170" y="1000" width="1060" height="48" rx="12" fill="#dbeafe"/>
+  <text x="700" y="1031" class="small center">Rule weights are configured engineering evidence; edits affect the live ranking and are marked.</text>
+
+  <rect x="160" y="1110" width="1080" height="190" rx="22" class="amber"/>
+  <text x="700" y="1152" class="head center">HOW TO READ BRAIN 1'S SCORES</text>
+  <text x="215" y="1192" class="body">• Each cause has its own score; the scores are not normalized to total 100%.</text>
+  <text x="215" y="1228" class="body">• They are case-specific rule scores, not calibrated real-world probabilities.</text>
+  <text x="215" y="1264" class="body">• Rank #1 means “best supported by the current rules,” not “proven root cause.”</text>
+  <text x="700" y="1290" class="tiny center muted">The evidence ledger explains which rules supported or argued against each cause.</text>
+  <path d="M700 1300V1340" class="arrow"/>
+
+  <!-- Check values card -->
+  <rect x="160" y="1340" width="1080" height="180" rx="22" class="green"/>
+  <text x="700" y="1382" class="head center">DIRECT CHECK RESULTS ALSO UPDATE BRAIN 1</text>
+  <text x="260" y="1422" class="body">CONFIRMS a cause  →  +3.0 log-odds</text>
+  <text x="800" y="1422" class="body">RULES OUT a cause  →  −3.0 log-odds</text>
+  <text x="260" y="1460" class="body">INCONCLUSIVE  →  no score change</text>
+  <text x="800" y="1460" class="body">Apply after rules, then sort the causes again.</text>
+  <text x="700" y="1500" class="tiny center muted">A check is an observation or test. It is not automatically a machine change.</text>
+  <path d="M700 1520V1560" class="arrow"/>
+
+  <!-- Brain 2 -->
+  <rect x="90" y="1560" width="1220" height="500" rx="26" class="purple"/>
+  <rect x="90" y="1560" width="1220" height="72" rx="24" fill="#7c3aed"/>
+  <path d="M90 1608H1310V1632H90Z" fill="#7c3aed"/>
+  <text x="700" y="1606" class="head center white">BRAIN 2 · THE INDEPENDENT LLM CRITIC</text>
+  <!-- speech bubble -->
+  <path d="M180 1680Q180 1660 200 1660H340Q360 1660 360 1680V1750Q360 1770 340 1770H280L238 1805V1770H200Q180 1770 180 1750Z" fill="#7c3aed"/>
+  <circle cx="225" cy="1715" r="8" fill="#fff"/><circle cx="270" cy="1715" r="8" fill="#fff"/><circle cx="315" cy="1715" r="8" fill="#fff"/>
+  <text x="425" y="1685" class="head">What it reads</text>
+  <text x="425" y="1720" class="body">The operator's complaint + dispenser class + material family only.</text>
+  <text x="425" y="1760" class="small">It does not receive structured answers, measured photo signals, image bytes,</text>
+  <text x="425" y="1787" class="small">or logged check outcomes. It cannot reason about evidence it never sees.</text>
+  <text x="170" y="1840" class="head">What it returns</text>
+  <text x="205" y="1878" class="body">An LLM-generated score for each candidate cause, kept separate from Brain 1.</text>
+  <text x="205" y="1913" class="small">These are model opinions, not calibrated probabilities. They are never added to,</text>
+  <text x="205" y="1940" class="small">averaged with, or used to directly reorder Brain 1's scores.</text>
+  <rect x="170" y="1962" width="1060" height="72" rx="14" fill="#ede9fe"/>
+  <text x="700" y="1991" class="small center">A critic pick is clear only if both are true: top score ≥25% AND at least</text>
+  <text x="700" y="2018" class="small center">10 percentage points above the runner-up. Otherwise it abstains.</text>
+
+  <text x="700" y="2090" class="tiny center muted">No clear pick / no LLM = no clear objection, not proof of agreement. Critic result is stored and reused on re-ranking.</text>
+  <text x="700" y="2150" class="tiny center muted">NEXT → Page 3: how history, chance testing and disagreement determine T1–T4</text>
+</svg>
