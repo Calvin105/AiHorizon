@@ -13,9 +13,7 @@ safest cuts are marked `[CUT IF LONG]`.
 ## 1 · Title — Team Lithium (~18 s)
 
 > Good morning. We're **Team Lithium**, three of us from **Universiti Sains
-> Malaysia**, and we took NSW Automation's challenge — the AI Dispensing Defect
-> Detective — all the way: the five core steps, the dynamic-questions bonus, and
-> **all four bonus challenges**.
+> Malaysia**, and we took NSW Automation's challenge for advanced level and all 4 bonus challenges
 >
 > [gesture to the image] That's a phone photo of a part lying on a desk. The
 > system lines the recipe up with it and reads the pattern: three missing
