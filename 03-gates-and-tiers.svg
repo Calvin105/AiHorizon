@@ -1,0 +1,112 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="2450" viewBox="0 0 1400 2450" role="img" aria-labelledby="title desc">
+  <title id="title">Page 3 — Reliability Gates and Tiers</title>
+  <desc id="desc">Illustrated decision flow explaining confirmed historical precedent matching, Gate A chance testing, comparison of the two brains, and the complete T1 through T4 conditions.</desc>
+  <defs>
+    <marker id="a" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto"><path d="M1 1L11 6L1 11Z" fill="#64748b"/></marker>
+    <style>
+      text{font-family:"Segoe UI",Arial,sans-serif;fill:#172033}.bg{fill:#f1f5f9}.title{font-size:40px;font-weight:750;fill:#fff}.sub{font-size:19px;fill:#dbeafe}.head{font-size:24px;font-weight:700}.body{font-size:18px}.small{font-size:16px}.tiny{font-size:14px}.center{text-anchor:middle}.muted{fill:#64748b}.white{fill:#fff}.card{fill:#fff;stroke:#cbd5e1;stroke-width:2}.blue{fill:#eff6ff;stroke:#3b82f6;stroke-width:3}.purple{fill:#f5f3ff;stroke:#8b5cf6;stroke-width:3}.amber{fill:#fffbeb;stroke:#d97706;stroke-width:3}.green{fill:#dcfce7;stroke:#16a34a;stroke-width:3}.orange{fill:#ffedd5;stroke:#ea580c;stroke-width:3}.red{fill:#fee2e2;stroke:#dc2626;stroke-width:3}.arrow{fill:none;stroke:#64748b;stroke-width:3;marker-end:url(#a)}
+    </style>
+  </defs>
+  <rect width="1400" height="2450" class="bg"/>
+  <rect width="1400" height="150" fill="#334155"/>
+  <circle cx="82" cy="75" r="34" fill="#94a3b8"/><text x="82" y="85" class="head center white">3</text>
+  <text x="140" y="68" class="title">Check the evidence, then choose the tier</text>
+  <text x="142" y="108" class="sub">PAGE 3 · GATE B HISTORY · GATE A CHANCE TEST · T1–T4</text>
+
+  <rect x="150" y="190" width="1100" height="145" rx="22" class="card"/>
+  <text x="700" y="232" class="head center">START WITH BRAIN 1'S UPDATED LEADER</text>
+  <text x="700" y="272" class="body center">Brain 1 has applied its rules and any logged checks. Gate B evaluates the leader</text>
+  <text x="700" y="304" class="body center">before the critic comparison; Gate A evaluates the leader after Gate B.</text>
+  <path d="M700 335V375" class="arrow"/>
+
+  <rect x="100" y="375" width="1200" height="710" rx="26" class="blue"/>
+  <rect x="100" y="375" width="1200" height="70" rx="24" fill="#2563eb"/>
+  <path d="M100 420H1300V445H100Z" fill="#2563eb"/>
+  <text x="700" y="421" class="head center white">GATE B · COMPARE WITH CONFIRMED PRECEDENTS</text>
+  <!-- database illustration -->
+  <ellipse cx="205" cy="515" rx="44" ry="15" fill="#bfdbfe" stroke="#2563eb" stroke-width="4"/>
+  <path d="M161 515V610C161 632 249 632 249 610V515M161 545C161 566 249 566 249 545M161 578C161 600 249 600 249 578" fill="#dbeafe" stroke="#2563eb" stroke-width="4"/>
+  <text x="300" y="492" class="head">How the search works</text>
+  <text x="300" y="532" class="body">1. Search confirmed cases only; exclude the current case.</text>
+  <text x="300" y="568" class="body">2. Require the same dispenser class and material family.</text>
+  <text x="300" y="604" class="body">3. Compare shared numeric photo signals; exclude signals at chance level.</text>
+  <text x="300" y="640" class="body">4. Normalize each difference by that signal's spread across confirmed cases.</text>
+  <text x="300" y="676" class="body">5. Keep mean normalized distance ≤1.0; return up to 10 closest matches.</text>
+  <rect x="160" y="715" width="1080" height="83" rx="15" fill="#fff"/>
+  <text x="700" y="749" class="small center">This is numeric signal matching, not complaint-text search or embedding similarity.</text>
+  <text x="700" y="778" class="small center">Unconfirmed, plausible, and unverified cases are not Gate B precedents.</text>
+  <text x="180" y="847" class="head">Decision 1: Are there at least 3 matches?</text>
+  <rect x="205" y="875" width="440" height="72" rx="14" fill="#fef3c7"/>
+  <text x="425" y="905" class="small center">NO — fewer than 3</text><text x="425" y="931" class="tiny center">No ranking adjustment</text>
+  <rect x="755" y="875" width="440" height="72" rx="14" fill="#dcfce7"/>
+  <text x="975" y="905" class="small center">YES — 3 or more</text><text x="975" y="931" class="tiny center">Check diagnosed matches</text>
+  <text x="180" y="990" class="head">Decision 2: Do diagnosed matches contradict the leader?</text>
+  <text x="205" y="1025" class="small">Count only matches with a recorded diagnosis. If no more than half contradict, do not penalize.</text>
+  <text x="205" y="1055" class="small">If more than half contradict, subtract min(0.4, 0.4 × contradiction share) log-odds and re-rank.</text>
+  <text x="700" y="1080" class="tiny center muted">History can lower a score; agreement never raises one. Normal T1 history requires ≥3 matches and zero diagnosed contradictions.</text>
+  <path d="M700 1085V1125" class="arrow"/>
+
+  <rect x="150" y="1125" width="1100" height="155" rx="22" class="purple"/>
+  <text x="700" y="1167" class="head center">COMPARE THE TWO BRAINS</text>
+  <text x="700" y="1208" class="body center">Compare Brain 2's clear top pick with Brain 1's top cause after Gate B.</text>
+  <text x="700" y="1245" class="small center">Same cause → no disagreement · Different causes → clear disagreement</text>
+  <text x="700" y="1270" class="tiny center muted">Critic abstains or is unavailable → no effective objection, not active agreement.</text>
+  <path d="M700 1280V1320" class="arrow"/>
+
+  <rect x="150" y="1320" width="1100" height="300" rx="24" class="amber"/>
+  <text x="700" y="1362" class="head center">GATE A · IS THERE AN ABOVE-CHANCE DECIDING SIGNAL?</text>
+  <!-- chart icon -->
+  <path d="M225 1500V1405H345M245 1480L280 1445L307 1460L337 1418" fill="none" stroke="#d97706" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="280" cy="1445" r="6" fill="#16a34a"/><circle cx="307" cy="1460" r="6" fill="#16a34a"/><circle cx="337" cy="1418" r="6" fill="#16a34a"/>
+  <text x="420" y="1415" class="body">Gate A inspects the updated top cause's signal evidence and selects</text>
+  <text x="420" y="1448" class="body">the signal with the largest absolute rule contribution.</text>
+  <text x="420" y="1491" class="body">Only the small-dot-then-oversized-dot pattern can decide this gate.</text>
+  <text x="420" y="1534" class="body">Selected pattern + exact binomial p &lt; 0.05 → ABOVE CHANCE.</text>
+  <text x="420" y="1570" class="body">p ≥ 0.05, another signal, or no signal evidence → NOT ABOVE CHANCE.</text>
+  <text x="700" y="1605" class="tiny center muted">Other measurements can show a defect or unstable process, but do not identify its cause for Gate A.</text>
+  <path d="M700 1620V1660" class="arrow"/>
+
+  <rect x="120" y="1660" width="1160" height="190" rx="22" class="card"/>
+  <text x="700" y="1702" class="head center">TIER DECISION ORDER</text>
+  <text x="180" y="1744" class="body">FIRST — Do checks confirm exactly one cause, not also rule it out, and is it now #1?</text>
+  <text x="230" y="1777" class="small">YES → T1 immediately. This direct-check path takes priority over critic disagreement and the normal gates.</text>
+  <text x="180" y="1817" class="body">NO — Use critic disagreement and the Gate A / Gate B results as shown below.</text>
+  <path d="M700 1850V1890" class="arrow"/>
+
+  <rect x="55" y="1890" width="300" height="280" rx="20" class="green"/>
+  <text x="205" y="1932" class="head center">T1 · STRONGEST</text>
+  <text x="205" y="1975" class="small center">Either:</text>
+  <text x="205" y="2008" class="small center">• Checks uniquely confirm</text>
+  <text x="205" y="2035" class="small center">  the current leader; OR</text>
+  <text x="205" y="2065" class="small center">• No clear objection, Gate A</text>
+  <text x="205" y="2092" class="small center">  above chance, ≥3 matches,</text>
+  <text x="205" y="2119" class="small center">  zero diagnosed contradictions.</text>
+  <rect x="385" y="1890" width="300" height="280" rx="20" fill="#fef3c7" stroke="#d97706" stroke-width="3"/>
+  <text x="535" y="1932" class="head center">T2 · PROVISIONAL</text>
+  <text x="535" y="1975" class="small center">No clear critic objection,</text>
+  <text x="535" y="2008" class="small center">but the normal evidence</text>
+  <text x="535" y="2035" class="small center">conditions for T1 are</text>
+  <text x="535" y="2062" class="small center">incomplete and checks have</text>
+  <text x="535" y="2089" class="small center">not uniquely confirmed the</text>
+  <text x="535" y="2116" class="small center">current leader.</text>
+  <rect x="715" y="1890" width="300" height="280" rx="20" fill="#ffedd5" stroke="#ea580c" stroke-width="3"/>
+  <text x="865" y="1932" class="head center">T3 · DISAGREEMENT</text>
+  <text x="865" y="1975" class="small center">Critic has a clear, different</text>
+  <text x="865" y="2008" class="small center">top cause AND Gate A is</text>
+  <text x="865" y="2035" class="small center">above chance.</text>
+  <text x="865" y="2080" class="small center">Keep the disagreement visible;</text>
+  <text x="865" y="2107" class="small center">do not hide it or blend scores.</text>
+  <rect x="1045" y="1890" width="300" height="280" rx="20" fill="#fee2e2" stroke="#dc2626" stroke-width="3"/>
+  <text x="1195" y="1932" class="head center">T4 · DO NOT FORCE</text>
+  <text x="1195" y="1975" class="small center">Critic has a clear, different</text>
+  <text x="1195" y="2008" class="small center">top cause AND Gate A is</text>
+  <text x="1195" y="2035" class="small center">not above chance.</text>
+  <text x="1195" y="2080" class="small center">Do not call one cause settled;</text>
+  <text x="1195" y="2107" class="small center">suggest a distinguishing check.</text>
+
+  <rect x="120" y="2210" width="1160" height="150" rx="22" fill="#1e293b"/>
+  <text x="700" y="2253" class="head center white">IMPORTANT DISTINCTION</text>
+  <text x="700" y="2293" class="body center white">A T1 ranking is not a case closed as CONFIRMED.</text>
+  <text x="700" y="2331" class="small center" fill="#cbd5e1">T1 describes support for the current ranking. CONFIRMED requires a separate repair verification.</text>
+  <text x="700" y="2410" class="tiny center muted">NEXT → Page 4: what the operator sees, how checks re-rank, and how a repair is verified</text>
+</svg>
