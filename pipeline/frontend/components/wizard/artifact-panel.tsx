@@ -677,11 +677,11 @@ export function ArtifactPanel({
             {artifacts.ranking.pass2 !== null || artifacts.ranking.critic_note ? (
               <div className="mb-3 grid grid-cols-2 gap-2 rounded-md bg-muted/40 p-2 text-xs">
                 <div>
-                  <div className="text-muted-foreground">Pass 1 &middot; rule engine</div>
+                  <div className="text-muted-foreground">Brain 1 &middot; rule engine</div>
                   <div className="font-medium">{artifacts.ranking.pass1[0]?.label ?? "—"}</div>
                 </div>
                 <div>
-                  <div className="text-muted-foreground">Pass 2 &middot; LLM critic</div>
+                  <div className="text-muted-foreground">Brain 2 &middot; LLM critic</div>
                   <div className="font-medium">
                     {artifacts.ranking.critic_top_cause_id
                       ? causeLabel(artifacts.ranking, artifacts.ranking.critic_top_cause_id)
@@ -713,7 +713,7 @@ export function ArtifactPanel({
 
             {/* Candidate causes with green/red difference bars */}
             <div className="mb-2 flex items-center justify-between">
-              <div className="text-xs font-semibold text-foreground">Candidate causes (pass 1)</div>
+              <div className="text-xs font-semibold text-foreground">Candidate causes (Brain 1)</div>
               {Object.keys(prevLikelihoods).length > 0 && (
                 <div className="flex items-center gap-2 text-[10px]">
                   <span className="inline-flex items-center gap-1 font-semibold text-emerald-600 dark:text-emerald-400">

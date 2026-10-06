@@ -1,7 +1,7 @@
 # Q&A bank — likely judge questions, short answers
 
 Three minutes of Q&A goes fast: answer in one or two sentences, then stop. Each answer
-names the backup slide (8–14) or the screen that shows it. The judges are industry
+names the backup slide (8–16) or the screen that shows it. The judges are industry
 people from NSW Automation, so lead with what it does on a line, then how.
 
 ---

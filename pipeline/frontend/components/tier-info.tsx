@@ -31,15 +31,15 @@ export function TierInfo() {
           <p className="mb-1 font-medium text-foreground">How the ranking is built</p>
           <ul className="space-y-1 text-muted-foreground">
             <li>
-              <span className="text-foreground">Pass 1 (rule engine)</span> — a fixed set of
+              <span className="text-foreground">Brain 1 (rule engine)</span> — a fixed set of
               rules over your answers and the photo&apos;s signals. No database lookup here, and
               no guessing: every weight is visible.
             </li>
             <li>
-              <span className="text-foreground">Pass 2 (LLM critic)</span> — a second, independent
-              read of the complaint text alone, with none of pass 1&apos;s signals or answers. It
+              <span className="text-foreground">Brain 2 (LLM critic)</span> — a second, independent
+              read of the complaint text alone, with none of Brain 1&apos;s signals or answers. It
               only runs if an LLM key is configured; if not, it&apos;s skipped and counted as
-              agreeing with pass 1.
+              agreeing with Brain 1.
             </li>
             <li>
               <span className="text-foreground">Gate A (chance check)</span> — asks whether the

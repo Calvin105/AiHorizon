@@ -40,6 +40,10 @@ const HEAD = "Cambria";
 const BODY = "Calibri";
 const W = 13.333;
 const MX = 0.6; // side margin
+const TIER = { T1: C.green, T2: C.warn, T3: "E0662B", T4: C.crit };
+const TIER_TINT = { T1: "E4F1E9", T2: "FBF0D9", T3: "FCE8DC", T4: "FAE3E3" };
+const STAR_ON = "F2A71B";
+const STAR_OFF = "D3DAD6";
 
 // A missing icon name shouldn't fail the whole build the morning of the final.
 const missingIcons = new Set();
@@ -100,6 +104,13 @@ async function cardRow(s, cards, { top, h, cw, gap, headSize = 20, bodySize = 15
       x: x + 0.32, y: top + bodyDy, w: cw - 0.64, h: h - bodyDy - 0.26, fontFace: BODY, fontSize: bodySize, color: C.ink2,
       margin: 0, isTextBox: true, valign: "top",
     });
+  }
+}
+
+function stars(slide, n, x, y, size = 0.24, step = 0.3) {
+  for (let k = 0; k < 5; k++) {
+    const color = k < n ? STAR_ON : STAR_OFF;
+    slide.addShape("star5", { x: x + k * step, y, w: size, h: size, fill: { color }, line: { color } });
   }
 }
 
@@ -507,10 +518,16 @@ async function build() {
         margin: 0, isTextBox: true,
       });
     }
-    s.addText("Precedent can lower confidence, never raise it — so the system can't talk itself into being right.", {
+    s.addText("T1 says how sure the ranking is. CONFIRMED says the fix was proved.", {
       x: MX, y: 6.2, w: W - 2 * MX, h: 0.45, fontFace: HEAD, fontSize: 18, italic: true, color: C.green, margin: 0, isTextBox: true,
     });
-    s.addNotes("Backup for 'how do you know a fix worked?'. The one-change rule is the point: two changes at once can't say which one worked.");
+    s.addNotes(
+      "Backup for 'how do you know a fix worked?'. When a case closes it gets a verdict. CONFIRMED needs all five: a check confirmed " +
+      "one cause, exactly one change was made and aimed at it, the photo was re-measured against a before photo, it came back in spec, " +
+      "and it held for twenty shots. Anything less is PLAUSIBLE or UNVERIFIED, and the record names what's missing, like 'three things " +
+      "changed at once, no way to say which one worked'. Only CONFIRMED cases become precedent, so a guess never gets taught to the system. " +
+      "T1 is how sure the ranking is; CONFIRMED is proof the fix worked.",
+    );
   }
 
   // ==== B4. Backup: tiers ==================================================
@@ -519,27 +536,89 @@ async function build() {
     s.background = { color: C.white };
     kicker(s, "BACKUP · CONFIDENCE TIERS", C.muted);
     title(s, "Four confidence tiers — and agreement never raises one");
-    const rows = [
-      ["Tier", "Reached when", "What the operator sees"],
-      ["T1", "A check on this case confirmed the top cause — or: rule engine and critic agree · deciding measurement beats chance · ≥3 similar confirmed cases, none contradicting", "One lead cause, with evidence and matching past cases"],
-      ["T2", "They agree, but no precedent or the measurement isn't decisive", "One lead cause, marked provisional, with what would confirm it"],
-      ["T3", "They disagree · the measurement beats chance", "Both candidates; the measurement holds the top slot"],
-      ["T4", "They disagree · the measurement can't separate them", "No lead cause — the check that would separate them"],
-    ];
-    s.addTable(rows.map((r, i) => r.map((cell, j) => ({
-      text: cell,
-      options: {
-        bold: i === 0 || j === 0, color: i === 0 ? C.white : C.ink, fill: { color: i === 0 ? C.green : i % 2 ? C.tint : C.white },
-        fontFace: BODY, fontSize: 13.5, valign: "middle", margin: [0.08, 0.12, 0.08, 0.12],
-      },
-    }))), { x: MX, y: 1.85, w: W - 2 * MX, colW: [0.9, 6.0, 5.233], border: { type: "solid", pt: 0.75, color: "D7E3DC" }, rowH: 0.62 });
+    // A check on the machine is tested before the 2x2: it outranks any reading.
+    const by = 1.75, bh = 0.62;
+    s.addShape("roundRect", { x: MX, y: by, w: W - 2 * MX, h: bh, fill: { color: C.tint }, line: { color: C.tint }, rectRadius: 0.1 });
+    await iconCircle(s, "LuFlaskConical", MX + 0.22, by + 0.08, 0.46);
     s.addText([
-      { text: "Gate A — chance. ", options: { bold: true } },
-      { text: "Only a signal that separates causes counts: the dispense-order pattern (binomial test, p < 0.05). A size spread is real but shared by several causes, so it can't decide.", options: { breakLine: true } },
-      { text: "Gate B — precedent. ", options: { bold: true } },
-      { text: "Similar confirmed cases (same material and dispenser, signals within one spread) can demote the lead by up to 0.4 log-odds — never promote it." },
-    ], { x: MX, y: 5.45, w: W - 2 * MX, h: 1.3, fontFace: BODY, fontSize: 14, color: C.ink2, margin: 0, isTextBox: true, paraSpaceAfter: 6, valign: "top" });
-    s.addNotes("Backup for 'how do you decide confidence?' and 'what if the AI and the rules disagree?'.");
+      { text: "First: did a check on the machine confirm the top cause? ", options: { bold: true, color: C.ink } },
+      { text: "Then it's T1, whatever the brains or gates say.", options: { color: C.ink2 } },
+    ], { x: MX + 0.9, y: by, w: W - 2 * MX - 2.3, h: bh, fontFace: BODY, fontSize: 14, valign: "middle", margin: 0, isTextBox: true });
+    const t1x = W - MX - 1.2;
+    s.addShape("roundRect", { x: t1x, y: by + 0.11, w: 0.95, h: 0.4, fill: { color: TIER.T1 }, line: { color: TIER.T1 }, rectRadius: 0.2 });
+    s.addText("→ T1", {
+      x: t1x, y: by + 0.11, w: 0.95, h: 0.4, fontFace: BODY, fontSize: 14, bold: true, color: C.white,
+      align: "center", valign: "middle", margin: 0, isTextBox: true,
+    });
+
+    const rw = 2.3, g = 0.15, cx0 = MX + rw + g, cw = (W - MX - cx0 - g) / 2;
+    const hy = 2.5, hh = 0.6, cy0 = hy + hh + 0.1, ch = 1.6;
+    const colHeads = [
+      ["Measured pattern beats chance", "Gate A · small-then-big pattern, p < 0.05"],
+      ["Nothing measured decides", "a size spread alone is shared by several causes"],
+    ];
+    for (let j = 0; j < 2; j++) {
+      s.addText([
+        { text: colHeads[j][0], options: { bold: true, color: C.ink, fontSize: 15, breakLine: true } },
+        { text: colHeads[j][1], options: { color: C.muted, fontSize: 11.5 } },
+      ], { x: cx0 + j * (cw + g), y: hy, w: cw, h: hh, fontFace: BODY, align: "center", valign: "bottom", margin: 0, isTextBox: true });
+    }
+    const rowHeads = [
+      ["Brain 2: no objection", "agrees, isn't sure,\nor has no LLM key"],
+      ["Brain 2 objects", "a clear, different top pick"],
+    ];
+    const cells = [
+      [["T1", "Strong", "Plus 3+ matching confirmed cases, none disagreeing (Gate B). Otherwise T2.", "one lead cause, with its evidence"],
+        ["T2", "Provisional", "No measurement singles the lead out.", "the lead, marked provisional, and the check to confirm it"]],
+      [["T3", "Disagreement", "The measurement still backs Brain 1's cause.", "both candidates, Brain 1's on top"],
+        ["T4", "Don't force it", "Nothing measured separates the two causes.", "no lead cause, just the check that settles it"]],
+    ];
+    for (let i = 0; i < 2; i++) {
+      const y = cy0 + i * (ch + g);
+      s.addText([
+        { text: rowHeads[i][0], options: { bold: true, color: C.ink, fontSize: 15, breakLine: true } },
+        { text: rowHeads[i][1], options: { color: C.muted, fontSize: 11.5 } },
+      ], { x: MX, y, w: rw, h: ch, fontFace: BODY, valign: "middle", margin: 0, isTextBox: true });
+      for (let j = 0; j < 2; j++) {
+        const [t, name, when, shows] = cells[i][j];
+        const x = cx0 + j * (cw + g);
+        s.addShape("roundRect", { x, y, w: cw, h: ch, fill: { color: TIER_TINT[t] }, line: { color: TIER_TINT[t] }, rectRadius: 0.1 });
+        s.addShape("roundRect", { x: x + 0.25, y: y + 0.2, w: 0.72, h: 0.42, fill: { color: TIER[t] }, line: { color: TIER[t] }, rectRadius: 0.21 });
+        s.addText(t, {
+          x: x + 0.25, y: y + 0.2, w: 0.72, h: 0.42, fontFace: BODY, fontSize: 15, bold: true, color: C.white,
+          align: "center", valign: "middle", margin: 0, isTextBox: true,
+        });
+        s.addText(name, {
+          x: x + 1.12, y: y + 0.2, w: cw - 1.4, h: 0.42, fontFace: BODY, fontSize: 18, bold: true, color: C.ink,
+          valign: "middle", margin: 0, isTextBox: true,
+        });
+        s.addText([
+          { text: when, options: { breakLine: true } },
+          { text: "Shows: ", options: { bold: true, color: C.ink } },
+          { text: shows },
+        ], {
+          x: x + 0.25, y: y + 0.74, w: cw - 0.5, h: ch - 0.86, fontFace: BODY, fontSize: 13, color: C.ink2,
+          paraSpaceAfter: 4, valign: "top", margin: 0, isTextBox: true,
+        });
+      }
+    }
+    s.addText([
+      { text: "Every tier says why on screen: ", options: { bold: true } },
+      { text: "“Provisional: fewer than 3 matching confirmed cases back it. A check that confirms it would settle it.”", options: { italic: true } },
+    ], {
+      x: MX, y: cy0 + 2 * ch + g + 0.14, w: W - 2 * MX, h: 0.45, fontFace: BODY, fontSize: 13.5, color: C.green,
+      valign: "top", margin: 0, isTextBox: true,
+    });
+    s.addNotes(
+      "Backup for 'how is confidence decided?' and 'what if the AI disagrees?'. The tier tells the operator how far to trust the ranking. " +
+      "First: if a check on the machine confirmed the top cause, it's T1, because a test outweighs a reading of the evidence. " +
+      "Otherwise T1 needs three things: Brain 2 has no objection, the measured pattern beats chance, and at least three matching " +
+      "confirmed cases back it, with none disagreeing. If anything is missing it's T2, provisional, and the screen says what's missing. " +
+      "If Brain 2 objects, it's T3 when the measurement still backs Brain 1, or T4 when nothing separates the two, and then it shows " +
+      "the check that settles it instead of picking one. Agreement never raises a tier: two readers can make the same mistake. " +
+      "No LLM key means Brain 2 doesn't run, which counts as no objection, not agreement. Gate B can also lower the leader's score, " +
+      "by up to 0.4 log-odds, when more than half of the matching confirmed cases disagree; it never raises one.",
+    );
   }
 
   // ==== B5. Backup: reliability ============================================
@@ -654,12 +733,154 @@ async function build() {
     s.addNotes("Backup for 'could NSW actually deploy this?' and feasibility questions.");
   }
 
+  // ==== B8. Backup: score vs tier vs verdict ===============================
+  {
+    const s = pres.addSlide();
+    s.background = { color: C.white };
+    kicker(s, "BACKUP · WHAT THE NUMBERS MEAN", C.muted);
+    title(s, "Score, tier, verdict: three different questions");
+    const cols = [
+      ["AFTER THE PHOTO", "Quality score", "How good are the dots?",
+        "Counts of dots that pass four checks: present, size, shape, position", "Detail: B9"],
+      ["AFTER EVERY RANKING", "Confidence tier", "How far can I trust the ranking?",
+        "The two brains and two gates, or a check that confirmed the cause", "Detail: B4"],
+      ["WHEN THE CASE CLOSES", "Verdict", "Was the fix proved?",
+        "Five conditions, read from the check log and a re-measured photo", "Detail: B3"],
+    ];
+    const gap = 0.55, cw = (W - 2 * MX - 2 * gap) / 3, top = 1.95, ch = 4.4;
+    for (let i = 0; i < cols.length; i++) {
+      const [when, name, question, by, ref] = cols[i];
+      const x = MX + i * (cw + gap), ix = x + 0.35, iw = cw - 0.7, vy = top + 2.05;
+      s.addShape("roundRect", { x, y: top, w: cw, h: ch, fill: { color: C.tint }, line: { color: C.tint }, rectRadius: 0.12 });
+      if (i < cols.length - 1) {
+        s.addShape("rightArrow", {
+          x: x + cw + 0.1, y: top + ch / 2 - 0.2, w: gap - 0.2, h: 0.4, fill: { color: C.greenLight }, line: { color: C.greenLight },
+        });
+      }
+      s.addText(when, {
+        x: ix, y: top + 0.3, w: iw, h: 0.3, fontFace: BODY, fontSize: 11, bold: true, color: C.copper, charSpacing: 2, margin: 0, isTextBox: true,
+      });
+      s.addText(name, { x: ix, y: top + 0.62, w: iw, h: 0.42, fontFace: BODY, fontSize: 19, bold: true, color: C.ink, margin: 0, isTextBox: true });
+      s.addText(question, {
+        x: ix, y: top + 1.1, w: iw, h: 0.8, fontFace: HEAD, fontSize: 20, italic: true, color: C.green, valign: "top", margin: 0, isTextBox: true,
+      });
+      if (i === 0) {
+        s.addText([
+          { text: "20", options: { fontSize: 30, bold: true, color: C.copper } },
+          { text: "/100", options: { fontSize: 15, color: C.muted } },
+        ], { x: ix, y: vy - 0.05, w: iw, h: 0.55, fontFace: BODY, valign: "bottom", margin: 0, isTextBox: true });
+        stars(s, 1, ix, vy + 0.62, 0.2, 0.25);
+        s.addText("size, 3 of 15", {
+          x: ix + 1.35, y: vy + 0.57, w: iw - 1.35, h: 0.3, fontFace: BODY, fontSize: 11, color: C.muted, valign: "middle", margin: 0, isTextBox: true,
+        });
+      } else if (i === 1) {
+        ["T1", "T2", "T3", "T4"].forEach((t, k) => {
+          const bx = ix + k * 0.74;
+          s.addShape("roundRect", { x: bx, y: vy + 0.15, w: 0.62, h: 0.42, fill: { color: TIER[t] }, line: { color: TIER[t] }, rectRadius: 0.21 });
+          s.addText(t, {
+            x: bx, y: vy + 0.15, w: 0.62, h: 0.42, fontFace: BODY, fontSize: 14, bold: true, color: C.white,
+            align: "center", valign: "middle", margin: 0, isTextBox: true,
+          });
+        });
+      } else {
+        const pw = (iw - 0.16) / 3;
+        [["CONFIRMED", C.good], ["PLAUSIBLE", C.warn], ["UNVERIFIED", "8A8984"]].forEach(([v, col], k) => {
+          const bx = ix + k * (pw + 0.08);
+          s.addShape("roundRect", { x: bx, y: vy + 0.15, w: pw, h: 0.42, fill: { color: col }, line: { color: col }, rectRadius: 0.21 });
+          s.addText(v, {
+            x: bx, y: vy + 0.15, w: pw, h: 0.42, fontFace: BODY, fontSize: 9.5, bold: true, color: C.white,
+            align: "center", valign: "middle", margin: 0, isTextBox: true,
+          });
+        });
+      }
+      s.addText([
+        { text: "Decided by: ", options: { bold: true, color: C.ink } },
+        { text: by },
+      ], { x: ix, y: top + 3.05, w: iw, h: 0.85, fontFace: BODY, fontSize: 13, color: C.ink2, valign: "top", margin: 0, isTextBox: true });
+      s.addText(ref, { x: ix, y: top + ch - 0.45, w: iw, h: 0.28, fontFace: BODY, fontSize: 11, color: C.muted, margin: 0, isTextBox: true });
+    }
+    s.addText("Separate answers: the quality score never sets the tier, and T1 is not CONFIRMED.", {
+      x: MX, y: 6.55, w: W - 2 * MX, h: 0.45, fontFace: HEAD, fontSize: 18, italic: true, color: C.green, margin: 0, isTextBox: true,
+    });
+    s.addNotes(
+      "Backup for 'is that score how sure it is?' and 'what's the difference between the score, the tier and the verdict?'. " +
+      "Three different questions. The quality score rates the dots in the photo. The tier says how far to trust the ranking. " +
+      "The verdict says whether the fix was proved when the case closed. None is computed from another, and T1 is not CONFIRMED.",
+    );
+  }
+
+  // ==== B9. Backup: dispensing quality score (Bonus 2) =====================
+  {
+    const s = pres.addSlide();
+    s.background = { color: C.white };
+    kicker(s, "BACKUP · BONUS 2 · DISPENSING QUALITY", C.muted);
+    title(s, "A quality score you can check by counting the dots");
+    const iw = 5.4, ih = (iw * 480) / 740, iy = 1.95;
+    s.addImage({
+      path: asset("quality_scatter_annotated.png"), x: MX, y: iy, w: iw, h: ih, shadow: shadow(),
+      altText: "Annotated test photo: 15 dots, 3 ringed green as within size spec, 12 ringed red as under, over or inconsistent",
+    });
+    s.addText("Real output on a test photo with scattered sizes: the 3 green rings are the only dots within 15% of the nominal size.", {
+      x: MX, y: iy + ih + 0.12, w: iw, h: 0.45, fontFace: BODY, fontSize: 12, color: C.ink2, margin: 0, isTextBox: true, valign: "top",
+    });
+    const px = MX + iw + 0.4, pw = W - MX - px;
+    s.addShape("roundRect", { x: px, y: iy, w: pw, h: ih, fill: { color: C.tint }, line: { color: C.tint }, rectRadius: 0.12 });
+    s.addText("Dispensing quality", {
+      x: px + 0.35, y: iy + 0.25, w: 3.2, h: 0.42, fontFace: BODY, fontSize: 16, bold: true, color: C.ink, valign: "middle", margin: 0, isTextBox: true,
+    });
+    s.addText([
+      { text: "20", options: { fontSize: 36, bold: true, color: C.copper } },
+      { text: "/100", options: { fontSize: 16, color: C.muted } },
+    ], { x: px + pw - 2.35, y: iy + 0.06, w: 2.0, h: 0.64, fontFace: BODY, align: "right", valign: "bottom", margin: 0, isTextBox: true });
+    s.addText("3 of 15 dots pass all four", {
+      x: px + pw - 2.85, y: iy + 0.72, w: 2.5, h: 0.24, fontFace: BODY, fontSize: 11, color: C.muted, align: "right", margin: 0, isTextBox: true,
+    });
+    const aspects = [
+      ["Completeness", 5, "15 of 15 deposits present"],
+      ["Size consistency", 1, "3 of 15 within 15% of the nominal size"],
+      ["Shape consistency", 5, "15 of 15 round"],
+      ["Dispensing position", 5, "15 of 15 where the recipe puts them"],
+    ];
+    for (let i = 0; i < aspects.length; i++) {
+      const [label, n, detail] = aspects[i];
+      const ry = iy + 1.08 + i * 0.6;
+      s.addText(label, {
+        x: px + 0.35, y: ry, w: 2.8, h: 0.3, fontFace: BODY, fontSize: 14, bold: true, color: C.ink, valign: "middle", margin: 0, isTextBox: true,
+      });
+      stars(s, n, px + pw - 0.35 - 1.44, ry + 0.03);
+      s.addText(detail, {
+        x: px + 0.35, y: ry + 0.3, w: pw - 0.7, h: 0.24, fontFace: BODY, fontSize: 12, color: C.ink2, valign: "top", margin: 0, isTextBox: true,
+      });
+    }
+    const how = [
+      ["LuStar", "Stars = share passed × 5, rounded down, so one failure always costs a star"],
+      ["LuPercent", "Overall = dots passing all four ÷ all dots: 3 of 15 → 20/100"],
+      ["LuScanEye", "Rates the dots, not the diagnosis: how far to trust the ranking is the tier's job"],
+    ];
+    const hy = 6.08, hgap = 0.3, hw = (W - 2 * MX - 2 * hgap) / 3;
+    for (let i = 0; i < how.length; i++) {
+      const hx = MX + i * (hw + hgap);
+      await iconCircle(s, how[i][0], hx, hy + 0.12, 0.46);
+      s.addText(how[i][1], {
+        x: hx + 0.6, y: hy, w: hw - 0.65, h: 0.7, fontFace: BODY, fontSize: 12.5, color: C.ink2, valign: "middle", margin: 0, isTextBox: true,
+      });
+    }
+    footnote(s, "Shown when the photo passes the quality check and the job has a recipe; without the expected dot positions there is nothing to rate.");
+    s.addNotes(
+      "Backup for Bonus 2 and 'why don't I see the quality score?'. It rates the dots in the photo on four things: present, right size, " +
+      "round, in the right place. Each gets stars, and a single failure always costs a star. The overall score is the share of dots that " +
+      "pass all four: here 3 of 15, so 20 out of 100. Every number is a count you can check on the annotated photo: count the green rings. " +
+      "It rates the dispensing, not the diagnosis; how far to trust the diagnosis is the tier's job. It only shows when the photo passes " +
+      "the quality check and the job has a recipe.",
+    );
+  }
+
   const out = path.join(__dirname, "AI-Dispensing-Defect-Detective.pptx");
   await pres.writeFile({ fileName: out });
   if (missingIcons.size) {
     console.warn("MISSING ICON NAMES (fell back to a circle):", [...missingIcons].join(", "));
   }
-  console.log("wrote", out, "— 7 pitch slides + 7 backup slides");
+  console.log("wrote", out, "— 7 pitch slides + 9 backup slides");
 }
 
 build().catch((err) => {

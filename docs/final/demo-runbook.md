@@ -5,8 +5,8 @@ Format (briefing deck): **10 minutes per team — 3 min presentation, 2 min live
 from 8:00. The rules PDF says 7 October; the briefing deck says Tuesday 6 October —
 confirm on the WhatsApp group.
 
-Slides: `docs/final/AI-Dispensing-Defect-Detective.pptx`. The first 8 slides are the
-3-minute pitch, with timed speaker notes; slides 9–13 are backup for Q&A. The PDF next
+Slides: `docs/final/AI-Dispensing-Defect-Detective.pptx`. The first 7 slides are the
+3-minute pitch, with timed speaker notes; slides 8–16 are backup for Q&A. The PDF next
 to it is the offline backup.
 
 ---

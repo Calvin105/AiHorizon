@@ -11,7 +11,7 @@ node build_deck.js                                        # writes AI-Dispensing
 ```
 
 The deck is **7 pitch slides** (title · problem · solution · the AI ·
-third-party declaration · limitations · close) followed by **7 backup slides**
+third-party declaration · limitations · close) followed by **9 backup slides**
 for Q&A. The spoken script, with timings per slide, is
 [`../pitch-script.md`](../pitch-script.md) — keep the two in step, and note the
 speaker notes on each slide repeat it.
@@ -23,3 +23,6 @@ Numbers on the slides come from `evaluation/results/latest.json` (2026-10-05).
 `assets/` holds the UI crops and the phone-photo pair; the annotated phone
 photo is drawn from `detect()`'s own output on a simulated phone photo of a
 printed sample card (the evaluation's `on_desk` condition).
+`quality_scatter_annotated.png` (B9) is `run_vision()`'s annotated output for
+`vision/samples/inconsistent.png` against the `good` sample's recipe — the same
+photo `test_dispensing_quality.py` scores at 20/100.
